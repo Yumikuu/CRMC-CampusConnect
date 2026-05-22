@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMC CampusConnect — Student Community Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand" aria-label="CRMC CampusConnect Home">
+        <div class="nav-logo">
+          <img src="Images/logo.png" alt="CRMC CampusConnect Logo" />
+        </div>
+        <span class="nav-title"><span class="nav-crmc">CRMC</span><span class="nav-sub">CampusConnect</span></span>
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="#" class="active" aria-current="page">Home</a></li>
+        <li><a href="#community">Community</a></li>
+        <li><a href="#announcements">Announcements</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="#" class="btn btn-outline">Login</a>
+        <a href="#" class="btn btn-primary">Register</a>
+      </div>
+
+      <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero" aria-labelledby="hero-heading">
+
+    <div class="hero-inner">
+      <!-- Left: maroon background + content -->
+      <div class="hero-content-side">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <i class="fas fa-sparkles" aria-hidden="true"></i>
+            AI-Powered Student Hub
+          </div>
+
+          <h1 class="hero-title" id="hero-heading">
+            Your Campus,<br />
+            <span class="highlight">Connected.</span>
+          </h1>
+
+          <p class="hero-desc">
+            A centralized student platform for announcements, community interaction, campus updates, and AI-powered safety monitoring.
+          </p>
+
+          <div class="hero-cta">
+            <a href="#" class="btn btn-gold btn-lg">
+              <i class="fas fa-user-plus" aria-hidden="true"></i>
+              Get Started
+            </a>
+            <a href="#features" class="btn btn-lg" style="background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);">
+              <i class="fas fa-play-circle" aria-hidden="true"></i>
+              Explore Features
+            </a>
+          </div>
+
+          <div class="hero-stats" role="list" aria-label="Platform statistics">
+            <div class="stat-item" role="listitem">
+              <div class="stat-num">5,200+</div>
+              <div class="stat-label">Active Students</div>
+            </div>
+            <div class="stat-item" role="listitem">
+              <div class="stat-num">120+</div>
+              <div class="stat-label">Communities</div>
+            </div>
+            <div class="stat-item" role="listitem">
+              <div class="stat-num">98%</div>
+              <div class="stat-label">Uptime</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: building image -->
+      <div class="hero-image-side">
+        <img src="Images/background.png" alt="CRMC Campus Building" class="hero-building-img" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section class="section features-bg" id="features" aria-labelledby="features-heading">
+    <div class="section-inner">
+      <div class="section-header features-header">
+        <div>
+          <div class="section-label"><i class="fas fa-bolt" aria-hidden="true"></i> Platform Features</div>
+          <h2 class="section-title" id="features-heading">Everything you need,<br /><span class="accent">in one place.</span></h2>
+          <p class="section-desc">Built for students, by students — with the power of AI to keep your campus community safe and informed.</p>
+        </div>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-maroon"><i class="fas fa-users" aria-hidden="true"></i></div>
+          <h3 class="feature-title">Student Communities</h3>
+          <p class="feature-desc">Join or create groups for your department, org, or interest. Connect with peers who share your passion.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-gold"><i class="fas fa-bullhorn" aria-hidden="true"></i></div>
+          <h3 class="feature-title">Smart Announcements</h3>
+          <p class="feature-desc">Never miss an important update. Announcements are categorized, prioritized, and delivered to the right audience.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-green"><i class="fas fa-comments" aria-hidden="true"></i></div>
+          <h3 class="feature-title">AI Chatbot Assistant</h3>
+          <p class="feature-desc">Ask our AI assistant about exams, class suspensions, lost items, and campus announcements — get instant answers without browsing through posts.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-blue"><i class="fas fa-bell" aria-hidden="true"></i></div>
+          <h3 class="feature-title">Automated Notifications</h3>
+          <p class="feature-desc">Get real-time alerts for enrollment deadlines, events, and community activity — right when you need them.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+          <h3 class="feature-title">Event Management</h3>
+          <p class="feature-desc">Discover, RSVP, and manage campus events all in one place. From org fairs to academic seminars.</p>
+        </div>
+        <div class="feature-card fade-up">
+          <div class="feature-icon icon-orange"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>
+          <h3 class="feature-title">Verified Content</h3>
+          <p class="feature-desc">Official posts from faculty and admin are verified and highlighted, so you always know what's credible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── POST CATEGORIES ── -->
+  <section class="section community-bg" id="community" aria-labelledby="community-heading">
+    <div class="section-inner">
+      <div class="section-header community-header">
+        <div>
+          <div class="section-label"><i class="fas fa-th-large" aria-hidden="true"></i> Post Categories</div>
+          <h2 class="section-title" id="community-heading">Share, ask, and <span class="accent">connect.</span></h2>
+        </div>
+      </div>
+      <p class="section-desc" style="margin-bottom:2.5rem;text-align:center;margin-left:auto;margin-right:auto;max-width:600px;">Post anonymously or publicly across dedicated categories — from lost items to academic help. Every concern has a place here.</p>
+
+      <div class="community-grid">
+        <div class="community-card community-card--red fade-up">
+          <div class="community-icon" style="background:rgba(239,68,68,.15);">
+            <i class="fas fa-search" style="font-size:1.5rem;color:#dc2626;"></i>
+          </div>
+          <div class="community-name">Lost & Found</div>
+          <div class="community-members">Report or recover lost items on campus</div>
+          <a href="#" class="community-join">Browse</a>
+        </div>
+        <div class="community-card community-card--blue fade-up">
+          <div class="community-icon" style="background:rgba(59,130,246,.15);">
+            <i class="fas fa-book-open" style="font-size:1.5rem;color:#2563eb;"></i>
+          </div>
+          <div class="community-name">Academic</div>
+          <div class="community-members">Study help, schedules, and school concerns</div>
+          <a href="#" class="community-join">Browse</a>
+        </div>
+        <div class="community-card community-card--maroon fade-up">
+          <div class="community-icon" style="background:rgba(107,15,26,.12);">
+            <i class="fas fa-comments" style="font-size:1.5rem;color:var(--maroon);"></i>
+          </div>
+          <div class="community-name">General</div>
+          <div class="community-members">Open discussions and campus conversations</div>
+          <a href="#" class="community-join">Browse</a>
+        </div>
+        <div class="community-card community-card--gold fade-up">
+          <div class="community-icon" style="background:rgba(244,197,66,.2);">
+            <i class="fas fa-handshake" style="font-size:1.5rem;color:var(--gold-dark);"></i>
+          </div>
+          <div class="community-name">Marketplace & Sharing</div>
+          <div class="community-members">Borrow, lend, or share materials with peers</div>
+          <a href="#" class="community-join">Browse</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ANNOUNCEMENTS ── -->
+  <section class="section" id="announcements" aria-labelledby="ann-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <div>
+          <div class="section-label"><i class="fas fa-newspaper" aria-hidden="true"></i> Latest Updates</div>
+          <h2 class="section-title" id="ann-heading">Campus <span class="accent">Announcements</span></h2>
+        </div>
+        <a href="#" class="btn btn-outline">View All <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+      </div>
+
+      <div class="announcements-grid">
+        <div class="announcement-card ann-featured fade-up">
+          <div class="ann-img">
+            <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+            <span class="ann-img-badge">Featured</span>
+          </div>
+          <div class="ann-body">
+            <div class="ann-category">Academic Affairs</div>
+            <h3 class="ann-title">2nd Semester Enrollment Now Open — Complete Guide for All Year Levels</h3>
+            <p class="ann-excerpt">The Office of the Registrar announces that enrollment for the 2nd semester is officially open. Students are advised to check their respective portals for their assigned schedules and required documents.</p>
+            <div class="ann-footer">
+              <span class="ann-date"><i class="fas fa-clock" aria-hidden="true"></i> May 20, 2026</span>
+              <a href="#" class="ann-read-more">Read More <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="ann-list">
+          <div class="ann-list-item fade-up">
+            <span class="ann-list-tag tag-event">Event</span>
+            <div class="ann-list-title">University Foundation Day Celebration — May 28, 2026</div>
+            <div class="ann-list-date"><i class="fas fa-clock" aria-hidden="true"></i> May 18, 2026</div>
+          </div>
+          <div class="ann-list-item fade-up">
+            <span class="ann-list-tag tag-academic">Academic</span>
+            <div class="ann-list-title">Final Exam Schedule Released for All Departments</div>
+            <div class="ann-list-date"><i class="fas fa-clock" aria-hidden="true"></i> May 17, 2026</div>
+          </div>
+          <div class="ann-list-item fade-up">
+            <span class="ann-list-tag tag-urgent">Urgent</span>
+            <div class="ann-list-title">Library System Maintenance — May 22, 8AM–12PM</div>
+            <div class="ann-list-date"><i class="fas fa-clock" aria-hidden="true"></i> May 16, 2026</div>
+          </div>
+          <div class="ann-list-item fade-up">
+            <span class="ann-list-tag tag-event">Event</span>
+            <div class="ann-list-title">Student Leadership Summit — Registration Open</div>
+            <div class="ann-list-date"><i class="fas fa-clock" aria-hidden="true"></i> May 15, 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AI SECTION ── -->
+  <section class="ai-section" id="about" aria-labelledby="ai-heading">
+    <div class="ai-inner">
+      <div class="ai-content">
+        <div class="section-label"><i class="fas fa-robot" aria-hidden="true"></i> AI-Powered</div>
+        <h2 class="section-title" id="ai-heading">Smart monitoring for a <span style="color:var(--gold)">safer campus.</span></h2>
+        <p class="section-desc">Our built-in AI engine works 24/7 to review content, detect policy violations, and send automated alerts — so admins can focus on what matters.</p>
+        <ul class="ai-features-list" role="list">
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> Real-time content moderation</li>
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> Automated notification dispatch</li>
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> Sentiment analysis on posts</li>
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> Spam and misinformation detection</li>
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> Admin dashboard with AI insights</li>
+          <li><div class="ai-check"><i class="fas fa-check" aria-hidden="true"></i></div> AI chatbot for instant campus info</li>
+        </ul>
+      </div>
+
+      <div class="ai-visual">
+        <div class="ai-monitor-card">
+          <div class="ai-monitor-header">
+            <span class="ai-monitor-title"><i class="fas fa-chart-bar" aria-hidden="true"></i> Content Health Score</span>
+            <span class="status-badge status-active">Live</span>
+          </div>
+          <div class="ai-bar-list">
+            <div class="ai-bar-item">
+              <div class="ai-bar-label"><span>Safe Content</span><span>96%</span></div>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:96%"></div></div>
+            </div>
+            <div class="ai-bar-item">
+              <div class="ai-bar-label"><span>Verified Posts</span><span>88%</span></div>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:88%"></div></div>
+            </div>
+            <div class="ai-bar-item">
+              <div class="ai-bar-label"><span>Spam Filtered</span><span>99%</span></div>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:99%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-monitor-card">
+          <div class="ai-monitor-title" style="margin-bottom:1rem;"><i class="fas fa-bell" aria-hidden="true"></i> Recent AI Actions</div>
+          <div style="display:flex;flex-direction:column;gap:.75rem;">
+            <div style="display:flex;align-items:center;gap:.75rem;font-size:.8rem;color:rgba(255,255,255,.7);">
+              <span style="width:8px;height:8px;background:#4ade80;border-radius:50%;flex-shrink:0;"></span>
+              Flagged 2 posts for review — 3 mins ago
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;font-size:.8rem;color:rgba(255,255,255,.7);">
+              <span style="width:8px;height:8px;background:var(--gold);border-radius:50%;flex-shrink:0;"></span>
+              Sent enrollment reminder to 1,200 students
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;font-size:.8rem;color:rgba(255,255,255,.7);">
+              <span style="width:8px;height:8px;background:#60a5fa;border-radius:50%;flex-shrink:0;"></span>
+              Auto-approved 34 community posts
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA BANNER ── -->
+  <section class="cta-section" id="contact">
+    <div class="cta-inner">
+      <div class="cta-banner" role="complementary" aria-label="Call to action">
+        <div class="cta-text">
+          <h2 class="cta-title">Ready to join the community?</h2>
+          <p class="cta-desc">Sign up for free and connect with thousands of CRMC students. Your campus life starts here.</p>
+        </div>
+        <div class="cta-actions">
+          <a href="#" class="btn btn-gold btn-lg">Create Free Account</a>
+          <a href="#" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);">Learn More</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+            <div class="nav-logo">
+              <img src="Images/logo.png" alt="CRMC CampusConnect Logo" />
+            </div>
+            <span class="nav-title" style="color:#fff;"><span class="nav-crmc">CRMC</span><span class="nav-sub">CampusConnect</span></span>
+          </div>
+          <p class="footer-desc">The official student community and information hub of CRMC — powered by AI, built for students.</p>
+          <div class="footer-socials" aria-label="Social media links">
+            <a href="#" class="social-btn" aria-label="Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+            <a href="#" class="social-btn" aria-label="Twitter/X"><i class="fab fa-x-twitter" aria-hidden="true"></i></a>
+            <a href="#" class="social-btn" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+            <a href="#" class="social-btn" aria-label="YouTube"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Platform</div>
+          <ul class="footer-links" role="list">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Announcements</a></li>
+            <li><a href="#">Events</a></li>
+            <li><a href="#">About</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Support</div>
+          <ul class="footer-links" role="list">
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Contact Us</a></li>
+            <li><a href="#">Report an Issue</a></li>
+            <li><a href="#">Community Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Legal</div>
+          <ul class="footer-links" role="list">
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+            <li><a href="#">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>&copy; 2026 CRMC CampusConnect. All rights reserved.</span>
+        <span>Made with <span style="color:var(--gold)">♥</span> for CRMC students</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="homepage.js" defer></script>
+
+</body>
+</html>

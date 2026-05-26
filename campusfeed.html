@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Feed — CRMC CampusConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="campusfeed.css" />
+</head>
+<body>
+
+<!-- ── TOP NAVBAR ── -->
+<nav class="topbar" role="navigation" aria-label="Main navigation">
+  <div class="topbar-left">
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+    <a href="index.html" class="topbar-brand" aria-label="CRMC CampusConnect Home">
+      <img src="Images/logo.png" alt="Logo" class="topbar-logo" />
+      <span class="topbar-name"><span class="t-crmc">CRMC</span><span class="t-cc">CampusConnect</span></span>
+    </a>
+  </div>
+
+  <div class="topbar-search">
+    <i class="fas fa-search"></i>
+    <input type="text" placeholder="Search posts, communities, students..." aria-label="Search" />
+  </div>
+
+  <div class="topbar-right">
+    <!-- Notifications -->
+    <div class="topbar-icon-wrap" id="notifToggle" aria-label="Notifications" role="button" tabindex="0">
+      <button class="topbar-icon-btn" aria-label="Notifications">
+        <i class="fas fa-bell"></i>
+        <span class="icon-badge">4</span>
+      </button>
+      <!-- Notification Dropdown -->
+      <div class="notif-dropdown" id="notifDropdown" hidden>
+        <div class="notif-header">
+          <span>Notifications</span>
+          <a href="#" class="notif-mark-all">Mark all read</a>
+        </div>
+        <div class="notif-list">
+          <div class="notif-item notif-unread">
+            <div class="notif-icon-wrap ni-urgent"><i class="fas fa-bullhorn"></i></div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>Urgent:</strong> Library system maintenance today 8AM–12PM</div>
+              <div class="notif-time">5 mins ago</div>
+            </div>
+          </div>
+          <div class="notif-item notif-unread">
+            <div class="notif-icon-wrap ni-comment"><i class="fas fa-comment"></i></div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>Maria S.</strong> replied to your post in Lost & Found</div>
+              <div class="notif-time">20 mins ago</div>
+            </div>
+          </div>
+          <div class="notif-item notif-unread">
+            <div class="notif-icon-wrap ni-dept"><i class="fas fa-graduation-cap"></i></div>
+            <div class="notif-body">
+              <div class="notif-text">New announcement in <strong>CTE Community</strong></div>
+              <div class="notif-time">1 hour ago</div>
+            </div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon-wrap ni-like"><i class="fas fa-heart"></i></div>
+            <div class="notif-body">
+              <div class="notif-text"><strong>3 students</strong> liked your post in Academic Help</div>
+              <div class="notif-time">2 hours ago</div>
+            </div>
+          </div>
+        </div>
+        <a href="#" class="notif-view-all">View all notifications</a>
+      </div>
+    </div>
+
+    <!-- Chatbot -->
+    <button class="topbar-icon-btn" id="chatbotToggleBtn" aria-label="Open AI Assistant">
+      <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- Profile -->
+    <div class="topbar-icon-wrap" id="profileToggle" role="button" tabindex="0">
+      <button class="topbar-profile-btn" aria-label="Profile menu">
+        <div class="profile-avatar">JD</div>
+        <span class="profile-name">Juan D.</span>
+        <i class="fas fa-chevron-down" style="font-size:.7rem;color:var(--gray-400);"></i>
+      </button>
+      <div class="profile-dropdown" id="profileDropdown" hidden>
+        <div class="profile-dd-header">
+          <div class="profile-dd-avatar">JD</div>
+          <div>
+            <div class="profile-dd-name">Juan Dela Cruz</div>
+            <div class="profile-dd-dept">CTE Student · 2024-00001</div>
+          </div>
+        </div>
+        <div class="profile-dd-links">
+          <a href="#"><i class="fas fa-user"></i> My Profile</a>
+          <a href="#"><i class="fas fa-cog"></i> Settings</a>
+          <a href="#"><i class="fas fa-shield-alt"></i> Privacy</a>
+          <a href="index.html" class="dd-logout"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── PAGE BODY ── -->
+<div class="page-body">
+
+  <!-- ── LEFT SIDEBAR ── -->
+  <aside class="left-sidebar" id="leftSidebar" aria-label="Communities">
+
+    <!-- User Card -->
+    <div class="user-card">
+      <div class="user-card-avatar">JD</div>
+      <div class="user-card-info">
+        <div class="user-card-name">Juan Dela Cruz</div>
+        <span class="dept-badge">CTE Student</span>
+      </div>
+    </div>
+
+    <!-- Department Community -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Department</div>
+      <a href="#" class="community-item community-item--dept active" data-feed="cte">
+        <div class="comm-icon ci-cte"><img src="Images/CTE.png" alt="CTE" /></div>
+        <div class="comm-info">
+          <div class="comm-name">CTE Community</div>
+          <div class="comm-sub">Your department</div>
+        </div>
+        <span class="comm-badge">3</span>
+      </a>
+    </div>
+
+    <!-- Public Communities -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Campus Communities</div>
+      <a href="#" class="community-item" data-feed="general">
+        <div class="comm-icon ci-general"><i class="fas fa-comments"></i></div>
+        <div class="comm-info"><div class="comm-name">General</div><div class="comm-sub">Open discussions</div></div>
+        <span class="comm-badge">12</span>
+      </a>
+      <a href="#" class="community-item" data-feed="lostandfound">
+        <div class="comm-icon ci-lost"><i class="fas fa-search"></i></div>
+        <div class="comm-info"><div class="comm-name">Lost & Found</div><div class="comm-sub">Report lost items</div></div>
+        <span class="comm-badge">5</span>
+      </a>
+      <a href="#" class="community-item" data-feed="marketplace">
+        <div class="comm-icon ci-market"><i class="fas fa-handshake"></i></div>
+        <div class="comm-info"><div class="comm-name">Marketplace</div><div class="comm-sub">Borrow &amp; lend</div></div>
+      </a>
+      <a href="#" class="community-item" data-feed="academic">
+        <div class="comm-icon ci-academic"><i class="fas fa-book-open"></i></div>
+        <div class="comm-info"><div class="comm-name">Academic Help</div><div class="comm-sub">Study &amp; schedules</div></div>
+        <span class="comm-badge">8</span>
+      </a>
+      <a href="#" class="community-item" data-feed="campus">
+        <div class="comm-icon ci-campus"><i class="fas fa-university"></i></div>
+        <div class="comm-info"><div class="comm-name">Campus Discussions</div><div class="comm-sub">Campus life</div></div>
+      </a>
+      <a href="#" class="community-item" data-feed="support">
+        <div class="comm-icon ci-support"><i class="fas fa-hands-helping"></i></div>
+        <div class="comm-info"><div class="comm-name">Student Support</div><div class="comm-sub">Help &amp; guidance</div></div>
+        <span class="comm-badge">2</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN FEED ── -->
+  <main class="main-feed" role="main">
+
+    <!-- Feed Header -->
+    <div class="feed-header">
+      <div class="feed-header-info">
+        <div class="feed-icon ci-general"><i class="fas fa-comments"></i></div>
+        <div>
+          <h1 class="feed-title">General Community</h1>
+          <p class="feed-sub">Open discussions for all CRMC students</p>
+        </div>
+      </div>
+      <button class="btn-join">Joined <i class="fas fa-check"></i></button>
+    </div>
+
+    <!-- Create Post -->
+    <div class="create-post-card">
+      <div class="create-post-avatar">JD</div>
+      <button class="create-post-input" id="openCreatePost" aria-label="Create a post">
+        What's on your mind, Juan?
+      </button>
+      <div class="create-post-actions">
+        <button class="create-action-btn"><i class="fas fa-image"></i> Photo</button>
+        <button class="create-action-btn"><i class="fas fa-tag"></i> Tag</button>
+        <button class="create-action-btn"><i class="fas fa-user-secret"></i> Anonymous</button>
+      </div>
+    </div>
+
+    <!-- Feed Tabs -->
+    <div class="feed-tabs" role="tablist">
+      <button class="feed-tab active" role="tab" aria-selected="true">🔥 Trending</button>
+      <button class="feed-tab" role="tab" aria-selected="false">🕐 Latest</button>
+      <button class="feed-tab" role="tab" aria-selected="false">📌 Pinned</button>
+    </div>
+
+    <!-- ── POST CARDS ── -->
+
+    <!-- Post 1: Lost & Found -->
+    <article class="post-card" aria-label="Post by Anonymous">
+      <div class="post-left">
+        <div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">
+          <span class="post-author">Anonymous</span>
+          <span class="post-dept-tag tag-lost">Lost &amp; Found</span>
+          <span class="post-time"><i class="fas fa-clock"></i> 15 mins ago</span>
+        </div>
+        <h2 class="post-title">Lost: Black tumbler near the library — anyone seen it?</h2>
+        <p class="post-content">I left my black Hydro Flask tumbler somewhere near the 2nd floor library area around 10AM. It has a small sticker of a cat on the side. If anyone finds it please message me or drop it at the guard's desk. Thank you so much!</p>
+        <div class="post-actions">
+          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>24</span></button>
+          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>8</span></button>
+          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 2: Academic -->
+    <article class="post-card" aria-label="Post by Maria Santos">
+      <div class="post-left">
+        <div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">MS</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">
+          <span class="post-author">Maria Santos</span>
+          <span class="post-dept-tag tag-academic">Academic</span>
+          <span class="post-time"><i class="fas fa-clock"></i> 1 hour ago</span>
+        </div>
+        <h2 class="post-title">Final exam schedule for CTE — here's what I found</h2>
+        <p class="post-content">Hey CTE students! I compiled the final exam schedule from the registrar's bulletin. Sharing it here so everyone has a copy. Please double-check with your professors for any changes.</p>
+        <div class="post-image-preview">
+          <div class="post-img-placeholder"><i class="fas fa-calendar-alt"></i><span>Exam Schedule.jpg</span></div>
+        </div>
+        <div class="post-actions">
+          <button class="post-action-btn liked" aria-label="Like"><i class="fas fa-heart"></i> <span>87</span></button>
+          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>34</span></button>
+          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 3: Marketplace -->
+    <article class="post-card" aria-label="Post by Carlo Reyes">
+      <div class="post-left">
+        <div class="post-avatar" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">CR</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">
+          <span class="post-author">Carlo Reyes</span>
+          <span class="post-dept-tag tag-market">Marketplace</span>
+          <span class="post-time"><i class="fas fa-clock"></i> 2 hours ago</span>
+        </div>
+        <h2 class="post-title">Lending: Casio scientific calculator — free to borrow until Friday</h2>
+        <p class="post-content">I have a spare Casio FX-991EX that I'm not using this week. Anyone who needs it for their Math finals can borrow it. Just message me and we can arrange a meetup inside campus. First come, first served!</p>
+        <div class="post-actions">
+          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>41</span></button>
+          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>15</span></button>
+          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Post 4: Campus concern -->
+    <article class="post-card" aria-label="Post by Anonymous">
+      <div class="post-left">
+        <div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">
+          <span class="post-author">Anonymous</span>
+          <span class="post-dept-tag tag-campus">Campus</span>
+          <span class="post-time"><i class="fas fa-clock"></i> 3 hours ago</span>
+        </div>
+        <h2 class="post-title">Is the canteen open during the foundation day celebration?</h2>
+        <p class="post-content">Just want to confirm if the main canteen will be operating on May 28 during the Foundation Day. Planning to come early and not sure if I should bring food. Anyone know?</p>
+        <div class="post-actions">
+          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>19</span></button>
+          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>22</span></button>
+          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <aside class="right-sidebar" aria-label="Campus info">
+
+    <!-- Trending Announcements -->
+    <div class="widget-card">
+      <div class="widget-title"><i class="fas fa-bullhorn"></i> Announcements</div>
+      <div class="ann-widget-list">
+        <div class="ann-widget-item">
+          <span class="ann-w-tag tag-urgent">Urgent</span>
+          <div class="ann-w-text">Library maintenance — May 22, 8AM–12PM</div>
+          <div class="ann-w-time">Today</div>
+        </div>
+        <div class="ann-widget-item">
+          <span class="ann-w-tag tag-event">Event</span>
+          <div class="ann-w-text">Foundation Day Celebration — May 28</div>
+          <div class="ann-w-time">May 18</div>
+        </div>
+        <div class="ann-widget-item">
+          <span class="ann-w-tag tag-academic">Academic</span>
+          <div class="ann-w-text">2nd Semester Enrollment now open</div>
+          <div class="ann-w-time">May 17</div>
+        </div>
+      </div>
+      <a href="#" class="widget-view-all">View all <i class="fas fa-arrow-right"></i></a>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="widget-card">
+      <div class="widget-title"><i class="fas fa-calendar-check"></i> Upcoming Events</div>
+      <div class="events-list">
+        <div class="event-item">
+          <div class="event-date"><span class="event-day">28</span><span class="event-month">MAY</span></div>
+          <div class="event-info">
+            <div class="event-name">Foundation Day</div>
+            <div class="event-loc"><i class="fas fa-map-marker-alt"></i> Main Campus</div>
+          </div>
+        </div>
+        <div class="event-item">
+          <div class="event-date"><span class="event-day">30</span><span class="event-month">MAY</span></div>
+          <div class="event-info">
+            <div class="event-name">Leadership Summit</div>
+            <div class="event-loc"><i class="fas fa-map-marker-alt"></i> Auditorium</div>
+          </div>
+        </div>
+        <div class="event-item">
+          <div class="event-date"><span class="event-day">02</span><span class="event-month">JUN</span></div>
+          <div class="event-info">
+            <div class="event-name">Final Exams Begin</div>
+            <div class="event-loc"><i class="fas fa-map-marker-alt"></i> All Departments</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Communities -->
+    <div class="widget-card">
+      <div class="widget-title"><i class="fas fa-fire"></i> Active Communities</div>
+      <div class="active-comm-list">
+        <div class="active-comm-item">
+          <div class="comm-icon ci-lost" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-search"></i></div>
+          <div class="active-comm-info"><div class="active-comm-name">Lost &amp; Found</div><div class="active-comm-posts">5 new posts</div></div>
+          <span class="active-dot"></span>
+        </div>
+        <div class="active-comm-item">
+          <div class="comm-icon ci-academic" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-book-open"></i></div>
+          <div class="active-comm-info"><div class="active-comm-name">Academic Help</div><div class="active-comm-posts">8 new posts</div></div>
+          <span class="active-dot"></span>
+        </div>
+        <div class="active-comm-item">
+          <div class="comm-icon ci-general" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-comments"></i></div>
+          <div class="active-comm-info"><div class="active-comm-name">General</div><div class="active-comm-posts">12 new posts</div></div>
+          <span class="active-dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Online Students -->
+    <div class="widget-card">
+      <div class="widget-title"><i class="fas fa-circle" style="color:#22c55e;font-size:.6rem;"></i> Online Now</div>
+      <div class="online-list">
+        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">MS</div><span>Maria Santos</span></div>
+        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">CR</div><span>Carlo Reyes</span></div>
+        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);">AL</div><span>Ana Lim</span></div>
+        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#ea580c,#c2410c);">RB</div><span>Rico Bautista</span></div>
+      </div>
+      <div class="online-count">+142 students online</div>
+    </div>
+
+    <!-- AI Chatbot Quick Access -->
+    <div class="widget-card widget-chatbot">
+      <div class="widget-title"><i class="fas fa-robot"></i> CRMC Assistant</div>
+      <p class="chatbot-widget-desc">Ask me anything about campus life, exams, lost items, and more.</p>
+      <div class="chatbot-suggestions">
+        <button class="chatbot-sugg-btn">📅 When is the exam?</button>
+        <button class="chatbot-sugg-btn">🔍 Lost &amp; Found</button>
+        <button class="chatbot-sugg-btn">📢 CTE announcements</button>
+      </div>
+      <button class="btn-open-chatbot" id="openChatbotWidget"><i class="fas fa-comments"></i> Open Assistant</button>
+    </div>
+
+  </aside>
+</div>
+
+<!-- ── CREATE POST MODAL ── -->
+<div class="modal-overlay" id="createPostModal" hidden role="dialog" aria-modal="true" aria-labelledby="createPostTitle">
+  <div class="modal cf-modal">
+    <button class="modal-close" id="closeCreatePost" aria-label="Close"><i class="fas fa-times"></i></button>
+    <h2 class="cf-modal-title" id="createPostTitle">Create Post</h2>
+    <div class="cf-modal-user">
+      <div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);width:38px;height:38px;font-size:.85rem;">JD</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem;">Juan Dela Cruz</div>
+        <select class="post-community-select" aria-label="Select community">
+          <option>General</option>
+          <option>Lost &amp; Found</option>
+          <option>Academic Help</option>
+          <option>Marketplace</option>
+          <option>Campus Discussions</option>
+          <option>CTE Community</option>
+        </select>
+      </div>
+    </div>
+    <textarea class="cf-post-textarea" placeholder="What's on your mind?" rows="5" aria-label="Post content"></textarea>
+    <div class="cf-post-options">
+      <button class="create-action-btn"><i class="fas fa-image"></i> Photo</button>
+      <label class="checkbox-label" style="font-size:.8rem;">
+        <input type="checkbox" /> Post anonymously
+      </label>
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:.75rem;">Post</button>
+  </div>
+</div>
+
+<!-- ── CHATBOT WIDGET ── -->
+<div class="chatbot-widget" id="chatbotWidget">
+  <button class="chatbot-fab" id="chatbotFab" aria-label="Open CRMC Assistant" aria-expanded="false">
+    <i class="fas fa-robot chatbot-fab-open"></i>
+    <i class="fas fa-times chatbot-fab-close" style="display:none;"></i>
+  </button>
+  <div class="chatbot-panel" id="chatbotPanel" hidden>
+    <div class="chatbot-head">
+      <div class="chatbot-head-info">
+        <div class="chatbot-head-avatar"><i class="fas fa-robot"></i><span class="chatbot-online-dot"></span></div>
+        <div><div class="chatbot-head-title">CRMC Assistant</div><div class="chatbot-head-sub">AI Campus Bot · Online</div></div>
+      </div>
+      <button class="chatbot-head-close" id="chatbotClose" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages" role="log" aria-live="polite">
+      <div class="cb-msg cb-bot">
+        <div class="cb-bubble">👋 Hi Juan! I'm your <strong>CRMC Assistant</strong>. Ask me about exams, class suspensions, lost items, or campus announcements!</div>
+      </div>
+      <div class="cb-suggestions" id="cbSuggestions">
+        <button class="cb-sugg" data-q="When is the examination?">📅 Exam schedule</button>
+        <button class="cb-sugg" data-q="Any class suspensions?">🚫 Suspensions</button>
+        <button class="cb-sugg" data-q="Lost and found items?">🔍 Lost &amp; Found</button>
+        <button class="cb-sugg" data-q="Latest CTE announcements?">📢 CTE updates</button>
+      </div>
+    </div>
+    <form class="chatbot-input-row" id="chatbotForm">
+      <input type="text" id="chatbotInput" placeholder="Ask about campus info..." autocomplete="off" aria-label="Message" maxlength="200" />
+      <button type="submit" class="chatbot-send" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+    </form>
+  </div>
+</div>
+
+<script src="campusfeed.js"></script>
+</body>
+</html>

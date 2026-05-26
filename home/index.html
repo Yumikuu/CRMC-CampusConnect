@@ -17,7 +17,7 @@
     <div class="nav-inner">
       <a href="#" class="nav-brand" aria-label="CRMC CampusConnect Home">
         <div class="nav-logo">
-          <img src="Images/logo.png" alt="CRMC CampusConnect Logo" />
+          <img src="../Images/logo.png" alt="CRMC CampusConnect Logo" />
         </div>
         <span class="nav-title"><span class="nav-crmc">CRMC</span><span class="nav-sub">CampusConnect</span></span>
       </a>
@@ -31,13 +31,28 @@
       </ul>
 
       <div class="nav-actions">
-        <a href="#" class="btn btn-outline">Login</a>
-        <a href="#" class="btn btn-primary">Register</a>
+        <a href="#" class="btn btn-outline" id="openLogin">Login</a>
+        <a href="#" class="btn btn-primary" id="openRegister">Register</a>
       </div>
 
       <button class="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
+    </div>
+
+    <!-- ── MOBILE DRAWER ── -->
+    <div class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
+      <ul class="mobile-nav-links" role="list">
+        <li><a href="#" class="active">Home</a></li>
+        <li><a href="#community">Community</a></li>
+        <li><a href="#announcements">Announcements</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="mobile-nav-actions">
+        <a href="#" class="btn btn-outline mobile-login">Login</a>
+        <a href="#" class="btn btn-primary mobile-register">Register</a>
+      </div>
     </div>
   </nav>
 
@@ -73,18 +88,9 @@
             </a>
           </div>
 
-          <div class="hero-stats" role="list" aria-label="Platform statistics">
+          <div class="hero-stats" role="list" aria-label="Platform highlights">
             <div class="stat-item" role="listitem">
-              <div class="stat-num">5,200+</div>
-              <div class="stat-label">Active Students</div>
-            </div>
-            <div class="stat-item" role="listitem">
-              <div class="stat-num">120+</div>
-              <div class="stat-label">Communities</div>
-            </div>
-            <div class="stat-item" role="listitem">
-              <div class="stat-num">98%</div>
-              <div class="stat-label">Uptime</div>
+              <div class="stat-num">Faster Campus Communication</div>
             </div>
           </div>
         </div>
@@ -92,7 +98,7 @@
 
       <!-- Right: building image -->
       <div class="hero-image-side">
-        <img src="Images/background.png" alt="CRMC Campus Building" class="hero-building-img" />
+        <img src="../Images/background.png" alt="CRMC Campus Building" class="hero-building-img" />
       </div>
     </div>
   </section>
@@ -311,10 +317,10 @@
       <div class="cta-banner" role="complementary" aria-label="Call to action">
         <div class="cta-text">
           <h2 class="cta-title">Ready to join the community?</h2>
-          <p class="cta-desc">Sign up for free and connect with thousands of CRMC students. Your campus life starts here.</p>
+          <p class="cta-desc">Sign up and connect with thousands of CRMC students. Your campus life starts here.</p>
         </div>
         <div class="cta-actions">
-          <a href="#" class="btn btn-gold btn-lg">Create Free Account</a>
+          <a href="#" class="btn btn-gold btn-lg">Create Account</a>
           <a href="#" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);">Learn More</a>
         </div>
       </div>
@@ -328,7 +334,7 @@
         <div class="footer-brand">
           <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
             <div class="nav-logo">
-              <img src="Images/logo.png" alt="CRMC CampusConnect Logo" />
+              <img src="../Images/logo.png" alt="CRMC CampusConnect Logo" />
             </div>
             <span class="nav-title" style="color:#fff;"><span class="nav-crmc">CRMC</span><span class="nav-sub">CampusConnect</span></span>
           </div>
@@ -379,6 +385,94 @@
       </div>
     </div>
   </footer>
+
+  <!-- ── LOGIN MODAL ── -->
+  <div class="modal-overlay" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
+    <div class="modal">
+      <button class="modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+      <div class="modal-logo">
+        <img src="../Images/logo.png" alt="CRMC CampusConnect" />
+      </div>
+      <h2 class="modal-title" id="loginTitle">Welcome back</h2>
+      <p class="modal-sub">Sign in to your CampusConnect account</p>
+      <form class="modal-form" id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="loginEmail">Email or Student ID</label>
+          <input type="text" id="loginEmail" placeholder="e.g. 2024-00001" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="input-password">
+            <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required />
+            <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="checkbox-label">
+            <input type="checkbox" /> Remember me
+          </label>
+          <a href="#" class="form-link">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+      <p class="modal-switch">Don't have an account? <a href="#" id="switchToRegister">Register here</a></p>
+    </div>
+  </div>
+
+  <!-- ── REGISTER MODAL ── -->
+  <div class="modal-overlay" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerTitle" hidden>
+    <div class="modal">
+      <button class="modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+      <div class="modal-logo">
+        <img src="../Images/logo.png" alt="CRMC CampusConnect" />
+      </div>
+      <h2 class="modal-title" id="registerTitle">Create an account</h2>
+      <p class="modal-sub">Join the CRMC student community</p>
+      <form class="modal-form" id="registerForm" novalidate>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="regFirstName">First Name</label>
+            <input type="text" id="regFirstName" placeholder="Juan" required />
+          </div>
+          <div class="form-group">
+            <label for="regLastName">Last Name</label>
+            <input type="text" id="regLastName" placeholder="Dela Cruz" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regStudentId">Student ID</label>
+          <input type="text" id="regStudentId" placeholder="e.g. 2024-00001" required />
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" placeholder="you@crmc.edu.ph" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <div class="input-password">
+            <input type="password" id="regPassword" placeholder="Create a password" autocomplete="new-password" required />
+            <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regDept">Department</label>
+          <select id="regDept" required>
+            <option value="" disabled selected>Select your department</option>
+            <option>College of Business Education (CBE)</option>
+            <option>College of Criminal Justice Education (CCJE)</option>
+            <option>College of Computer Studies (CSS)</option>
+            <option>College of Teacher Education (CTE)</option>
+            <option>Psychology (PSYCH)</option>
+          </select>
+        </div>
+        <label class="checkbox-label" style="margin-bottom:.75rem;">
+          <input type="checkbox" required /> I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+      <p class="modal-switch">Already have an account? <a href="#" id="switchToLogin">Sign in here</a></p>
+    </div>
+  </div>
 
   <script src="homepage.js" defer></script>
 

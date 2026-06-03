@@ -1,3 +1,132 @@
+// ── DEPARTMENT CONFIG ──
+const DEPT_CONFIG = {
+  cte: {
+    name:    'CTE Community',
+    label:   'CTE Student',
+    img:     'Images/CTE.png',
+    imgAlt:  'CTE',
+    title:   'CTE Community',
+    sub:     'College of Teacher Education',
+    iconClass: 'ci-cte',
+  },
+  cbe: {
+    name:    'CBE Community',
+    label:   'CBE Student',
+    img:     'Images/CBE.png',
+    imgAlt:  'CBE',
+    title:   'CBE Community',
+    sub:     'College of Business Education',
+    iconClass: 'ci-cbe',
+  },
+  ccje: {
+    name:    'CCJE Community',
+    label:   'CCJE Student',
+    img:     'Images/CCJE.png',
+    imgAlt:  'CCJE',
+    title:   'CCJE Community',
+    sub:     'College of Criminal Justice Education',
+    iconClass: 'ci-ccje',
+  },
+  css: {
+    name:    'CSS Community',
+    label:   'CSS Student',
+    img:     'Images/CSS.png',
+    imgAlt:  'CSS',
+    title:   'CSS Community',
+    sub:     'College of Computer Studies',
+    iconClass: 'ci-css',
+  },
+  psych: {
+    name:    'PSYCH Community',
+    label:   'PSYCH Student',
+    img:     'Images/PSYCH.png',
+    imgAlt:  'PSYCH',
+    title:   'PSYCH Community',
+    sub:     'Psychology Department',
+    iconClass: 'ci-psych',
+  },
+};
+
+// ── AUTH GUARD + POPULATE UI ──
+(async () => {
+  // Give Supabase a moment to process the session from the URL hash
+  const { data: { session } } = await db.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'landing page/index.html';
+    return;
+  }
+
+  // Fetch profile from DB
+  const { data: profile, error } = await db
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error || !profile) {
+    console.error('Could not load profile:', error);
+    window.location.href = 'landing page/index.html';
+    return;
+  }
+
+  // Determine department slug from URL param or profile
+  const urlParams  = new URLSearchParams(window.location.search);
+  const deptSlug   = urlParams.get('dept') || 'general';
+  const deptConf   = DEPT_CONFIG[deptSlug];
+
+  // Build initials and display name
+  const initials   = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
+  const fullName   = `${profile.first_name} ${profile.last_name}`;
+  const shortName  = `${profile.first_name} ${profile.last_name[0]}.`;
+  const deptLabel  = deptConf ? deptConf.label : 'Student';
+
+  // ── Topbar ──
+  document.getElementById('topbarAvatar').textContent = initials;
+  document.getElementById('topbarName').textContent   = shortName;
+
+  // ── Profile dropdown ──
+  document.getElementById('ddAvatar').textContent   = initials;
+  document.getElementById('ddFullName').textContent = fullName;
+  document.getElementById('ddDeptId').textContent   = `${deptLabel} · ${profile.student_id}`;
+
+  // ── Sidebar user card ──
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent   = fullName;
+  document.getElementById('sidebarDept').textContent   = deptLabel;
+
+  // ── Department community item ──
+  if (deptConf) {
+    document.getElementById('deptCommName').textContent = deptConf.name;
+    const iconWrap = document.getElementById('deptCommIcon');
+    iconWrap.className = `comm-icon ${deptConf.iconClass}`;
+
+    const img = document.getElementById('deptCommImg');
+    img.src = deptConf.img;
+    img.alt = deptConf.imgAlt;
+    img.style.display = '';
+    document.getElementById('deptCommFallback').style.display = 'none';
+
+    // ── Feed header ──
+    document.getElementById('feedTitle').textContent = deptConf.title;
+    document.getElementById('feedSub').textContent   = deptConf.sub;
+    const feedIcon = document.getElementById('feedHeaderIcon');
+    feedIcon.className = `feed-icon ${deptConf.iconClass}`;
+    feedIcon.innerHTML = `<img src="${deptConf.img}" alt="${deptConf.imgAlt}" style="width:100%;height:100%;object-fit:contain;" />`;
+  }
+
+  // ── Create post greeting ──
+  document.getElementById('createPostAvatar').textContent    = initials;
+  document.getElementById('createPostGreeting').textContent  = `What's on your mind, ${profile.first_name}?`;
+
+  // ── Logout ──
+  document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await db.auth.signOut();
+    window.location.href = 'landing page/index.html';
+  });
+})();
+
 // ── DROPDOWN TOGGLES ──
 function setupDropdown(triggerId, dropdownId) {
   const trigger  = document.getElementById(triggerId);

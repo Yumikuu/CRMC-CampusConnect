@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="campusfeed.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
 </head>
 <body>
 
@@ -84,23 +86,23 @@
     <!-- Profile -->
     <div class="topbar-icon-wrap" id="profileToggle" role="button" tabindex="0">
       <button class="topbar-profile-btn" aria-label="Profile menu">
-        <div class="profile-avatar">JD</div>
-        <span class="profile-name">Juan D.</span>
+        <div class="profile-avatar" id="topbarAvatar">--</div>
+        <span class="profile-name" id="topbarName">Loading</span>
         <i class="fas fa-chevron-down" style="font-size:.7rem;color:var(--gray-400);"></i>
       </button>
       <div class="profile-dropdown" id="profileDropdown" hidden>
         <div class="profile-dd-header">
-          <div class="profile-dd-avatar">JD</div>
+          <div class="profile-dd-avatar" id="ddAvatar">--</div>
           <div>
-            <div class="profile-dd-name">Juan Dela Cruz</div>
-            <div class="profile-dd-dept">CTE Student · 2024-00001</div>
+            <div class="profile-dd-name" id="ddFullName">Loading...</div>
+            <div class="profile-dd-dept" id="ddDeptId">Student</div>
           </div>
         </div>
         <div class="profile-dd-links">
           <a href="#"><i class="fas fa-user"></i> My Profile</a>
           <a href="#"><i class="fas fa-cog"></i> Settings</a>
           <a href="#"><i class="fas fa-shield-alt"></i> Privacy</a>
-          <a href="index.html" class="dd-logout"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+          <a href="home/index.html" class="dd-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Log Out</a>
         </div>
       </div>
     </div>
@@ -115,20 +117,23 @@
 
     <!-- User Card -->
     <div class="user-card">
-      <div class="user-card-avatar">JD</div>
+      <div class="user-card-avatar" id="sidebarAvatar">--</div>
       <div class="user-card-info">
-        <div class="user-card-name">Juan Dela Cruz</div>
-        <span class="dept-badge">CTE Student</span>
+        <div class="user-card-name" id="sidebarName">Loading...</div>
+        <span class="dept-badge" id="sidebarDept">Student</span>
       </div>
     </div>
 
     <!-- Department Community -->
     <div class="sidebar-section">
       <div class="sidebar-section-label">My Department</div>
-      <a href="#" class="community-item community-item--dept active" data-feed="cte">
-        <div class="comm-icon ci-cte"><img src="Images/CTE.png" alt="CTE" /></div>
+      <a href="#" class="community-item community-item--dept active" id="deptCommunityItem" data-feed="dept">
+        <div class="comm-icon ci-cte" id="deptCommIcon">
+          <img src="" alt="" id="deptCommImg" style="display:none;" />
+          <i class="fas fa-graduation-cap" id="deptCommFallback"></i>
+        </div>
         <div class="comm-info">
-          <div class="comm-name">CTE Community</div>
+          <div class="comm-name" id="deptCommName">My Department</div>
           <div class="comm-sub">Your department</div>
         </div>
         <span class="comm-badge">3</span>
@@ -176,10 +181,10 @@
     <!-- Feed Header -->
     <div class="feed-header">
       <div class="feed-header-info">
-        <div class="feed-icon ci-general"><i class="fas fa-comments"></i></div>
+        <div class="feed-icon ci-general" id="feedHeaderIcon"><i class="fas fa-comments"></i></div>
         <div>
-          <h1 class="feed-title">General Community</h1>
-          <p class="feed-sub">Open discussions for all CRMC students</p>
+          <h1 class="feed-title" id="feedTitle">General Community</h1>
+          <p class="feed-sub" id="feedSub">Open discussions for all CRMC students</p>
         </div>
       </div>
       <button class="btn-join">Joined <i class="fas fa-check"></i></button>
@@ -187,9 +192,9 @@
 
     <!-- Create Post -->
     <div class="create-post-card">
-      <div class="create-post-avatar">JD</div>
+      <div class="create-post-avatar" id="createPostAvatar">--</div>
       <button class="create-post-input" id="openCreatePost" aria-label="Create a post">
-        What's on your mind, Juan?
+        <span id="createPostGreeting">What's on your mind?</span>
       </button>
       <div class="create-post-actions">
         <button class="create-action-btn"><i class="fas fa-image"></i> Photo</button>

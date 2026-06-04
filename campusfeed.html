@@ -124,10 +124,21 @@
       </div>
     </div>
 
+    <!-- Campus Feed (All Posts) -->
+    <div class="sidebar-section">
+      <a href="#" class="community-item active" data-feed="all">
+        <div class="comm-icon ci-general"><i class="fas fa-home"></i></div>
+        <div class="comm-info">
+          <div class="comm-name">Campus Feed</div>
+          <div class="comm-sub">All posts</div>
+        </div>
+      </a>
+    </div>
+
     <!-- Department Community -->
     <div class="sidebar-section">
       <div class="sidebar-section-label">My Department</div>
-      <a href="#" class="community-item community-item--dept active" id="deptCommunityItem" data-feed="dept">
+      <a href="#" class="community-item community-item--dept" id="deptCommunityItem" data-feed="dept">
         <div class="comm-icon ci-cte" id="deptCommIcon">
           <img src="" alt="" id="deptCommImg" style="display:none;" />
           <i class="fas fa-graduation-cap" id="deptCommFallback"></i>
@@ -205,99 +216,13 @@
 
     <!-- Feed Tabs -->
     <div class="feed-tabs" role="tablist">
-      <button class="feed-tab active" role="tab" aria-selected="true">🔥 Trending</button>
-      <button class="feed-tab" role="tab" aria-selected="false">🕐 Latest</button>
-      <button class="feed-tab" role="tab" aria-selected="false">📌 Pinned</button>
+      <button class="feed-tab active" role="tab" aria-selected="true"><i class="fas fa-fire"></i> Trending</button>
+      <button class="feed-tab" role="tab" aria-selected="false"><i class="fas fa-clock"></i> Latest</button>
+      <button class="feed-tab" role="tab" aria-selected="false"><i class="fas fa-thumbtack"></i> Pinned</button>
     </div>
 
     <!-- ── POST CARDS ── -->
-
-    <!-- Post 1: Lost & Found -->
-    <article class="post-card" aria-label="Post by Anonymous">
-      <div class="post-left">
-        <div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>
-      </div>
-      <div class="post-body">
-        <div class="post-meta">
-          <span class="post-author">Anonymous</span>
-          <span class="post-dept-tag tag-lost">Lost &amp; Found</span>
-          <span class="post-time"><i class="fas fa-clock"></i> 15 mins ago</span>
-        </div>
-        <h2 class="post-title">Lost: Black tumbler near the library — anyone seen it?</h2>
-        <p class="post-content">I left my black Hydro Flask tumbler somewhere near the 2nd floor library area around 10AM. It has a small sticker of a cat on the side. If anyone finds it please message me or drop it at the guard's desk. Thank you so much!</p>
-        <div class="post-actions">
-          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>24</span></button>
-          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>8</span></button>
-          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
-        </div>
-      </div>
-    </article>
-
-    <!-- Post 2: Academic -->
-    <article class="post-card" aria-label="Post by Maria Santos">
-      <div class="post-left">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">MS</div>
-      </div>
-      <div class="post-body">
-        <div class="post-meta">
-          <span class="post-author">Maria Santos</span>
-          <span class="post-dept-tag tag-academic">Academic</span>
-          <span class="post-time"><i class="fas fa-clock"></i> 1 hour ago</span>
-        </div>
-        <h2 class="post-title">Final exam schedule for CTE — here's what I found</h2>
-        <p class="post-content">Hey CTE students! I compiled the final exam schedule from the registrar's bulletin. Sharing it here so everyone has a copy. Please double-check with your professors for any changes.</p>
-        <div class="post-image-preview">
-          <div class="post-img-placeholder"><i class="fas fa-calendar-alt"></i><span>Exam Schedule.jpg</span></div>
-        </div>
-        <div class="post-actions">
-          <button class="post-action-btn liked" aria-label="Like"><i class="fas fa-heart"></i> <span>87</span></button>
-          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>34</span></button>
-          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
-        </div>
-      </div>
-    </article>
-
-    <!-- Post 3: Marketplace -->
-    <article class="post-card" aria-label="Post by Carlo Reyes">
-      <div class="post-left">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">CR</div>
-      </div>
-      <div class="post-body">
-        <div class="post-meta">
-          <span class="post-author">Carlo Reyes</span>
-          <span class="post-dept-tag tag-market">Marketplace</span>
-          <span class="post-time"><i class="fas fa-clock"></i> 2 hours ago</span>
-        </div>
-        <h2 class="post-title">Lending: Casio scientific calculator — free to borrow until Friday</h2>
-        <p class="post-content">I have a spare Casio FX-991EX that I'm not using this week. Anyone who needs it for their Math finals can borrow it. Just message me and we can arrange a meetup inside campus. First come, first served!</p>
-        <div class="post-actions">
-          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>41</span></button>
-          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>15</span></button>
-          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
-        </div>
-      </div>
-    </article>
-
-    <!-- Post 4: Campus concern -->
-    <article class="post-card" aria-label="Post by Anonymous">
-      <div class="post-left">
-        <div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>
-      </div>
-      <div class="post-body">
-        <div class="post-meta">
-          <span class="post-author">Anonymous</span>
-          <span class="post-dept-tag tag-campus">Campus</span>
-          <span class="post-time"><i class="fas fa-clock"></i> 3 hours ago</span>
-        </div>
-        <h2 class="post-title">Is the canteen open during the foundation day celebration?</h2>
-        <p class="post-content">Just want to confirm if the main canteen will be operating on May 28 during the Foundation Day. Planning to come early and not sure if I should bring food. Anyone know?</p>
-        <div class="post-actions">
-          <button class="post-action-btn" aria-label="Like"><i class="fas fa-heart"></i> <span>19</span></button>
-          <button class="post-action-btn" aria-label="Comment"><i class="fas fa-comment"></i> <span>22</span></button>
-          <button class="post-action-btn" aria-label="Share"><i class="fas fa-share"></i> Share</button>
-        </div>
-      </div>
-    </article>
+    <!-- Posts will be loaded dynamically from the database -->
 
   </main>
 
@@ -423,6 +348,7 @@
         </select>
       </div>
     </div>
+    <input type="text" class="cf-post-title-input" placeholder="Post title (optional)" aria-label="Post title" maxlength="100" />
     <textarea class="cf-post-textarea" placeholder="What's on your mind?" rows="5" aria-label="Post content"></textarea>
     <div class="cf-post-options">
       <button class="create-action-btn"><i class="fas fa-image"></i> Photo</button>

@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="campusfeed.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
+  <script src="sentiment.js"></script>
 </head>
 <body>
 
@@ -36,43 +37,16 @@
     <div class="topbar-icon-wrap" id="notifToggle" aria-label="Notifications" role="button" tabindex="0">
       <button class="topbar-icon-btn" aria-label="Notifications">
         <i class="fas fa-bell"></i>
-        <span class="icon-badge">4</span>
+        <span class="icon-badge" style="display:none;">0</span>
       </button>
       <!-- Notification Dropdown -->
       <div class="notif-dropdown" id="notifDropdown" hidden>
         <div class="notif-header">
           <span>Notifications</span>
-          <a href="#" class="notif-mark-all">Mark all read</a>
+          <a href="#" class="notif-mark-all" id="markAllReadBtn">Mark all read</a>
         </div>
-        <div class="notif-list">
-          <div class="notif-item notif-unread">
-            <div class="notif-icon-wrap ni-urgent"><i class="fas fa-bullhorn"></i></div>
-            <div class="notif-body">
-              <div class="notif-text"><strong>Urgent:</strong> Library system maintenance today 8AM–12PM</div>
-              <div class="notif-time">5 mins ago</div>
-            </div>
-          </div>
-          <div class="notif-item notif-unread">
-            <div class="notif-icon-wrap ni-comment"><i class="fas fa-comment"></i></div>
-            <div class="notif-body">
-              <div class="notif-text"><strong>Maria S.</strong> replied to your post in Lost & Found</div>
-              <div class="notif-time">20 mins ago</div>
-            </div>
-          </div>
-          <div class="notif-item notif-unread">
-            <div class="notif-icon-wrap ni-dept"><i class="fas fa-graduation-cap"></i></div>
-            <div class="notif-body">
-              <div class="notif-text">New announcement in <strong>CTE Community</strong></div>
-              <div class="notif-time">1 hour ago</div>
-            </div>
-          </div>
-          <div class="notif-item">
-            <div class="notif-icon-wrap ni-like"><i class="fas fa-heart"></i></div>
-            <div class="notif-body">
-              <div class="notif-text"><strong>3 students</strong> liked your post in Academic Help</div>
-              <div class="notif-time">2 hours ago</div>
-            </div>
-          </div>
+        <div class="notif-list" id="notifList">
+          <div class="notif-loading">Loading notifications...</div>
         </div>
         <a href="#" class="notif-view-all">View all notifications</a>
       </div>
@@ -348,15 +322,23 @@
         </select>
       </div>
     </div>
-    <input type="text" class="cf-post-title-input" placeholder="Post title (optional)" aria-label="Post title" maxlength="100" />
     <textarea class="cf-post-textarea" placeholder="What's on your mind?" rows="5" aria-label="Post content"></textarea>
+    
+    <!-- Image Upload Section -->
+    <div class="cf-image-upload" id="imageUploadSection" style="display:none;">
+      <div class="cf-image-preview-grid" id="imagePreviewGrid"></div>
+    </div>
+    <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none;" />
+    
     <div class="cf-post-options">
-      <button class="create-action-btn"><i class="fas fa-image"></i> Photo</button>
+      <button type="button" class="create-action-btn" id="uploadImageBtn">
+        <i class="fas fa-image"></i> Photo
+      </button>
       <label class="checkbox-label" style="font-size:.8rem;">
-        <input type="checkbox" /> Post anonymously
+        <input type="checkbox" id="postAnonymousCheckbox" /> Post anonymously
       </label>
     </div>
-    <button class="btn btn-primary btn-block" style="margin-top:.75rem;">Post</button>
+    <button class="btn btn-primary btn-block" id="submitPostBtn" style="margin-top:.75rem;">Post</button>
   </div>
 </div>
 
@@ -389,6 +371,31 @@
       <input type="text" id="chatbotInput" placeholder="Ask about campus info..." autocomplete="off" aria-label="Message" maxlength="200" />
       <button type="submit" class="chatbot-send" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
     </form>
+  </div>
+</div>
+
+<!-- ── POST PREVIEW MODAL (opened from notifications) ── -->
+<div class="modal-overlay" id="postPreviewModal" hidden role="dialog" aria-modal="true" aria-labelledby="postPreviewTitle">
+  <div class="modal post-preview-modal">
+    <button class="modal-close" id="closePostPreview" aria-label="Close"><i class="fas fa-times"></i></button>
+    <div id="postPreviewContent">
+      <div class="post-preview-loading"><i class="fas fa-spinner fa-spin"></i> Loading post...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DELETE CONFIRMATION MODAL ── -->
+<div class="modal-overlay" id="deleteConfirmModal" hidden role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+  <div class="modal delete-modal">
+    <div class="delete-modal-icon">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h2 class="delete-modal-title" id="deleteTitle">Delete Post?</h2>
+    <p class="delete-modal-text">Are you sure you want to delete this post? This action cannot be undone.</p>
+    <div class="delete-modal-actions">
+      <button class="btn btn-outline" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+    </div>
   </div>
 </div>
 

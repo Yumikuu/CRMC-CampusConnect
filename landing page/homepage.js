@@ -280,18 +280,26 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
 
       if (authError) throw authError;
 
-      // Fetch their profile to get department
+      // Fetch their profile to get department and admin status
       const { data: profile, error: profileError } = await db
         .from('profiles')
-        .select('department')
+        .select('department, admin_role')
         .eq('id', authData.user.id)
         .single();
 
       if (profileError) throw profileError;
 
+      // Check if this is an admin account
+      if (profile.admin_role && profile.admin_role !== 'student') {
+        // This is an admin account - redirect to admin portal
+        await db.auth.signOut();
+        throw new Error('Please use the admin portal to login. Admins cannot access the student portal.');
+      }
+
       // Wait briefly for session to persist, then redirect
       await new Promise(resolve => setTimeout(resolve, 400));
 
+      // Redirect to student feed
       const deptSlug = DEPT_COMMUNITY[profile.department] || 'general';
       window.location.href = `../campusfeed.html?dept=${deptSlug}`;
 

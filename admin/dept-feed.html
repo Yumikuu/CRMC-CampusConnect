@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Feed — CRMC CampusHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+  <style>
+    /* ── Feed-specific overrides inside admin layout ── */
+    .feed-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 680px;
+    }
+
+    /* Create post box */
+    .create-box {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+      padding: 1rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .create-box-top {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .feed-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--maroon), var(--maroon-light));
+      color: white; font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .create-placeholder {
+      flex: 1; padding: 0.625rem 1rem;
+      background: var(--gray-100); border: 1.5px solid var(--gray-200);
+      border-radius: 9999px; font-size: 14px; color: var(--gray-400);
+      cursor: pointer; font-family: Poppins,sans-serif;
+      transition: all 0.2s; text-align: left;
+    }
+    .create-placeholder:hover { border-color: var(--maroon); background: white; color: var(--gray-600); }
+    .create-box-actions {
+      display: flex; gap: 0.5rem;
+      padding-top: 0.75rem; border-top: 1px solid var(--gray-100);
+    }
+    .create-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      background: var(--gray-100); border: 1px solid var(--gray-200);
+      border-radius: 20px; font-size: 13px; font-weight: 600;
+      color: var(--gray-700); cursor: pointer;
+      font-family: Poppins,sans-serif; transition: all 0.2s;
+    }
+    .create-btn:hover { background: var(--maroon); color: white; border-color: var(--maroon); }
+
+    /* Post card */
+    .post-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--gray-200); padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .post-card:hover { box-shadow: var(--shadow-md); }
+    .post-card.is-pinned { border-left: 4px solid #f59e0b; }
+    .post-card.is-flagged { border-left: 4px solid #ef4444; }
+    .post-card.is-announcement { border-left: 4px solid var(--maroon); }
+
+    .post-top {
+      display: flex; align-items: flex-start;
+      gap: 0.75rem; margin-bottom: 0.75rem;
+    }
+    .post-author-info { flex: 1; min-width: 0; }
+    .post-author-name { font-weight: 700; font-size: 14px; color: var(--gray-900); }
+    .post-meta-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      flex-wrap: wrap; margin-top: 2px;
+    }
+    .post-time { font-size: 12px; color: var(--gray-400); }
+    .badge {
+      padding: 2px 8px; border-radius: 9999px;
+      font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge-pin  { background: #fef3c7; color: #d97706; }
+    .badge-flag { background: #fee2e2; color: #dc2626; }
+    .badge-ann  { background: rgba(107,15,26,0.1); color: var(--maroon); }
+    .badge-admin { background: linear-gradient(135deg,var(--maroon),var(--maroon-light)); color: white; }
+
+    .post-content {
+      font-size: 14px; color: var(--gray-700);
+      line-height: 1.65; margin-bottom: 0.875rem;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* Images — small thumbnails, full image visible (no crop) */
+    .post-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 0.875rem;
+    }
+    .img-item {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--gray-100);
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-item img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .img-item:hover img { transform: scale(1.05); }
+    .img-more-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; font-weight: 800; color: white;
+      border-radius: 8px;
+    }
+
+    /* Actions row */
+    .post-actions {
+      display: flex; gap: 0.25rem;
+      padding-top: 0.75rem; border-top: 1px solid var(--gray-200);
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 0.875rem; border-radius: var(--radius-sm);
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--gray-500);
+      font-family: Poppins,sans-serif; transition: all 0.15s;
+    }
+    .action-btn:hover { background: var(--gray-100); color: var(--maroon); }
+    .action-btn.liked { color: #dc2626; }
+    .action-btn.active { color: var(--maroon); background: rgba(107,15,26,0.07); }
+
+    /* Admin actions — right side */
+    .admin-actions { display: flex; gap: 0.25rem; margin-left: auto; }
+    .admin-btn {
+      padding: 0.375rem 0.75rem; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: Poppins,sans-serif; border: 1px solid var(--gray-300);
+      background: var(--gray-100); color: var(--gray-700);
+      transition: all 0.15s;
+    }
+    .admin-btn:hover { border-color: var(--maroon); color: var(--maroon); background: rgba(107,15,26,0.06); }
+    .admin-btn.danger { background: #fee2e2; color: #dc2626; border-color: transparent; }
+    .admin-btn.danger:hover { background: #fca5a5; }
+
+    /* Comments */
+    .comment-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); }
+    .comment-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .comment-item { display: flex; gap: 0.625rem; align-items: flex-start; }
+    .comment-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--maroon), var(--maroon-light));
+      color: white; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .comment-bubble {
+      flex: 1; background: var(--gray-50); border-radius: var(--radius-sm);
+      padding: 0.6rem 0.875rem;
+    }
+    .comment-author { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+    .comment-time   { font-size: 11px; color: var(--gray-400); margin-left: 6px; }
+    .comment-text   { font-size: 13px; color: var(--gray-700); line-height: 1.5; margin-top: 2px; }
+    .comment-input-row {
+      display: flex; align-items: center; gap: 0.625rem;
+      background: var(--gray-50); border: 1.5px solid var(--gray-200);
+      border-radius: 9999px; padding: 0.375rem 0.625rem;
+      transition: border-color 0.2s;
+    }
+    .comment-input-row:focus-within { border-color: var(--maroon); background: white; }
+    .comment-input {
+      flex: 1; border: none; background: none; outline: none;
+      font-family: Poppins,sans-serif; font-size: 13px; color: var(--gray-800);
+      padding: 0.25rem 0.5rem;
+    }
+    .comment-send {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--maroon); border: none; color: white;
+      font-size: 12px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .comment-send:hover { background: var(--maroon-dark); transform: scale(1.05); }
+
+    /* Empty state */
+    .empty-feed {
+      text-align: center; padding: 3rem 2rem;
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+    }
+    .empty-feed i { font-size: 2.5rem; color: var(--gray-300); display: block; margin-bottom: 1rem; }
+    .empty-feed p { color: var(--gray-500); font-size: 15px; }
+
+    /* Filter tabs */
+    .feed-filter-tabs { display: flex; gap: 0.375rem; }
+    .feed-tab {
+      padding: 0.45rem 0.875rem; border-radius: 9999px;
+      border: 1.5px solid var(--gray-200); background: white;
+      font-size: 13px; font-weight: 600; color: var(--gray-600);
+      cursor: pointer; font-family: Poppins,sans-serif; transition: all 0.2s;
+    }
+    .feed-tab:hover { border-color: var(--maroon); color: var(--maroon); }
+    .feed-tab.active { background: var(--maroon); border-color: var(--maroon); color: white; }
+
+    /* Community header */
+    .comm-header {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--gray-200); padding: 1.25rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem;
+    }
+    .comm-header-info { display: flex; align-items: center; gap: 1rem; }
+    .comm-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: rgba(107,15,26,0.1); color: var(--maroon);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; flex-shrink: 0;
+    }
+    .comm-name { font-size: 1.1rem; font-weight: 800; color: var(--gray-900); }
+    .comm-sub  { font-size: 13px; color: var(--gray-400); margin-top: 2px; }
+    .comm-stat { text-align: center; }
+    .comm-stat-num   { font-size: 1.25rem; font-weight: 800; color: var(--maroon); }
+    .comm-stat-label { font-size: 11px; color: var(--gray-500); }
+  </style>
+</head>
+<body>
+
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand"><span class="brand-crmc">CRMC</span><span class="brand-cc">CampusHub</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="dept-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="dept-feed.html" class="nav-item active"><i class="fas fa-stream"></i><span>Community Feed</span></a>
+    <a href="dept-users.html" class="nav-item"><i class="fas fa-users"></i><span><span class="deptLabel">Dept</span> Users</span></a>
+    <a href="dept-posts.html" class="nav-item"><i class="fas fa-newspaper"></i><span><span class="deptLabel">Dept</span> Posts</span></a>
+    <a href="dept-moderation.html" class="nav-item"><i class="fas fa-flag"></i><span>Moderation</span></a>
+    <a href="dept-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+  </div>
+</aside>
+
+<main class="admin-main">
+
+  <!-- Topbar -->
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title" id="pageTitle">Community Feed</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;" id="pageSubtitle">Live feed of your department community</p>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar">DA</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role" id="adminRoleText">Dept Admin</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Feed area: 2 columns -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:1.25rem;align-items:start;">
+
+    <!-- Main feed -->
+    <div class="feed-wrapper">
+
+      <!-- Community header card -->
+      <div class="comm-header" id="commHeader">
+        <div class="comm-header-info">
+          <div class="comm-icon"><i class="fas fa-users"></i></div>
+          <div>
+            <div class="comm-name" id="commName">Loading...</div>
+            <div class="comm-sub" id="commSub">Department Community</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1.5rem;">
+          <div class="comm-stat">
+            <div class="comm-stat-num" id="statPosts">—</div>
+            <div class="comm-stat-label">Posts</div>
+          </div>
+          <div class="comm-stat">
+            <div class="comm-stat-num" id="statMembers">—</div>
+            <div class="comm-stat-label">Students</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create post box -->
+      <div class="create-box">
+        <div class="create-box-top">
+          <div class="feed-avatar" id="createAvatar">DA</div>
+          <button class="create-placeholder" id="openCreatePost">
+            Write a post or announcement for your community...
+          </button>
+        </div>
+        <div class="create-box-actions">
+          <button class="create-btn" id="quickPostBtn"><i class="fas fa-newspaper"></i> Post</button>
+          <button class="create-btn" id="quickAnnBtn"><i class="fas fa-bullhorn"></i> Announcement</button>
+          <button class="create-btn" id="quickPhotoBtn"><i class="fas fa-image"></i> Photo</button>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div class="feed-filter-tabs">
+          <button class="feed-tab active" data-filter="all">All</button>
+          <button class="feed-tab" data-filter="pinned"><i class="fas fa-thumbtack"></i> Pinned</button>
+          <button class="feed-tab" data-filter="announcements"><i class="fas fa-bullhorn"></i> Announcements</button>
+          <button class="feed-tab" data-filter="flagged"><i class="fas fa-flag"></i> Flagged</button>
+        </div>
+        <span id="postCountLabel" style="font-size:13px;color:var(--gray-400);"></span>
+      </div>
+
+      <!-- Posts -->
+      <div id="feedContainer">
+        <div style="text-align:center;padding:3rem;color:var(--gray-400);">
+          <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+          <p style="margin-top:1rem;">Loading feed...</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right sidebar -->
+    <div style="position:sticky;top:calc(62px + 1.25rem);display:flex;flex-direction:column;gap:1rem;">
+
+      <!-- Admin identity card -->
+      <div style="background:linear-gradient(135deg,var(--maroon),var(--maroon-light));border-radius:var(--radius);padding:1.25rem;color:white;">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.875rem;">
+          <div class="feed-avatar" id="sideAvatar" style="width:44px;height:44px;font-size:15px;">DA</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;" id="sideName">Loading...</div>
+            <div style="font-size:12px;opacity:0.8;" id="sideRole">Dept Administrator</div>
+          </div>
+        </div>
+        <div style="font-size:12px;opacity:0.75;line-height:1.5;">You are the community head of this department. You can post, moderate, and manage all content here.</div>
+      </div>
+
+      <!-- Quick actions -->
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--gray-200);padding:1.1rem 1.25rem;">
+        <div style="font-size:13px;font-weight:700;color:var(--gray-900);margin-bottom:0.875rem;"><i class="fas fa-bolt" style="color:var(--maroon);margin-right:6px;"></i>Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          <button onclick="openModal('post')" style="padding:0.625rem 1rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;text-align:left;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-plus"></i> New Post
+          </button>
+          <button onclick="openModal('announcement')" style="padding:0.625rem 1rem;background:#fef3c7;color:#92400e;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;text-align:left;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-bullhorn"></i> Post Announcement
+          </button>
+          <a href="dept-moderation.html" style="padding:0.625rem 1rem;background:#fee2e2;color:#dc2626;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-flag"></i> View Flagged Posts
+          </a>
+          <a href="dept-users.html" style="padding:0.625rem 1rem;background:var(--gray-100);color:var(--gray-700);border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-users"></i> Manage Students
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent members -->
+      <div style="background:white;border-radius:var(--radius);border:1px solid var(--gray-200);padding:1.1rem 1.25rem;">
+        <div style="font-size:13px;font-weight:700;color:var(--gray-900);margin-bottom:0.875rem;"><i class="fas fa-user-plus" style="color:var(--maroon);margin-right:6px;"></i>Recent Students</div>
+        <div id="recentMembersList" style="display:flex;flex-direction:column;gap:0.5rem;">
+          <div style="color:var(--gray-400);font-size:13px;">Loading...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Create/Announce Modal -->
+<div id="createModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">New Post</h3>
+      <button class="modal-close" onclick="document.getElementById('createModal').style.display='none'"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem;">
+
+      <!-- Type toggle -->
+      <div style="display:flex;gap:0.5rem;">
+        <button id="typeBtnPost" onclick="setType('post')" style="flex:1;padding:0.625rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+          <i class="fas fa-newspaper"></i> Regular Post
+        </button>
+        <button id="typeBtnAnn" onclick="setType('announcement')" style="flex:1;padding:0.625rem;background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+          <i class="fas fa-bullhorn"></i> Announcement
+        </button>
+      </div>
+      <input type="hidden" id="modalPostType" value="post" />
+
+      <div id="annBadge" style="display:none;padding:0.5rem 0.875rem;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:var(--radius-sm);font-size:13px;color:#92400e;font-weight:600;">
+        <i class="fas fa-bullhorn"></i> This will appear as an official department announcement
+      </div>
+
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Content *</label>
+        <textarea id="modalContent" rows="5" placeholder="Write something for your community..."
+          style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;resize:vertical;line-height:1.6;outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--maroon)'" onblur="this.style.borderColor='var(--gray-300)'"></textarea>
+      </div>
+
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Images (optional, max 5)</label>
+        <div id="imgPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"></div>
+        <label for="imgInput" style="display:inline-flex;align-items:center;gap:6px;padding:0.5rem 1rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-700);">
+          <i class="fas fa-image"></i> Add Photos
+        </label>
+        <input type="file" id="imgInput" accept="image/*" multiple style="display:none;" />
+      </div>
+
+      <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;padding:0.75rem;background:var(--gray-50);border-radius:var(--radius-sm);">
+        <input type="checkbox" id="pinNewPost" style="width:16px;height:16px;accent-color:var(--maroon);" />
+        <div>
+          <div style="font-size:13px;font-weight:600;"><i class="fas fa-thumbtack" style="color:var(--maroon);margin-right:4px;"></i> Pin this post</div>
+          <div style="font-size:12px;color:var(--gray-500);">Shows at the top of the community feed</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button onclick="document.getElementById('createModal').style.display='none'" style="padding:0.625rem 1.25rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+      <button id="publishBtn" onclick="publishPost()" style="padding:0.625rem 1.5rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-paper-plane"></i> Publish
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deletePostModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-body" style="text-align:center;padding:2rem;">
+      <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <i class="fas fa-trash" style="font-size:1.75rem;color:#dc2626;"></i>
+      </div>
+      <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.5rem;">Delete this post?</h3>
+      <p style="color:var(--gray-600);font-size:14px;">This cannot be undone.</p>
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button onclick="document.getElementById('deletePostModal').style.display='none'" style="flex:1;padding:0.75rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+        <button id="confirmDeletePostBtn" style="flex:1;padding:0.75rem;background:#dc2626;color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="dept-feed.js"></script>
+</body>
+</html>

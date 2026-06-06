@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Communities â€” CRMC CampusHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+</head>
+<body>
+
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand"><span class="brand-crmc">CRMC</span><span class="brand-cc">CampusHub</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="ssg-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="ssg-users.html" class="nav-item"><i class="fas fa-users"></i><span>All Users</span></a>
+    <a href="ssg-posts.html" class="nav-item"><i class="fas fa-newspaper"></i><span>All Posts</span></a>
+    <a href="ssg-communities.html" class="nav-item active"><i class="fas fa-layer-group"></i><span>Communities</span></a>
+    <a href="ssg-moderation.html" class="nav-item"><i class="fas fa-flag"></i><span>Moderation</span></a>
+    <a href="ssg-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+    <a href="ssg-admins.html" class="nav-item"><i class="fas fa-user-shield"></i><span>Manage Admins</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+  </div>
+</aside>
+
+<main class="admin-main">
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title">Communities</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">Manage all department and public communities</p>
+    </div>
+    <div class="topbar-right">
+      <button id="addCommunityBtn" style="padding:0.625rem 1.25rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:0.5rem;">
+        <i class="fas fa-plus"></i> New Community
+      </button>
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar">SSG</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role">SSG Administrator</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-filter="all"><i class="fas fa-layer-group"></i> All</button>
+    <button class="tab-btn" data-filter="department"><i class="fas fa-building"></i> Department</button>
+    <button class="tab-btn" data-filter="public"><i class="fas fa-globe"></i> Public</button>
+  </div>
+
+  <!-- Communities Grid -->
+  <div id="communitiesGrid" style="margin-top:1.25rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray-400);">
+      <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+      <p style="margin-top:1rem;">Loading communities...</p>
+    </div>
+  </div>
+</main>
+
+<!-- Add/Edit Community Modal -->
+<div id="communityModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="communityModalTitle">New Community</h3>
+      <button class="modal-close" onclick="closeCommunityModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="communityForm" style="display:flex;flex-direction:column;gap:1rem;">
+        <input type="hidden" id="editCommunityId" />
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Community Name *</label>
+          <input type="text" id="commName" placeholder="e.g. Study Groups" required
+            style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Slug (URL key) *</label>
+          <input type="text" id="commSlug" placeholder="e.g. study-groups" required
+            style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;" />
+          <p style="font-size:12px;color:var(--gray-400);margin-top:4px;">Lowercase letters and hyphens only. Auto-fills from name.</p>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Description</label>
+          <textarea id="commDesc" rows="3" placeholder="What is this community about?"
+            style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;resize:vertical;"></textarea>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Type *</label>
+          <select id="commType" required
+            style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
+            <option value="public">Public â€” open to all students</option>
+            <option value="department">Department â€” tied to a specific department</option>
+          </select>
+        </div>
+        <div id="deptSelectWrap" style="display:none;">
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Department</label>
+          <select id="commDept"
+            style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
+            <option value="College of Teacher Education (CTE)">CTE â€” College of Teacher Education</option>
+            <option value="College of Computer Studies (CSS)">CSS â€” College of Computer Studies</option>
+            <option value="College of Business Education (CBE)">CBE â€” College of Business Education</option>
+            <option value="Psychology (PSYCH)">PSYCH â€” Psychology</option>
+            <option value="College of Criminal Justice Education (CCJE)">CCJE â€” College of Criminal Justice Education</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeCommunityModal()" style="padding:0.625rem 1.25rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+      <button id="saveCommunityBtn" onclick="saveCommunity()" style="padding:0.625rem 1.25rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Save Community</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteCommModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-body" style="text-align:center;padding:2rem;">
+      <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <i class="fas fa-trash" style="font-size:1.75rem;color:#dc2626;"></i>
+      </div>
+      <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.5rem;">Delete Community?</h3>
+      <p style="color:var(--gray-600);font-size:14px;" id="deleteCommMessage">All posts in this community will also be deleted. This cannot be undone.</p>
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button onclick="closeDeleteCommModal()" style="flex:1;padding:0.75rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+        <button id="confirmDeleteCommBtn" style="flex:1;padding:0.75rem;background:#dc2626;color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="ssg-communities.js"></script>
+</body>
+</html>
+
+

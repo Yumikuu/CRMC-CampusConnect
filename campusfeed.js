@@ -411,12 +411,97 @@ let loggedInUser = null;
 })();
 
 // Wire up the Post button
+let selectedImageFiles = []; // Changed to array
+let selectedImagePreviewUrls = []; // Changed to array
+const MAX_IMAGES = 5;
+
+// Handle image upload button click
+document.getElementById('uploadImageBtn')?.addEventListener('click', function(e) {
+  e.preventDefault();
+  document.getElementById('imageUploadInput').click();
+});
+
+// Handle image file selection (multiple)
+document.getElementById('imageUploadInput')?.addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+  
+  // Check if adding these files would exceed the limit
+  if (selectedImageFiles.length + files.length > MAX_IMAGES) {
+    showToast(`You can only upload up to ${MAX_IMAGES} images`, 'error');
+    return;
+  }
+  
+  // Validate each file
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select only image files', 'error');
+      continue;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(`${file.name} is too large. Max 5MB per image`, 'error');
+      continue;
+    }
+    
+    selectedImageFiles.push(file);
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedImagePreviewUrls.push(e.target.result);
+      renderImagePreviews();
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  // Clear input so same file can be selected again if needed
+  e.target.value = '';
+});
+
+// Render image preview grid
+function renderImagePreviews() {
+  const previewGrid = document.getElementById('imagePreviewGrid');
+  const previewSection = document.getElementById('imageUploadSection');
+  
+  if (selectedImageFiles.length === 0) {
+    previewSection.style.display = 'none';
+    return;
+  }
+  
+  previewSection.style.display = 'block';
+  
+  previewGrid.innerHTML = selectedImagePreviewUrls.map((url, index) => `
+    <div class="cf-image-preview-item">
+      <img src="${url}" alt="Preview ${index + 1}" />
+      <button type="button" class="remove-single-image" data-index="${index}">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+  
+  // Add event listeners to remove buttons
+  previewGrid.querySelectorAll('.remove-single-image').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.dataset.index);
+      removeSingleImage(index);
+    });
+  });
+}
+
+// Remove a single image by index
+function removeSingleImage(index) {
+  selectedImageFiles.splice(index, 1);
+  selectedImagePreviewUrls.splice(index, 1);
+  renderImagePreviews();
+}
+
 document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', async function() {
   const titleInput = document.querySelector('.cf-post-title-input');
   const textarea = document.querySelector('.cf-post-textarea');
   const title = titleInput?.value.trim();
   const content = textarea?.value.trim();
-  const isAnon = document.querySelector('.cf-post-options input[type="checkbox"]')?.checked;
+  const isAnon = document.getElementById('postAnonymousCheckbox')?.checked;
   const communitySelect = document.querySelector('.post-community-select');
   const selectedSlug = communitySelect?.value;
   
@@ -437,12 +522,49 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
     // Get selected community ID
     const { data: community } = await db.from('communities').select('id').eq('slug', selectedSlug).single();
     
+    let imageUrls = [];
+    
+    // Upload images if selected
+    if (selectedImageFiles.length > 0) {
+      this.textContent = `Uploading ${selectedImageFiles.length} image(s)...`;
+      
+      for (let i = 0; i < selectedImageFiles.length; i++) {
+        const file = selectedImageFiles[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${loggedInUser.id}/${Date.now()}_${i}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await db
+          .storage
+          .from('post-images')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`Failed to upload image ${i + 1}: ` + uploadError.message);
+        }
+        
+        // Get public URL
+        const { data: urlData } = db
+          .storage
+          .from('post-images')
+          .getPublicUrl(fileName);
+        
+        imageUrls.push(urlData.publicUrl);
+      }
+      
+      this.textContent = 'Creating post...';
+    }
+    
     const { data, error } = await db.from('posts').insert({
       community_id: community.id,
       author_id: loggedInUser.id,
       is_anonymous: isAnon || false,
       title: title || null,
-      content: content
+      content: content,
+      image_url: imageUrls.length > 0 ? imageUrls : null
     }).select().single();
     
     if (error) throw error;
@@ -450,11 +572,26 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
     showToast('Post created successfully!', 'success');
     if (titleInput) titleInput.value = '';
     textarea.value = '';
+    
+    // Reset image upload
+    selectedImageFiles = [];
+    selectedImagePreviewUrls = [];
+    document.getElementById('imageUploadSection').style.display = 'none';
+    document.getElementById('imagePreviewGrid').innerHTML = '';
+    document.getElementById('imageUploadInput').value = '';
+    
     document.getElementById('createPostModal').hidden = true;
     document.body.style.overflow = '';
     
     // Reload feed to show new post
     setTimeout(() => loadPostsFromDB(), 500);
+
+    // ── Run AI sentiment analysis in background (non-blocking) ──
+    runSentimentAnalysis(data.id, content, title || '').then(result => {
+      if (result.shouldFlag) {
+        console.warn('⚠️ Post flagged by AI:', result.reason);
+      }
+    });
     
   } catch (err) {
     console.error(err);
@@ -509,6 +646,11 @@ async function loadPostsFromDB() {
     
     console.log('Loaded posts:', posts);
     
+    // Debug: Log image_url for each post
+    posts.forEach((post, index) => {
+      console.log(`Post ${index + 1} image_url:`, post.image_url, 'Type:', typeof post.image_url, 'IsArray:', Array.isArray(post.image_url));
+    });
+    
     // Clear hardcoded posts
     const mainFeed = document.querySelector('.main-feed');
     mainFeed.querySelectorAll('.post-card').forEach(p => p.remove());
@@ -528,7 +670,7 @@ async function loadPostsFromDB() {
         .select('id')
         .eq('post_id', post.id)
         .eq('user_id', loggedInUser.id)
-        .single();
+        .maybeSingle();  // use maybeSingle instead of single — returns null if not found instead of 406 error
       
       post.user_has_liked = !!likeData;
       
@@ -611,6 +753,23 @@ function createPostElement(post) {
       </div>
       ${post.title ? `<h2 class="post-title">${escapeHtml(post.title)}</h2>` : ''}
       <p class="post-content">${escapeHtml(post.content)}</p>
+      ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? (() => {
+        const imgs = post.image_url;
+        const shown = imgs.slice(0, 5);
+        const extra = imgs.length > 5 ? imgs.length - 4 : 0;
+        return `<div class="post-images-grid">
+          ${shown.map((url, i) => `
+            <div class="post-image-item" onclick="window.open('${url}', '_blank')">
+              <img src="${url}" alt="Post image" loading="lazy" />
+              ${extra && i === 3 ? `<div class="img-more-overlay">+${extra}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>`;
+      })() : post.image_url && typeof post.image_url === 'string' ? `
+        <div class="post-image" onclick="window.open('${post.image_url}', '_blank')">
+          <img src="${post.image_url}" alt="Post image" loading="lazy" />
+        </div>
+      ` : ''}
       <div class="post-actions">
         <button class="post-action-btn post-like-btn ${likedClass}" aria-label="Like" data-post-id="${post.id}">
           <i class="fas fa-heart"></i> <span>${post.like_count || 0}</span>
@@ -627,7 +786,7 @@ function createPostElement(post) {
         </div>
         <div class="comment-input-wrapper">
           <div class="comment-input-avatar">${loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--'}</div>
-          <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}" />
+          <input type="text" class="comment-input top-level-comment-input" placeholder="Write a comment…" data-post-id="${post.id}" />
           <button class="comment-send-btn" data-post-id="${post.id}">
             <i class="fas fa-paper-plane"></i>
           </button>
@@ -756,12 +915,69 @@ document.addEventListener('click', async (e) => {
     }
   }
   
-  // Handle comment send button
-  if (e.target.closest('.comment-send-btn')) {
-    const btn = e.target.closest('.comment-send-btn');
+  // Handle top-level comment send button
+  if (e.target.closest('.comment-send-btn') && !e.target.closest('.reply-send-btn')) {
+    const btn   = e.target.closest('.comment-send-btn');
     const postId = btn.dataset.postId;
-    const input = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+    // Top-level input: scoped inside the comment-input-wrapper (not inside a reply box)
+    const input = document.querySelector(
+      `#comments-${postId} .top-level-comment-input`
+    );
     await submitComment(postId, input);
+    return;
+  }
+
+  // Handle reply send button
+  if (e.target.closest('.reply-send-btn')) {
+    const btn      = e.target.closest('.reply-send-btn');
+    const postId   = btn.dataset.postId;
+    const parentId = btn.dataset.parentId;
+    const input    = document.querySelector(
+      `#reply-input-${parentId} .reply-input`
+    );
+    await submitComment(postId, input, parentId);
+    return;
+  }
+
+  // Handle reply button toggle
+  if (e.target.closest('.comment-reply-btn')) {
+    const btn        = e.target.closest('.comment-reply-btn');
+    const commentId  = btn.dataset.commentId;
+    const replyBox   = document.getElementById(`reply-input-${commentId}`);
+    if (!replyBox) return;
+    const isHidden = replyBox.style.display === 'none';
+    // Close all other open reply boxes first
+    document.querySelectorAll('.reply-input-wrapper').forEach(b => b.style.display = 'none');
+    replyBox.style.display = isHidden ? 'flex' : 'none';
+    if (isHidden) replyBox.querySelector('.reply-input')?.focus();
+    return;
+  }
+
+  // Handle comment delete button
+  if (e.target.closest('.comment-delete-btn')) {
+    const btn       = e.target.closest('.comment-delete-btn');
+    const commentId = btn.dataset.commentId;
+    const postId    = btn.dataset.postId;
+    if (!confirm('Delete this comment?')) return;
+    try {
+      const { error } = await db
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('author_id', loggedInUser.id);
+      if (error) throw error;
+      await loadComments(postId);
+      const { count } = await db
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+      const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${postId}"]`);
+      if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
+      showToast('Comment deleted', 'success');
+    } catch (err) {
+      showToast('Failed to delete comment: ' + err.message, 'error');
+    }
+    return;
   }
   
   // Close dropdowns when clicking outside
@@ -770,10 +986,20 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// Handle Enter key for comment input
+// Handle Enter key for comment and reply inputs
 document.addEventListener('keypress', async (e) => {
-  if (e.target.classList.contains('comment-input') && e.key === 'Enter') {
-    const input = e.target;
+  if (e.key !== 'Enter') return;
+
+  if (e.target.classList.contains('reply-input')) {
+    const input    = e.target;
+    const postId   = input.dataset.postId;
+    const parentId = input.dataset.parentId;
+    await submitComment(postId, input, parentId);
+    return;
+  }
+
+  if (e.target.classList.contains('comment-input') && !e.target.classList.contains('reply-input')) {
+    const input  = e.target;
     const postId = input.dataset.postId;
     await submitComment(postId, input);
   }
@@ -834,28 +1060,45 @@ async function toggleLike(postId, buttonElement) {
 }
 
 // Delete a post
+let postToDelete = null;
+
 async function deletePost(postId) {
   if (!loggedInUser) {
     showToast('You must be logged in', 'error');
     return;
   }
   
-  // Confirm deletion
-  const confirmed = confirm('Are you sure you want to delete this post? This action cannot be undone.');
-  if (!confirmed) return;
+  // Store post ID for later
+  postToDelete = postId;
+  
+  // Show custom confirmation modal
+  const deleteModal = document.getElementById('deleteConfirmModal');
+  deleteModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+// Handle delete confirmation
+document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+  if (!postToDelete) return;
+  
+  const deleteModal = document.getElementById('deleteConfirmModal');
+  const btn = this;
+  
+  btn.disabled = true;
+  btn.textContent = 'Deleting...';
   
   try {
     // Delete from database (CASCADE will delete related comments and likes)
     const { error } = await db
       .from('posts')
       .delete()
-      .eq('id', postId)
+      .eq('id', postToDelete)
       .eq('author_id', loggedInUser.id); // Ensure user can only delete their own posts
     
     if (error) throw error;
     
     // Remove from UI
-    const postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    const postCard = document.querySelector(`.post-card[data-post-id="${postToDelete}"]`);
     if (postCard) {
       postCard.style.opacity = '0';
       postCard.style.transform = 'scale(0.95)';
@@ -863,13 +1106,38 @@ async function deletePost(postId) {
       setTimeout(() => postCard.remove(), 300);
     }
     
+    // Close modal
+    deleteModal.hidden = true;
+    document.body.style.overflow = '';
+    postToDelete = null;
+    
     showToast('Post deleted successfully', 'success');
     
   } catch (err) {
     console.error('Error deleting post:', err);
     showToast('Failed to delete post: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Delete';
   }
-}
+});
+
+// Handle delete cancel
+document.getElementById('cancelDeleteBtn')?.addEventListener('click', function() {
+  const deleteModal = document.getElementById('deleteConfirmModal');
+  deleteModal.hidden = true;
+  document.body.style.overflow = '';
+  postToDelete = null;
+});
+
+// Close modal when clicking outside
+document.getElementById('deleteConfirmModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.hidden = true;
+    document.body.style.overflow = '';
+    postToDelete = null;
+  }
+});
 
 // Edit a post
 async function editPost(postId) {
@@ -1010,107 +1278,143 @@ function copyToClipboard(text) {
   });
 }
 
+// ── COMMENT RENDERING HELPER ──
+function buildCommentHTML(comment, replies = []) {
+  const isAnon = comment.is_anonymous;
+  const author = comment.profiles;
+
+  let authorName    = 'Anonymous';
+  let authorInitials = '<i class="fas fa-user-secret" style="font-size:.7rem;"></i>';
+
+  if (!isAnon && author) {
+    authorName     = `${author.first_name} ${author.last_name}`;
+    authorInitials = (author.first_name[0] + author.last_name[0]).toUpperCase();
+  }
+
+  const timeAgo   = formatTimeAgo(new Date(comment.created_at));
+  const isOwn     = loggedInUser && comment.author_id === loggedInUser.id;
+
+  // Build nested replies HTML
+  const repliesHTML = replies.length > 0
+    ? `<div class="comment-replies">
+        ${replies.map(reply => buildCommentHTML(reply, [])).join('')}
+       </div>`
+    : '';
+
+  return `
+    <div class="comment-item" data-comment-id="${comment.id}">
+      <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}">${authorInitials}</div>
+      <div class="comment-content-wrapper">
+        <div class="comment-header">
+          <span class="comment-author">${authorName}</span>
+          <span class="comment-time">${timeAgo}</span>
+          ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
+        </div>
+        <div class="comment-text">${escapeHtml(comment.content)}</div>
+        <button class="comment-reply-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" data-author="${authorName}">
+          <i class="fas fa-reply"></i> Reply
+        </button>
+        <div class="reply-input-wrapper" id="reply-input-${comment.id}" style="display:none;">
+          <div class="comment-input-avatar">${loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--'}</div>
+          <input type="text" class="comment-input reply-input" placeholder="Reply to ${authorName}…"
+                 data-post-id="${comment.post_id}" data-parent-id="${comment.id}" />
+          <button class="comment-send-btn reply-send-btn" data-post-id="${comment.post_id}" data-parent-id="${comment.id}">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+        ${repliesHTML}
+      </div>
+    </div>
+  `;
+}
+
 // Load comments for a post
 async function loadComments(postId) {
   const commentList = document.getElementById(`comment-list-${postId}`);
-  
+
   try {
-    const { data: comments, error } = await db
+    // Fetch all comments + replies for this post in one query
+    const { data: allComments, error } = await db
       .from('comments')
-      .select(`
-        *,
-        profiles:author_id (first_name, last_name)
-      `)
+      .select(`*, profiles:author_id (first_name, last_name)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
-    
+
     if (error) throw error;
-    
-    if (comments.length === 0) {
+
+    if (!allComments || allComments.length === 0) {
       commentList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
       return;
     }
-    
-    commentList.innerHTML = comments.map(comment => {
-      const isAnon = comment.is_anonymous;
-      const author = comment.profiles;
-      
-      let authorName = 'Anonymous';
-      let authorInitials = '<i class="fas fa-user-secret" style="font-size:.7rem;"></i>';
-      
-      if (!isAnon && author) {
-        authorName = `${author.first_name} ${author.last_name}`;
-        authorInitials = (author.first_name[0] + author.last_name[0]).toUpperCase();
-      }
-      
-      const timeAgo = formatTimeAgo(new Date(comment.created_at));
-      
-      return `
-        <div class="comment-item">
-          <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}">${authorInitials}</div>
-          <div class="comment-content-wrapper">
-            <div class="comment-header">
-              <span class="comment-author">${authorName}</span>
-              <span class="comment-time">${timeAgo}</span>
-            </div>
-            <div class="comment-text">${escapeHtml(comment.content)}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-    
+
+    // Separate top-level comments from replies
+    const topLevel = allComments.filter(c => !c.parent_id);
+    const replyMap = {};
+    allComments.filter(c => c.parent_id).forEach(reply => {
+      if (!replyMap[reply.parent_id]) replyMap[reply.parent_id] = [];
+      replyMap[reply.parent_id].push(reply);
+    });
+
+    commentList.innerHTML = topLevel
+      .map(comment => buildCommentHTML(comment, replyMap[comment.id] || []))
+      .join('');
+
   } catch (err) {
     console.error('Error loading comments:', err);
     commentList.innerHTML = '<div class="comment-error">Failed to load comments</div>';
   }
 }
 
-// Submit a comment
-async function submitComment(postId, inputElement) {
+// Submit a comment or reply
+async function submitComment(postId, inputElement, parentId = null) {
   const content = inputElement.value.trim();
-  
+
   if (!content) {
     showToast('Please write a comment!', 'error');
     return;
   }
-  
+
   if (!loggedInUser) {
     showToast('You must be logged in to comment', 'error');
     return;
   }
-  
+
   try {
-    const { data, error } = await db.from('comments').insert({
-      post_id: postId,
-      author_id: loggedInUser.id,
-      is_anonymous: false, // You can add checkbox for this later
-      content: content
-    }).select().single();
-    
+    const payload = {
+      post_id:      postId,
+      author_id:    loggedInUser.id,
+      is_anonymous: false,
+      content:      content,
+    };
+    if (parentId) payload.parent_id = parentId;
+
+    const { error } = await db.from('comments').insert(payload);
     if (error) throw error;
-    
-    // Clear input
+
+    // Clear input and hide reply box if it was a reply
     inputElement.value = '';
-    
-    // Reload comments
+    if (parentId) {
+      const replyBox = document.getElementById(`reply-input-${parentId}`);
+      if (replyBox) replyBox.style.display = 'none';
+    }
+
+    // Reload comments to show the new one
     await loadComments(postId);
-    
-    // Get actual comment count from database
+
+    // Update comment count badge (only top-level + replies count)
     const { count } = await db
       .from('comments')
       .select('*', { count: 'exact', head: true })
       .eq('post_id', postId);
-    
-    // Update comment count in UI with actual database count
+
     const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${postId}"]`);
-    const countSpan = commentBtn.querySelector('span');
-    countSpan.textContent = count || 0;
-    
-    showToast('Comment posted!', 'success');
-    
+    if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
+
+    showToast(parentId ? 'Reply posted!' : 'Comment posted!', 'success');
+
   } catch (err) {
     console.error('Error posting comment:', err);
-    showToast('Failed to post comment: ' + err.message, 'error');
+    showToast('Failed to post: ' + err.message, 'error');
   }
 }
 
@@ -1180,3 +1484,480 @@ document.querySelectorAll('.community-item').forEach(item => {
     await loadPostsFromDB();
   });
 });
+
+
+// ══════════════════════════════════════════════════════════════════
+// NOTIFICATIONS SYSTEM — Module 4
+// ══════════════════════════════════════════════════════════════════
+
+// Icon map per notification type
+const NOTIF_ICONS = {
+  like:         { icon: 'fa-heart',        cls: 'ni-like'    },
+  comment:      { icon: 'fa-comment',      cls: 'ni-comment' },
+  reply:        { icon: 'fa-reply',        cls: 'ni-comment' },
+  announcement: { icon: 'fa-bullhorn',     cls: 'ni-urgent'  },
+  mention:      { icon: 'fa-at',           cls: 'ni-dept'    },
+};
+
+// Load notifications from DB and render dropdown
+async function loadNotifications() {
+  if (!loggedInUser) return;
+
+  const notifList = document.getElementById('notifList');
+  if (!notifList) return;
+
+  try {
+    const { data: notifications, error } = await db
+      .from('notifications')
+      .select('*')
+      .eq('user_id', loggedInUser.id)
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    if (error) throw error;
+
+    if (!notifications || notifications.length === 0) {
+      notifList.innerHTML = `
+        <div style="text-align:center;padding:2rem 1rem;color:var(--gray-400);">
+          <i class="fas fa-bell-slash" style="font-size:1.5rem;margin-bottom:.5rem;display:block;"></i>
+          No notifications yet
+        </div>`;
+      updateNotifBadge(0);
+      return;
+    }
+
+    notifList.innerHTML = notifications.map(n => {
+      const typeInfo = NOTIF_ICONS[n.type] || NOTIF_ICONS.mention;
+      const timeAgo  = formatTimeAgo(new Date(n.created_at));
+      const unreadClass = n.is_read ? '' : 'notif-unread';
+
+      // Extract post ID from the link field (format: /campusfeed.html?post=UUID)
+      const postId = n.link ? n.link.split('post=')[1] : null;
+
+      return `
+        <div class="notif-item ${unreadClass}" data-notif-id="${n.id}" ${postId ? `data-post-id="${postId}" style="cursor:pointer;"` : ''}>
+          <div class="notif-icon-wrap ${typeInfo.cls}">
+            <i class="fas ${typeInfo.icon}"></i>
+          </div>
+          <div class="notif-body">
+            <div class="notif-text">${n.message}</div>
+            <div class="notif-time">${timeAgo}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Update badge with unread count
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    updateNotifBadge(unreadCount);
+
+  } catch (err) {
+    console.error('Error loading notifications:', err);
+    notifList.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--gray-400);">Failed to load notifications</div>';
+  }
+}
+
+// Update the bell badge number
+function updateNotifBadge(count) {
+  const badge = document.querySelector('#notifToggle .icon-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Mark all notifications as read
+async function markAllNotificationsRead() {
+  if (!loggedInUser) return;
+
+  try {
+    const { error } = await db
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', loggedInUser.id)
+      .eq('is_read', false);
+
+    if (error) throw error;
+
+    // Update UI
+    document.querySelectorAll('.notif-item.notif-unread').forEach(el => {
+      el.classList.remove('notif-unread');
+    });
+    updateNotifBadge(0);
+
+  } catch (err) {
+    console.error('Error marking notifications read:', err);
+  }
+}
+
+// Load notifications when dropdown opens
+document.getElementById('notifToggle')?.addEventListener('click', () => {
+  loadNotifications();
+});
+
+// Mark all read button
+document.getElementById('markAllReadBtn')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  await markAllNotificationsRead();
+});
+
+// Load unread count on page load (after user is set)
+setTimeout(async () => {
+  if (!loggedInUser) return;
+  try {
+    const { count } = await db
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', loggedInUser.id)
+      .eq('is_read', false);
+    updateNotifBadge(count || 0);
+  } catch (err) {
+    console.error('Error loading notification count:', err);
+  }
+}, 1500);
+
+// ── CLICK ON NOTIFICATION → scroll to post in feed ──
+document.getElementById('notifList')?.addEventListener('click', async (e) => {
+  const item = e.target.closest('.notif-item[data-post-id]');
+  if (!item) return;
+
+  const postId  = item.dataset.postId;
+  const notifId = item.dataset.notifId;
+
+  // Mark this notification as read
+  if (notifId) {
+    item.classList.remove('notif-unread');
+    await db.from('notifications').update({ is_read: true }).eq('id', notifId);
+    const unreadLeft = document.querySelectorAll('.notif-item.notif-unread').length;
+    updateNotifBadge(unreadLeft);
+  }
+
+  // Close notifications dropdown
+  document.getElementById('notifDropdown').hidden = true;
+
+  // Find the post card in the feed
+  let postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+
+  // If post not in current feed, reload all posts first
+  if (!postCard) {
+    currentCommunityFilter = null;
+    await loadPostsFromDB();
+    postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+  }
+
+  if (!postCard) {
+    showToast('Post not found or may have been deleted', 'info');
+    return;
+  }
+
+  // Scroll post into view smoothly
+  postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Highlight the post with a pulse animation
+  postCard.classList.add('post-highlighted');
+  setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+
+  // Auto-open the comment section
+  const commentSection = document.getElementById(`comments-${postId}`);
+  const commentBtn     = document.querySelector(`.post-comment-btn[data-post-id="${postId}"]`);
+  if (commentSection && commentSection.style.display === 'none') {
+    commentSection.style.display = 'block';
+    if (commentBtn) commentBtn.classList.add('active');
+    await loadComments(postId);
+  }
+});
+
+// ── POST PREVIEW MODAL ──
+async function openPostPreview(postId) {
+  const modal   = document.getElementById('postPreviewModal');
+  const content = document.getElementById('postPreviewContent');
+
+  content.innerHTML = '<div class="post-preview-loading"><i class="fas fa-spinner fa-spin"></i> Loading post...</div>';
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const { data: post, error } = await db
+      .from('posts')
+      .select(`*, profiles:author_id (first_name, last_name), communities:community_id (name, slug)`)
+      .eq('id', postId)
+      .single();
+
+    if (error || !post) throw new Error('Post not found');
+
+    const isAnon   = post.is_anonymous;
+    const author   = post.profiles;
+    const authorName = (!isAnon && author) ? `${author.first_name} ${author.last_name}` : 'Anonymous';
+    const initials   = (!isAnon && author) ? (author.first_name[0] + author.last_name[0]).toUpperCase() : '?';
+    const avatarStyle = isAnon ? 'background:var(--gray-500);' : 'background:linear-gradient(135deg,#6B0F1A,#8b1525);';
+    const timeAgo  = formatTimeAgo(new Date(post.created_at));
+    const community = post.communities?.name || 'General';
+
+    // Fetch comments
+    const { data: comments } = await db
+      .from('comments')
+      .select(`*, profiles:author_id (first_name, last_name)`)
+      .eq('post_id', postId)
+      .is('parent_id', null)
+      .order('created_at', { ascending: true })
+      .limit(10);
+
+    const userInitials = loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--';
+
+    const buildPreviewComment = (c, isReply = false) => {
+      const cName = c.is_anonymous ? 'Anonymous' : (c.profiles ? `${c.profiles.first_name} ${c.profiles.last_name}` : 'Unknown');
+      const cInit = c.is_anonymous ? '?' : (c.profiles ? (c.profiles.first_name[0] + c.profiles.last_name[0]).toUpperCase() : '?');
+      return `
+        <div class="comment-item ${isReply ? 'preview-reply' : ''}" data-comment-id="${c.id}">
+          <div class="comment-avatar" style="${isReply ? 'width:26px;height:26px;font-size:.6rem;' : ''}">${cInit}</div>
+          <div class="comment-content-wrapper">
+            <div class="comment-header">
+              <span class="comment-author">${cName}</span>
+              <span class="comment-time">${formatTimeAgo(new Date(c.created_at))}</span>
+            </div>
+            <div class="comment-text">${escapeHtml(c.content)}</div>
+            ${!isReply ? `
+              <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${post.id}" data-author="${cName}">
+                <i class="fas fa-reply"></i> Reply
+              </button>
+              <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
+                <div class="comment-input-avatar">${userInitials}</div>
+                <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
+                       data-post-id="${post.id}" data-parent-id="${c.id}" />
+                <button class="comment-send-btn preview-reply-send" data-post-id="${post.id}" data-parent-id="${c.id}">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>` : ''}
+          </div>
+        </div>`;
+    };
+
+    const commentsHTML = (comments && comments.length > 0)
+      ? comments.map(c => buildPreviewComment(c, false)).join('')
+      : '<div class="no-comments">No comments yet. Be the first!</div>';
+
+    content.innerHTML = `
+      <div class="post-preview-inner">
+        <div class="post-preview-header">
+          <div class="post-avatar" style="${avatarStyle}width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0;">${initials}</div>
+          <div>
+            <div style="font-weight:600;font-size:.9rem;">${authorName}</div>
+            <div style="font-size:.75rem;color:var(--gray-400);">${community} · ${timeAgo}</div>
+          </div>
+        </div>
+        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title)}</h3>` : ''}
+        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml(post.content)}</p>
+        ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? `
+          <div class="post-images-grid" style="margin-bottom:1rem;">
+            ${post.image_url.slice(0,4).map(url => `<div class="post-image-item"><img src="${url}" loading="lazy" /></div>`).join('')}
+          </div>` : ''}
+        <div style="border-top:1px solid var(--gray-200);padding-top:.75rem;margin-bottom:.5rem;">
+          <strong style="font-size:.82rem;color:var(--gray-600);">Comments</strong>
+        </div>
+        <div class="comment-list" id="preview-comment-list-${post.id}" style="max-height:240px;overflow-y:auto;margin-bottom:.75rem;">
+          ${commentsHTML}
+        </div>
+        <div class="comment-input-wrapper" id="preview-new-comment-wrapper">
+          <div class="comment-input-avatar">${userInitials}</div>
+          <input type="text" class="comment-input preview-new-comment-input" placeholder="Write a comment…" data-post-id="${post.id}" />
+          <button class="comment-send-btn preview-new-comment-send" data-post-id="${post.id}">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>`;
+
+  } catch (err) {
+    content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray-400);">Could not load post.</div>';
+  }
+}
+
+// Close post preview modal
+document.getElementById('closePostPreview')?.addEventListener('click', () => {
+  document.getElementById('postPreviewModal').hidden = true;
+  document.body.style.overflow = '';
+});
+document.getElementById('postPreviewModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('postPreviewModal')) {
+    document.getElementById('postPreviewModal').hidden = true;
+    document.body.style.overflow = '';
+  }
+});
+
+// ── PREVIEW MODAL: comment & reply interactions ──
+document.getElementById('postPreviewModal')?.addEventListener('click', async (e) => {
+
+  // Toggle reply input box
+  if (e.target.closest('.preview-reply-btn')) {
+    const btn       = e.target.closest('.preview-reply-btn');
+    const commentId = btn.dataset.commentId;
+    const replyBox  = document.getElementById(`preview-reply-input-${commentId}`);
+    if (!replyBox) return;
+    const isHidden = replyBox.style.display === 'none';
+    document.querySelectorAll('[id^="preview-reply-input-"]').forEach(b => b.style.display = 'none');
+    replyBox.style.display = isHidden ? 'flex' : 'none';
+    if (isHidden) replyBox.querySelector('input')?.focus();
+    return;
+  }
+
+  // Send reply from preview modal
+  if (e.target.closest('.preview-reply-send')) {
+    const btn      = e.target.closest('.preview-reply-send');
+    const postId   = btn.dataset.postId;
+    const parentId = btn.dataset.parentId;
+    const input    = document.querySelector(`#preview-reply-input-${parentId} .preview-reply-input`);
+    if (!input?.value.trim()) return;
+    await submitCommentPreview(postId, input, parentId);
+    await refreshPreviewComments(postId);
+    return;
+  }
+
+  // Send new top-level comment from preview modal
+  if (e.target.closest('.preview-new-comment-send')) {
+    const btn    = e.target.closest('.preview-new-comment-send');
+    const postId = btn.dataset.postId;
+    const input  = document.querySelector('.preview-new-comment-input');
+    if (!input?.value.trim()) return;
+    await submitCommentPreview(postId, input);
+    await refreshPreviewComments(postId);
+    return;
+  }
+});
+
+// Enter key inside preview modal inputs
+document.getElementById('postPreviewModal')?.addEventListener('keypress', async (e) => {
+  if (e.key !== 'Enter') return;
+
+  if (e.target.classList.contains('preview-reply-input')) {
+    const postId   = e.target.dataset.postId;
+    const parentId = e.target.dataset.parentId;
+    await submitCommentPreview(postId, e.target, parentId);
+    await refreshPreviewComments(postId);
+    return;
+  }
+
+  if (e.target.classList.contains('preview-new-comment-input')) {
+    const postId = e.target.dataset.postId;
+    await submitCommentPreview(postId, e.target);
+    await refreshPreviewComments(postId);
+  }
+});
+
+// ── submitCommentPreview: used inside the notification post preview modal ──
+// Same as submitComment but doesn't touch the main feed comment section
+async function submitCommentPreview(postId, inputElement, parentId = null) {
+  const content = inputElement.value.trim();
+  if (!content) return;
+  if (!loggedInUser) { showToast('You must be logged in to comment', 'error'); return; }
+
+  try {
+    const payload = {
+      post_id:      postId,
+      author_id:    loggedInUser.id,
+      is_anonymous: false,
+      content:      content,
+    };
+    if (parentId) payload.parent_id = parentId;
+
+    const { error } = await db.from('comments').insert(payload);
+    if (error) throw error;
+
+    inputElement.value = '';
+
+    // Hide reply box if it was a reply
+    if (parentId) {
+      const replyBox = document.getElementById(`preview-reply-input-${parentId}`);
+      if (replyBox) replyBox.style.display = 'none';
+    }
+
+  } catch (err) {
+    console.error('Preview comment error:', err);
+    showToast('Failed to post: ' + err.message, 'error');
+  }
+}
+
+// Refresh comment list inside preview modal after submitting
+async function refreshPreviewComments(postId) {
+  const list = document.getElementById(`preview-comment-list-${postId}`);
+  if (!list) return;
+
+  // Fetch ALL comments for this post (top-level + replies)
+  const { data: allComments } = await db
+    .from('comments')
+    .select(`*, profiles:author_id (first_name, last_name)`)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  const userInitials = loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--';
+
+  if (!allComments || allComments.length === 0) {
+    list.innerHTML = '<div class="no-comments">No comments yet. Be the first!</div>';
+    return;
+  }
+
+  // Separate top-level from replies
+  const topLevel = allComments.filter(c => !c.parent_id);
+  const replyMap = {};
+  allComments.filter(c => c.parent_id).forEach(r => {
+    if (!replyMap[r.parent_id]) replyMap[r.parent_id] = [];
+    replyMap[r.parent_id].push(r);
+  });
+
+  const buildComment = (c) => {
+    const cName = c.is_anonymous ? 'Anonymous' : (c.profiles ? `${c.profiles.first_name} ${c.profiles.last_name}` : 'Unknown');
+    const cInit = c.is_anonymous ? '?' : (c.profiles ? (c.profiles.first_name[0] + c.profiles.last_name[0]).toUpperCase() : '?');
+    const replies = replyMap[c.id] || [];
+
+    const repliesHTML = replies.length > 0 ? `
+      <div class="comment-replies">
+        ${replies.map(r => {
+          const rName = r.is_anonymous ? 'Anonymous' : (r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : 'Unknown');
+          const rInit = r.is_anonymous ? '?' : (r.profiles ? (r.profiles.first_name[0] + r.profiles.last_name[0]).toUpperCase() : '?');
+          return `
+            <div class="comment-item">
+              <div class="comment-avatar" style="width:26px;height:26px;font-size:.6rem;">${rInit}</div>
+              <div class="comment-content-wrapper">
+                <div class="comment-header">
+                  <span class="comment-author">${rName}</span>
+                  <span class="comment-time">${formatTimeAgo(new Date(r.created_at))}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(r.content)}</div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>` : '';
+
+    return `
+      <div class="comment-item" data-comment-id="${c.id}">
+        <div class="comment-avatar">${cInit}</div>
+        <div class="comment-content-wrapper">
+          <div class="comment-header">
+            <span class="comment-author">${cName}</span>
+            <span class="comment-time">${formatTimeAgo(new Date(c.created_at))}</span>
+          </div>
+          <div class="comment-text">${escapeHtml(c.content)}</div>
+          <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${postId}" data-author="${cName}">
+            <i class="fas fa-reply"></i> Reply
+          </button>
+          <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
+            <div class="comment-input-avatar">${userInitials}</div>
+            <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
+                   data-post-id="${postId}" data-parent-id="${c.id}" />
+            <button class="comment-send-btn preview-reply-send" data-post-id="${postId}" data-parent-id="${c.id}">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+          ${repliesHTML}
+        </div>
+      </div>`;
+  };
+
+  list.innerHTML = topLevel.map(c => buildComment(c)).join('');
+
+  // Update comment count badge on main feed post card
+  const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${postId}"]`);
+  if (commentBtn) {
+    commentBtn.querySelector('span').textContent = allComments.length;
+  }
+}

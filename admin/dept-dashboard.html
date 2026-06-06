@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Department Admin Dashboard — CRMC CampusHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand">
+      <span class="brand-crmc">CRMC</span>
+      <span class="brand-cc">CampusHub</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="dept-dashboard.html" class="nav-item active">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="dept-feed.html" class="nav-item">
+      <i class="fas fa-stream"></i>
+      <span>Community Feed</span>
+    </a>
+    <a href="dept-users.html" class="nav-item">
+      <i class="fas fa-users"></i>
+      <span><span id="navDeptName">Dept</span> Users</span>
+    </a>
+    <a href="dept-posts.html" class="nav-item">
+      <i class="fas fa-newspaper"></i>
+      <span><span id="navDeptName2">Dept</span> Posts</span>
+    </a>
+    <a href="dept-moderation.html" class="nav-item">
+      <i class="fas fa-flag"></i>
+      <span>Moderation</span>
+    </a>
+    <a href="dept-analytics.html" class="nav-item">
+      <i class="fas fa-chart-bar"></i>
+      <span>Analytics</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="admin-main">
+  
+  <!-- Top Bar -->
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title" id="deptTitle">Department Dashboard</h1>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <i class="fas fa-shield-alt" style="color:var(--maroon);font-size:14px;"></i>
+        <span style="color:var(--gray-600);font-size:13px;font-weight:500;" id="deptRole">Department Administrator</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="createPostBtn" style="padding:0.625rem 1.25rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:0.5rem;">
+        <i class="fas fa-plus"></i> New Post
+      </button>
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar">DA</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role" id="adminRoleText">Department Admin</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(107,15,26,.1); color: var(--maroon);">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="deptUsers">-</div>
+        <div class="stat-label" id="deptUsersLabel">Department Students</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(59,130,246,.1); color: #2563eb;">
+        <i class="fas fa-newspaper"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="deptPosts">-</div>
+        <div class="stat-label" id="deptPostsLabel">Department Posts</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(34,197,94,.1); color: #16a34a;">
+        <i class="fas fa-comments"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="deptComments">-</div>
+        <div class="stat-label">Comments</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(239,68,68,.1); color: #dc2626;">
+        <i class="fas fa-flag"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="deptFlagged">-</div>
+        <div class="stat-label">Flagged Posts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="content-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Department Posts</h2>
+        <a href="dept-posts.html" class="card-link">View all →</a>
+      </div>
+      <div class="card-body">
+        <div id="recentPosts" class="activity-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Department Users</h2>
+        <a href="dept-users.html" class="card-link">View all →</a>
+      </div>
+      <div class="card-body">
+        <div id="recentUsers" class="activity-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notice -->
+  <div style="margin-top:1.5rem;padding:1rem;background:rgba(59,130,246,.1);border-left:4px solid #2563eb;border-radius:var(--radius-sm);">
+    <div style="display:flex;align-items:center;gap:.5rem;color:#1e40af;font-size:.85rem;font-weight:600;margin-bottom:.25rem;">
+      <i class="fas fa-info-circle"></i>
+      <span>Limited Access</span>
+    </div>
+    <div style="color:#1e40af;font-size:.8rem;line-height:1.5;">
+      As a department admin, you can only view and moderate posts from your department community. 
+      Contact SSG Admin for system-wide access.
+    </div>
+  </div>
+
+</main>
+
+<!-- Create Post Modal -->
+<div id="createPostModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Create Department Post</h3>
+      <button class="modal-close" onclick="document.getElementById('createPostModal').style.display='none'"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem;">
+
+      <!-- Post type toggle -->
+      <div style="display:flex;gap:0.5rem;">
+        <button id="typePost" onclick="setPostType('post')" style="flex:1;padding:0.625rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+          <i class="fas fa-newspaper"></i> Regular Post
+        </button>
+        <button id="typeAnnouncement" onclick="setPostType('announcement')" style="flex:1;padding:0.625rem;background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+          <i class="fas fa-bullhorn"></i> Announcement
+        </button>
+      </div>
+      <input type="hidden" id="postType" value="post" />
+
+      <!-- Announcement badge preview -->
+      <div id="announcementBadge" style="display:none;padding:0.5rem 0.875rem;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:var(--radius-sm);font-size:13px;color:#92400e;font-weight:600;">
+        <i class="fas fa-bullhorn"></i> This will be posted as an official announcement from your department admin
+      </div>
+
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Content *</label>
+        <textarea id="postContent" rows="5" placeholder="Write your post or announcement here..."
+          style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;resize:vertical;line-height:1.6;"></textarea>
+      </div>
+
+      <!-- Image upload -->
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Attach Images (optional, max 5)</label>
+        <div id="imagePreviewRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"></div>
+        <label for="postImages" style="display:inline-flex;align-items:center;gap:6px;padding:0.5rem 1rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-700);">
+          <i class="fas fa-image"></i> Add Photos
+        </label>
+        <input type="file" id="postImages" accept="image/*" multiple style="display:none;" />
+      </div>
+
+      <!-- Pin option -->
+      <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;padding:0.75rem;background:var(--gray-50);border-radius:var(--radius-sm);">
+        <input type="checkbox" id="pinPost" style="width:16px;height:16px;accent-color:var(--maroon);" />
+        <div>
+          <div style="font-size:13px;font-weight:600;"><i class="fas fa-thumbtack" style="color:var(--maroon);margin-right:4px;"></i> Pin this post</div>
+          <div style="font-size:12px;color:var(--gray-500);">Pinned posts appear at the top of your community</div>
+        </div>
+      </label>
+
+    </div>
+    <div class="modal-footer">
+      <button onclick="document.getElementById('createPostModal').style.display='none'" style="padding:0.625rem 1.25rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+      <button id="submitPostBtn" onclick="submitPost()" style="padding:0.625rem 1.5rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+        <i class="fas fa-paper-plane"></i> Publish
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="dept-dashboard.js"></script>
+</body>
+</html>

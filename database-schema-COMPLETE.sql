@@ -1,8 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════
--- CRMC CAMPUSCONNECT — COMPLETE DATABASE SCHEMA
+-- CRMC CAMPUSHUB — COMPLETE DATABASE SCHEMA WITH ADMIN SYSTEM
 -- ═══════════════════════════════════════════════════════════════
 -- Run this entire script in your Supabase SQL Editor
--- This will create all tables, triggers, and security policies
+-- This includes ALL tables, triggers, policies, AND admin system
 -- ═══════════════════════════════════════════════════════════════
 
 -- ── 1. ENABLE REQUIRED EXTENSIONS ──
@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS community_members CASCADE;
 DROP TABLE IF EXISTS communities CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 
--- ── 3. PROFILES TABLE ──
+-- ── 3. PROFILES TABLE (WITH ADMIN SYSTEM) ──
 -- Stores user information (linked to auth.users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -29,8 +29,7 @@ CREATE TABLE profiles (
   avatar_url TEXT,
   bio TEXT,
   is_verified BOOLEAN DEFAULT false,
-  admin_role TEXT CHECK (admin_role IN ('SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE', 'student')),
-  account_status TEXT DEFAULT 'pending' CHECK (account_status IN ('pending', 'approved', 'rejected', 'suspended')),
+  admin_role TEXT DEFAULT NULL CHECK (admin_role IN ('SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -69,13 +68,10 @@ CREATE TABLE posts (
   is_anonymous BOOLEAN DEFAULT false,
   title TEXT,
   content TEXT NOT NULL,
-  image_url TEXT[],
+  image_url TEXT,
   is_pinned BOOLEAN DEFAULT false,
   is_flagged BOOLEAN DEFAULT false,
   flag_reason TEXT,
-  moderation_status TEXT DEFAULT 'approved' CHECK (moderation_status IN ('pending', 'approved', 'rejected')),
-  moderated_by UUID REFERENCES profiles(id),
-  moderated_at TIMESTAMPTZ,
   like_count INT DEFAULT 0,
   comment_count INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -115,46 +111,16 @@ CREATE TABLE notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ── 10. ADMIN ACTIVITY LOGS TABLE ──
-CREATE TABLE admin_activity_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  admin_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  action_type TEXT NOT NULL CHECK (action_type IN ('approve_user', 'reject_user', 'suspend_user', 'approve_post', 'reject_post', 'delete_post', 'flag_post', 'unflag_post', 'pin_post', 'unpin_post', 'create_community', 'delete_community')),
-  target_id UUID,
-  target_type TEXT CHECK (target_type IN ('user', 'post', 'comment', 'community')),
-  details JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ── 11. POST REPORTS TABLE ──
-CREATE TABLE post_reports (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-  reporter_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  reason TEXT NOT NULL CHECK (reason IN ('spam', 'harassment', 'inappropriate', 'misinformation', 'other')),
-  description TEXT,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'dismissed')),
-  reviewed_by UUID REFERENCES profiles(id),
-  reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ── 12. CREATE INDEXES FOR PERFORMANCE ──
+-- ── 10. CREATE INDEXES FOR PERFORMANCE ──
 CREATE INDEX idx_posts_community ON posts(community_id);
 CREATE INDEX idx_posts_author ON posts(author_id);
 CREATE INDEX idx_posts_created ON posts(created_at DESC);
-CREATE INDEX idx_posts_flagged ON posts(is_flagged);
-CREATE INDEX idx_posts_moderation ON posts(moderation_status);
 CREATE INDEX idx_comments_post ON comments(post_id);
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_unread ON notifications(user_id, is_read);
-CREATE INDEX idx_profiles_status ON profiles(account_status);
-CREATE INDEX idx_admin_logs_admin ON admin_activity_logs(admin_id);
-CREATE INDEX idx_admin_logs_created ON admin_activity_logs(created_at DESC);
-CREATE INDEX idx_post_reports_status ON post_reports(status);
-CREATE INDEX idx_post_reports_post ON post_reports(post_id);
+CREATE INDEX idx_profiles_admin_role ON profiles(admin_role);
 
--- ── 13. AUTO-UPDATE TIMESTAMP FUNCTION ──
+-- ── 11. AUTO-UPDATE TIMESTAMP FUNCTION ──
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -173,7 +139,7 @@ CREATE TRIGGER posts_updated_at BEFORE UPDATE ON posts
 CREATE TRIGGER comments_updated_at BEFORE UPDATE ON comments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- ── 14. AUTO-CREATE PROFILE ON USER REGISTRATION ──
+-- ── 12. AUTO-CREATE PROFILE ON USER REGISTRATION ──
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -206,7 +172,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
--- ── 15. UPDATE POST/COMMENT COUNTS ──
+-- ── 13. UPDATE POST/COMMENT COUNTS ──
 -- Update post like_count
 CREATE OR REPLACE FUNCTION update_post_like_count()
 RETURNS TRIGGER AS $$
@@ -241,7 +207,32 @@ CREATE TRIGGER post_comments_count_trigger
   AFTER INSERT OR DELETE ON comments
   FOR EACH ROW EXECUTE FUNCTION update_post_comment_count();
 
--- ── 16. ROW LEVEL SECURITY (RLS) POLICIES ──
+-- ── 14. ADMIN HELPER FUNCTIONS ──
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() 
+    AND admin_role IS NOT NULL
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION get_admin_role()
+RETURNS TEXT AS $$
+DECLARE
+  role TEXT;
+BEGIN
+  SELECT admin_role INTO role
+  FROM profiles 
+  WHERE id = auth.uid();
+  
+  RETURN role;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── 15. ROW LEVEL SECURITY (RLS) POLICIES ──
 
 -- Enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -251,8 +242,6 @@ ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_activity_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE post_reports ENABLE ROW LEVEL SECURITY;
 
 -- PROFILES: Everyone can read, users can update their own
 CREATE POLICY "Profiles are viewable by everyone"
@@ -288,6 +277,73 @@ CREATE POLICY "Users can update their own posts"
 CREATE POLICY "Users can delete their own posts"
   ON posts FOR DELETE USING (auth.uid() = author_id);
 
+-- ADMIN POLICIES FOR POSTS
+CREATE POLICY "SSG admin can view all posts"
+  ON posts FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.admin_role = 'SSG'
+    )
+  );
+
+CREATE POLICY "SSG admin can update any post"
+  ON posts FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.admin_role = 'SSG'
+    )
+  );
+
+CREATE POLICY "SSG admin can delete any post"
+  ON posts FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.admin_role = 'SSG'
+    )
+  );
+
+CREATE POLICY "Dept admin can view their department posts"
+  ON posts FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      JOIN communities c ON c.department LIKE '%' || p.admin_role || '%'
+      WHERE p.id = auth.uid() 
+      AND p.admin_role IN ('CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
+      AND posts.community_id = c.id
+    )
+  );
+
+CREATE POLICY "Dept admin can update their department posts"
+  ON posts FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      JOIN communities c ON c.department LIKE '%' || p.admin_role || '%'
+      WHERE p.id = auth.uid() 
+      AND p.admin_role IN ('CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
+      AND posts.community_id = c.id
+    )
+  );
+
+CREATE POLICY "Dept admin can delete their department posts"
+  ON posts FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      JOIN communities c ON c.department LIKE '%' || p.admin_role || '%'
+      WHERE p.id = auth.uid() 
+      AND p.admin_role IN ('CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
+      AND posts.community_id = c.id
+    )
+  );
+
 -- POST LIKES: Users can like/unlike
 CREATE POLICY "Post likes are viewable by everyone"
   ON post_likes FOR SELECT USING (true);
@@ -318,40 +374,7 @@ CREATE POLICY "Users can view their own notifications"
 CREATE POLICY "Users can update their own notifications"
   ON notifications FOR UPDATE USING (auth.uid() = user_id);
 
--- ADMIN ACTIVITY LOGS: Only admins can view
-CREATE POLICY "Admins can view activity logs"
-  ON admin_activity_logs FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() AND admin_role IN ('SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
-    )
-  );
-
-CREATE POLICY "System can insert activity logs"
-  ON admin_activity_logs FOR INSERT WITH CHECK (true);
-
--- POST REPORTS: Users can report, admins can view all
-CREATE POLICY "Users can view their own reports"
-  ON post_reports FOR SELECT USING (
-    reporter_id = auth.uid() OR
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() AND admin_role IN ('SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
-    )
-  );
-
-CREATE POLICY "Users can create reports"
-  ON post_reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
-
-CREATE POLICY "Admins can update reports"
-  ON post_reports FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() AND admin_role IN ('SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE')
-    )
-  );
-
--- ── 17. SEED DATA: CREATE DEFAULT COMMUNITIES ──
+-- ── 16. SEED DATA: CREATE DEFAULT COMMUNITIES ──
 INSERT INTO communities (slug, name, description, type, department) VALUES
   ('cte', 'CTE Community', 'College of Teacher Education', 'department', 'College of Teacher Education (CTE)'),
   ('cbe', 'CBE Community', 'College of Business Education', 'department', 'College of Business Education (CBE)'),
@@ -363,24 +386,22 @@ INSERT INTO communities (slug, name, description, type, department) VALUES
   ('academic', 'Academic Help', 'Study help, schedules, and school concerns', 'public', NULL),
   ('marketplace', 'Marketplace & Sharing', 'Borrow, lend, or share materials with peers', 'public', NULL),
   ('campus', 'Campus Discussions', 'Campus life and student concerns', 'public', NULL),
-  ('support', 'Student Support', 'Help and guidance for students', 'public', NULL);
-
--- ── 18. CREATE SAMPLE POSTS (OPTIONAL - FOR TESTING) ──
--- You can delete this section if you don't want sample data
-
--- First, we need a sample user. Create one via your Registration form, 
--- then uncomment and run these lines with the actual user ID:
-
--- INSERT INTO posts (community_id, author_id, is_anonymous, title, content) VALUES
---   ((SELECT id FROM communities WHERE slug = 'lostandfound'), 'YOUR_USER_ID_HERE', true, 
---    'Lost: Black tumbler near the library — anyone seen it?',
---    'I left my black Hydro Flask tumbler somewhere near the 2nd floor library area around 10AM. It has a small sticker of a cat on the side. If anyone finds it please message me or drop it at the guard''s desk. Thank you so much!');
+  ('support', 'Student Support', 'Help and guidance for students', 'public', NULL),
+  ('ssg-announcements', 'SSG Announcements', 'Official campus-wide announcements from the Supreme Student Government', 'public', NULL)
+ON CONFLICT (slug) DO NOTHING;
 
 -- ═══════════════════════════════════════════════════════════════
 -- SETUP COMPLETE! 
 -- ═══════════════════════════════════════════════════════════════
 -- Next steps:
--- 1. Run this entire script in Supabase SQL Editor
--- 2. Test registration on your app
--- 3. Check if profile is auto-created in profiles table
+-- 1. Assign admin roles manually:
+--    UPDATE profiles SET admin_role = 'SSG' WHERE email = 'your-ssg@email.com';
+--    UPDATE profiles SET admin_role = 'CTE' WHERE email = 'cte@email.com';
+--    UPDATE profiles SET admin_role = 'CSS' WHERE email = 'css@email.com';
+--    UPDATE profiles SET admin_role = 'CBE' WHERE email = 'cbe@email.com';
+--    UPDATE profiles SET admin_role = 'PSYCH' WHERE email = 'psych@email.com';
+--    UPDATE profiles SET admin_role = 'CCJE' WHERE email = 'ccje@email.com';
+-- 
+-- 2. Test the admin login at /admin/login.html
+-- 3. Test student login at /landing page/index.html
 -- ═══════════════════════════════════════════════════════════════

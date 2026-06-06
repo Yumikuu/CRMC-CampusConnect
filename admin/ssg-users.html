@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management â€” CRMC CampusHub Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+</head>
+<body>
+
+<!-- â”€â”€ SIDEBAR â”€â”€ -->
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand">
+      <span class="brand-crmc">CRMC</span>
+      <span class="brand-cc">CampusHub</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="ssg-dashboard.html" class="nav-item">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="ssg-users.html" class="nav-item active">
+      <i class="fas fa-users"></i>
+      <span>All Users</span>
+    </a>
+    <a href="ssg-posts.html" class="nav-item">
+      <i class="fas fa-newspaper"></i>
+      <span>All Posts</span>
+    </a>
+    <a href="ssg-communities.html" class="nav-item">
+      <i class="fas fa-layer-group"></i>
+      <span>Communities</span>
+    </a>
+    <a href="ssg-moderation.html" class="nav-item">
+      <i class="fas fa-flag"></i>
+      <span>Moderation</span>
+    </a>
+    <a href="ssg-analytics.html" class="nav-item">
+      <i class="fas fa-chart-bar"></i>
+      <span>Analytics</span>
+    </a>
+    <a href="ssg-admins.html" class="nav-item">
+      <i class="fas fa-user-shield"></i>
+      <span>Manage Admins</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
+
+<!-- â”€â”€ MAIN CONTENT â”€â”€ -->
+<main class="admin-main">
+  
+  <!-- Top Bar -->
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">Approve, manage, and monitor all student accounts</p>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar">SSG</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role">SSG Administrator</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-filter="all">
+      <i class="fas fa-users"></i> All Users (<span id="countAll">0</span>)
+    </button>
+    <button class="tab-btn" data-filter="pending">
+      <i class="fas fa-clock"></i> Pending Approval (<span id="countPending">0</span>)
+    </button>
+    <button class="tab-btn" data-filter="approved">
+      <i class="fas fa-check-circle"></i> Approved (<span id="countApproved">0</span>)
+    </button>
+    <button class="tab-btn" data-filter="suspended">
+      <i class="fas fa-ban"></i> Suspended (<span id="countSuspended">0</span>)
+    </button>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="card" style="margin-top:1.25rem;">
+    <div class="card-body">
+      <div style="display:flex;gap:1rem;align-items:center;">
+        <div style="flex:1;position:relative;">
+          <i class="fas fa-search" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--gray-400);"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search by name, email, or student ID..." 
+            style="width:100%;padding:0.75rem 1rem 0.75rem 2.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;"
+          />
+        </div>
+        <select id="departmentFilter" style="padding:0.75rem 1rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;">
+          <option value="">All Departments</option>
+          <option value="College of Teacher Education (CTE)">CTE</option>
+          <option value="College of Computer Studies (CSS)">CSS</option>
+          <option value="College of Business Education (CBE)">CBE</option>
+          <option value="Psychology (PSYCH)">PSYCH</option>
+          <option value="College of Criminal Justice Education (CCJE)">CCJE</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card" style="margin-top:1.25rem;">
+    <div class="card-body" style="padding:0;">
+      <div id="usersContainer" style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
+              <th style="padding:1rem;text-align:left;font-size:13px;font-weight:600;color:var(--gray-700);">Student</th>
+              <th style="padding:1rem;text-align:left;font-size:13px;font-weight:600;color:var(--gray-700);">Student ID</th>
+              <th style="padding:1rem;text-align:left;font-size:13px;font-weight:600;color:var(--gray-700);">Department</th>
+              <th style="padding:1rem;text-align:left;font-size:13px;font-weight:600;color:var(--gray-700);">Status</th>
+              <th style="padding:1rem;text-align:left;font-size:13px;font-weight:600;color:var(--gray-700);">Joined</th>
+              <th style="padding:1rem;text-align:center;font-size:13px;font-weight:600;color:var(--gray-700);">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr>
+              <td colspan="6" style="padding:3rem;text-align:center;color:var(--gray-400);">
+                <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+                <p style="margin-top:1rem;">Loading users...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- User Details Modal -->
+<div id="userModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 class="modal-title">User Details</h3>
+      <button class="modal-close" onclick="closeUserModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="userModalBody">
+      <!-- User details will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script src="ssg-users.js"></script>
+
+</body>
+</html>
+
+

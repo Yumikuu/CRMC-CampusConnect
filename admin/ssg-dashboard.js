@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
-// SSG ADMIN DASHBOARD — Full System Access
+// Main Admin DASHBOARD — Full System Access
 // ═══════════════════════════════════════════════════════════════
 
 let adminUser = null;
 
-// ── AUTH GUARD + LOAD SSG ADMIN DATA ──
+// ── AUTH GUARD + LOAD Main Admin DATA ──
 (async () => {
   const { data: { session } } = await db.auth.getSession();
 
@@ -26,13 +26,14 @@ let adminUser = null;
     return;
   }
 
-  // Check if user is SSG Admin
+  // Check if user is Main Admin (SSG role only)
   if (profile.admin_role !== 'SSG') {
-    // Not SSG admin - redirect based on role
-    if (profile.admin_role && profile.admin_role !== 'student') {
-      window.location.href = 'dept-dashboard.html';  // Department admin
+    if (profile.admin_role === 'SSG_OFFICER') {
+      window.location.href = 'ssg-officer-dashboard.html';
+    } else if (profile.admin_role && profile.admin_role !== 'student') {
+      window.location.href = 'dept-dashboard.html';
     } else {
-      window.location.href = '../campusfeed.html';  // Regular student
+      window.location.href = '../campusfeed.html';
     }
     return;
   }

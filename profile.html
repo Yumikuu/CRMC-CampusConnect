@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — CRMC CampusConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="campusfeed.css" />
+  <link rel="stylesheet" href="profile.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+
+<!-- ── TOP NAVBAR ── -->
+<nav class="topbar" role="navigation" aria-label="Main navigation">
+  <div class="topbar-left">
+    <a href="campusfeed.html" class="topbar-brand" aria-label="Back to Feed">
+      <img src="Images/logo.png" alt="Logo" class="topbar-logo" />
+      <span class="topbar-name"><span class="t-crmc">CRMC</span><span class="t-cc">CampusConnect</span></span>
+    </a>
+  </div>
+  <div class="topbar-right">
+    <a href="campusfeed.html" class="btn-back-feed">
+      <i class="fas fa-arrow-left"></i> Back to Feed
+    </a>
+  </div>
+</nav>
+
+<!-- ── PROFILE CONTENT ── -->
+<div class="profile-page">
+
+  <!-- Profile Header Card -->
+  <div class="profile-header-card" id="profileHeaderCard">
+    <div class="profile-header-loading">
+      <i class="fas fa-spinner fa-spin"></i> Loading profile...
+    </div>
+  </div>
+
+  <!-- Posts Section -->
+  <div class="profile-posts-section">
+    <div class="profile-posts-header">
+      <h2 class="profile-posts-title" id="profilePostsTitle">Posts</h2>
+      <span class="profile-posts-count" id="profilePostsCount"></span>
+    </div>
+    <div id="profilePostsFeed">
+      <div class="profile-posts-loading">Loading posts...</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="profile.js"></script>
+</body>
+</html>

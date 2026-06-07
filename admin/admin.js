@@ -7,7 +7,7 @@ let adminUser = null;
   const { data: { session } } = await db.auth.getSession();
 
   if (!session) {
-    window.location.href = '../landing page/index.html';
+    window.location.href = '../landing-page/index.html';
     return;
   }
 
@@ -20,7 +20,7 @@ let adminUser = null;
 
   if (error || !profile) {
     console.error('Could not load profile:', error);
-    window.location.href = '../landing page/index.html';
+    window.location.href = '../landing-page/index.html';
     return;
   }
 
@@ -188,5 +188,5 @@ function escapeHtml(text) {
 // ── LOGOUT ──
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
-  window.location.href = '../landing page/index.html';
+  window.location.href = '../landing-page/index.html';
 });

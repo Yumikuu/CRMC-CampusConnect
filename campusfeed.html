@@ -27,9 +27,10 @@
     </a>
   </div>
 
-  <div class="topbar-search">
+  <div class="topbar-search" id="searchWrapper">
     <i class="fas fa-search"></i>
-    <input type="text" placeholder="Search posts, communities, students..." aria-label="Search" />
+    <input type="text" id="searchInput" placeholder="Search posts, communities, students..." aria-label="Search" />
+    <div class="search-results-dropdown" id="searchDropdown" hidden></div>
   </div>
 
   <div class="topbar-right">
@@ -73,7 +74,7 @@
           </div>
         </div>
         <div class="profile-dd-links">
-          <a href="#"><i class="fas fa-user"></i> My Profile</a>
+          <a href="profile.html?me=1"><i class="fas fa-user"></i> My Profile</a>
           <a href="#"><i class="fas fa-cog"></i> Settings</a>
           <a href="#"><i class="fas fa-shield-alt"></i> Privacy</a>
           <a href="home/index.html" class="dd-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Log Out</a>
@@ -128,6 +129,10 @@
     <!-- Public Communities -->
     <div class="sidebar-section">
       <div class="sidebar-section-label">Campus Communities</div>
+      <a href="#" class="community-item community-item--ssg" data-feed="ssg">
+        <div class="comm-icon ci-ssg"><i class="fas fa-star"></i></div>
+        <div class="comm-info"><div class="comm-name">SSG — Student Government</div><div class="comm-sub">Ask &amp; connect with SSG</div></div>
+      </a>
       <a href="#" class="community-item" data-feed="general">
         <div class="comm-icon ci-general"><i class="fas fa-comments"></i></div>
         <div class="comm-info"><div class="comm-name">General</div><div class="comm-sub">Open discussions</div></div>
@@ -190,9 +195,10 @@
 
     <!-- Feed Tabs -->
     <div class="feed-tabs" role="tablist">
-      <button class="feed-tab active" role="tab" aria-selected="true"><i class="fas fa-fire"></i> Trending</button>
-      <button class="feed-tab" role="tab" aria-selected="false"><i class="fas fa-clock"></i> Latest</button>
-      <button class="feed-tab" role="tab" aria-selected="false"><i class="fas fa-thumbtack"></i> Pinned</button>
+      <button class="feed-tab active" role="tab" aria-selected="true" data-tab="all"><i class="fas fa-layer-group"></i> All</button>
+      <button class="feed-tab" role="tab" aria-selected="false" data-tab="trending"><i class="fas fa-fire"></i> Trending</button>
+      <button class="feed-tab" role="tab" aria-selected="false" data-tab="latest"><i class="fas fa-clock"></i> Latest</button>
+      <button class="feed-tab" role="tab" aria-selected="false" data-tab="pinned"><i class="fas fa-thumbtack"></i> Pinned</button>
     </div>
 
     <!-- ── POST CARDS ── -->
@@ -206,24 +212,10 @@
     <!-- Trending Announcements -->
     <div class="widget-card">
       <div class="widget-title"><i class="fas fa-bullhorn"></i> Announcements</div>
-      <div class="ann-widget-list">
-        <div class="ann-widget-item">
-          <span class="ann-w-tag tag-urgent">Urgent</span>
-          <div class="ann-w-text">Library maintenance — May 22, 8AM–12PM</div>
-          <div class="ann-w-time">Today</div>
-        </div>
-        <div class="ann-widget-item">
-          <span class="ann-w-tag tag-event">Event</span>
-          <div class="ann-w-text">Foundation Day Celebration — May 28</div>
-          <div class="ann-w-time">May 18</div>
-        </div>
-        <div class="ann-widget-item">
-          <span class="ann-w-tag tag-academic">Academic</span>
-          <div class="ann-w-text">2nd Semester Enrollment now open</div>
-          <div class="ann-w-time">May 17</div>
-        </div>
+      <div class="ann-widget-list" id="announcementsWidget">
+        <div class="ann-widget-loading">Loading announcements...</div>
       </div>
-      <a href="#" class="widget-view-all">View all <i class="fas fa-arrow-right"></i></a>
+      <a href="#" class="widget-view-all" id="viewAllAnnouncements">View all <i class="fas fa-arrow-right"></i></a>
     </div>
 
     <!-- Upcoming Events -->
@@ -274,18 +266,6 @@
           <span class="active-dot"></span>
         </div>
       </div>
-    </div>
-
-    <!-- Online Students -->
-    <div class="widget-card">
-      <div class="widget-title"><i class="fas fa-circle" style="color:#22c55e;font-size:.6rem;"></i> Online Now</div>
-      <div class="online-list">
-        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">MS</div><span>Maria Santos</span></div>
-        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">CR</div><span>Carlo Reyes</span></div>
-        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);">AL</div><span>Ana Lim</span></div>
-        <div class="online-item"><div class="online-avatar" style="background:linear-gradient(135deg,#ea580c,#c2410c);">RB</div><span>Rico Bautista</span></div>
-      </div>
-      <div class="online-count">+142 students online</div>
     </div>
 
     <!-- AI Chatbot Quick Access -->

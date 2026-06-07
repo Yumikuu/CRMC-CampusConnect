@@ -53,7 +53,7 @@ const DEPT_CONFIG = {
   const { data: { session } } = await db.auth.getSession();
 
   if (!session) {
-    window.location.href = 'landing page/index.html';
+    window.location.href = 'landing-page/index.html';
     return;
   }
 
@@ -66,7 +66,7 @@ const DEPT_CONFIG = {
 
   if (error || !profile) {
     console.error('Could not load profile:', error);
-    window.location.href = 'landing page/index.html';
+    window.location.href = 'landing-page/index.html';
     return;
   }
 
@@ -123,8 +123,14 @@ const DEPT_CONFIG = {
   document.getElementById('logoutBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     await db.auth.signOut();
-    window.location.href = 'landing page/index.html';
+    window.location.href = 'landing-page/index.html';
   });
+
+  // ── My Profile link ──
+  const myProfileLink = document.querySelector('.profile-dd-links a[href*="profile.html"]');
+  if (myProfileLink) {
+    myProfileLink.href = `profile.html?id=${profile.id}`;
+  }
 })();
 
 // ── DROPDOWN TOGGLES ──
@@ -178,14 +184,18 @@ document.querySelectorAll('.community-item').forEach(item => {
 });
 
 // ── FEED TABS ──
+let currentFeedTab = 'all'; // all | trending | latest | pinned
+
 document.querySelectorAll('.feed-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
+  tab.addEventListener('click', async () => {
     document.querySelectorAll('.feed-tab').forEach(t => {
       t.classList.remove('active');
       t.setAttribute('aria-selected', 'false');
     });
     tab.classList.add('active');
     tab.setAttribute('aria-selected', 'true');
+    currentFeedTab = tab.dataset.tab || 'all';
+    await loadPostsFromDB();
   });
 });
 
@@ -369,7 +379,7 @@ let loggedInUser = null;
 (async function initUser() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) {
-    window.location.href = 'landing page/index.html';
+    window.location.href = 'landing-page/index.html';
     return;
   }
 
@@ -608,37 +618,58 @@ async function loadPostsFromDB() {
   if (!loggedInUser) return;
   
   try {
-    let query = db
-      .from('posts')
-      .select(`
-        *,
-        profiles:author_id (first_name, last_name),
-        communities:community_id (name, slug)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    
+    // ── Step 1: Resolve community IDs to filter by ──
+    let communityIds = [];
+
     if (currentCommunityFilter) {
-      // Filter by specific community
       const { data: comm } = await db
         .from('communities')
         .select('id')
         .eq('slug', currentCommunityFilter)
         .single();
-      
-      if (comm) {
-        query = query.eq('community_id', comm.id);
-      }
+      if (comm) communityIds = [comm.id];
     } else {
-      // Show all communities user can see
       const { data: communities } = await db
         .from('communities')
         .select('id')
         .or(`type.eq.public,department.eq.${loggedInUser.department}`);
-      
-      const communityIds = communities.map(c => c.id);
-      query = query.in('community_id', communityIds);
+      communityIds = (communities || []).map(c => c.id);
     }
+
+    if (communityIds.length === 0) {
+      document.querySelector('.main-feed').querySelectorAll('.post-card, .feed-empty-state').forEach(el => el.remove());
+      return;
+    }
+
+    // ── Step 2: Build query with community filter ──
+    let query = db
+      .from('posts')
+      .select(`*, profiles:author_id (first_name, last_name), communities:community_id (name, slug)`)
+      .in('community_id', communityIds);
+
+    // ── Step 3: Apply tab filter ──
+    if (currentFeedTab === 'pinned') {
+      query = query
+        .eq('is_pinned', true)
+        .order('created_at', { ascending: false });
+    } else if (currentFeedTab === 'trending') {
+      // Trending: most likes in last 7 days
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      query = query
+        .gte('created_at', weekAgo)
+        .order('like_count', { ascending: false })
+        .order('comment_count', { ascending: false })
+        .order('created_at', { ascending: false });
+    } else if (currentFeedTab === 'latest') {
+      query = query.order('created_at', { ascending: false });
+    } else {
+      // All — pinned first, then newest
+      query = query
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+    }
+
+    query = query.limit(20);
     
     const { data: posts, error } = await query;
     
@@ -651,9 +682,9 @@ async function loadPostsFromDB() {
       console.log(`Post ${index + 1} image_url:`, post.image_url, 'Type:', typeof post.image_url, 'IsArray:', Array.isArray(post.image_url));
     });
     
-    // Clear hardcoded posts
+    // Clear posts and empty state
     const mainFeed = document.querySelector('.main-feed');
-    mainFeed.querySelectorAll('.post-card').forEach(p => p.remove());
+    mainFeed.querySelectorAll('.post-card, .feed-empty-state').forEach(p => p.remove());
     
     // Get actual comment counts from database for each post
     for (const post of posts) {
@@ -684,10 +715,26 @@ async function loadPostsFromDB() {
     }
     
     // Render real posts
-    posts.forEach(post => {
-      const postEl = createPostElement(post);
-      mainFeed.appendChild(postEl);
-    });
+    if (posts.length === 0) {
+      const emptyMsg = {
+        pinned:   { icon: 'fa-thumbtack', text: 'No pinned posts yet.' },
+        trending: { icon: 'fa-fire',      text: 'No trending posts in the last 7 days.' },
+        latest:   { icon: 'fa-clock',     text: 'No posts yet. Be the first to post!' },
+        all:      { icon: 'fa-newspaper', text: 'No posts yet. Be the first to post!' },
+      }[currentFeedTab] || { icon: 'fa-newspaper', text: 'No posts found.' };
+
+      const emptyEl = document.createElement('div');
+      emptyEl.className = 'feed-empty-state';
+      emptyEl.innerHTML = `
+        <i class="fas ${emptyMsg.icon}"></i>
+        <p>${emptyMsg.text}</p>`;
+      mainFeed.appendChild(emptyEl);
+    } else {
+      posts.forEach(post => {
+        const postEl = createPostElement(post);
+        mainFeed.appendChild(postEl);
+      });
+    }
     
   } catch (err) {
     console.error('Error loading posts:', err);
@@ -826,7 +873,21 @@ setTimeout(() => {
     
     // Load all posts (no filter)
     currentCommunityFilter = null;
-    loadPostsFromDB();
+    loadPostsFromDB().then(() => {
+      // Handle ?highlight=postId from profile page clicks
+      const urlParams   = new URLSearchParams(window.location.search);
+      const highlightId = urlParams.get('highlight');
+      if (highlightId) {
+        setTimeout(() => {
+          const postCard = document.querySelector(`.post-card[data-post-id="${highlightId}"]`);
+          if (postCard) {
+            postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            postCard.classList.add('post-highlighted');
+            setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+          }
+        }, 500);
+      }
+    });
   }
 }, 100); // Faster to avoid flash
 
@@ -1460,7 +1521,8 @@ document.querySelectorAll('.community-item').forEach(item => {
         'academic': { name: 'Academic Help', sub: 'Study help', icon: 'fa-book-open' },
         'marketplace': { name: 'Marketplace', sub: 'Borrow & lend', icon: 'fa-handshake' },
         'campus': { name: 'Campus Discussions', sub: 'Campus life', icon: 'fa-university' },
-        'support': { name: 'Student Support', sub: 'Help & guidance', icon: 'fa-hands-helping' }
+        'support': { name: 'Student Support', sub: 'Help & guidance', icon: 'fa-hands-helping' },
+        'ssg':    { name: 'SSG — Student Government', sub: 'Ask & connect with SSG', icon: 'fa-star' }
       };
       
       const comm = communityNames[feedSlug] || communityNames['general'];
@@ -1475,6 +1537,7 @@ document.querySelectorAll('.community-item').forEach(item => {
       else if (feedSlug === 'marketplace') feedIcon.classList.add('ci-market');
       else if (feedSlug === 'campus') feedIcon.classList.add('ci-campus');
       else if (feedSlug === 'support') feedIcon.classList.add('ci-support');
+      else if (feedSlug === 'ssg') feedIcon.classList.add('ci-ssg');
       else feedIcon.classList.add('ci-general');
       
       currentCommunityFilter = feedSlug;
@@ -1961,3 +2024,333 @@ async function refreshPreviewComments(postId) {
     commentBtn.querySelector('span').textContent = allComments.length;
   }
 }
+
+
+// ══════════════════════════════════════════════════════════════════
+// ANNOUNCEMENTS WIDGET — Module 5
+// Fetches real posts from ssg-announcements + dept announcement posts
+// ══════════════════════════════════════════════════════════════════
+
+async function loadAnnouncementsWidget() {
+  const widget = document.getElementById('announcementsWidget');
+  if (!widget || !loggedInUser) return;
+
+  try {
+    // Get the ssg-announcements community + user's dept community
+    const { data: communities } = await db
+      .from('communities')
+      .select('id, slug, name')
+      .or(`slug.eq.ssg-announcements,type.eq.department`);
+
+    if (!communities || communities.length === 0) {
+      widget.innerHTML = '<div class="ann-widget-loading">No announcements yet.</div>';
+      return;
+    }
+
+    const commIds = communities.map(c => c.id);
+
+    // Fetch latest pinned or recent posts from those communities
+    const { data: posts, error } = await db
+      .from('posts')
+      .select(`
+        id, title, content, created_at, is_pinned,
+        communities:community_id (name, slug)
+      `)
+      .in('community_id', commIds)
+      .eq('moderation_status', 'approved')
+      .eq('is_flagged', false)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error) throw error;
+
+    if (!posts || posts.length === 0) {
+      widget.innerHTML = '<div class="ann-widget-loading">No announcements yet.</div>';
+      return;
+    }
+
+    widget.innerHTML = posts.map(post => {
+      const slug      = post.communities?.slug || '';
+      const commName  = post.communities?.name || 'General';
+      const text      = post.title || post.content.substring(0, 70) + (post.content.length > 70 ? '…' : '');
+      const timeAgo   = formatTimeAgo(new Date(post.created_at));
+
+      // Pick tag style based on community or pinned status
+      let tagLabel = 'General';
+      let tagClass = 'tag-general';
+
+      if (post.is_pinned) {
+        tagLabel = 'Pinned';
+        tagClass = 'tag-urgent';
+      } else if (slug === 'ssg-announcements') {
+        tagLabel = 'Official';
+        tagClass = 'tag-urgent';
+      } else if (slug.match(/cte|css|cbe|psych|ccje/)) {
+        tagLabel = slug.toUpperCase();
+        tagClass = 'tag-academic';
+      } else if (slug === 'academic') {
+        tagLabel = 'Academic';
+        tagClass = 'tag-academic';
+      } else if (slug === 'campus') {
+        tagLabel = 'Event';
+        tagClass = 'tag-event';
+      }
+
+      return `
+        <div class="ann-widget-item ann-widget-clickable" data-post-id="${post.id}" style="cursor:pointer;">
+          <span class="ann-w-tag ${tagClass}">${tagLabel}</span>
+          <div class="ann-w-text">${escapeHtml(text)}</div>
+          <div class="ann-w-time">${timeAgo}</div>
+        </div>`;
+    }).join('');
+
+    // Click → scroll to post in feed
+    widget.querySelectorAll('.ann-widget-clickable').forEach(item => {
+      item.addEventListener('click', async () => {
+        const postId  = item.dataset.postId;
+        let postCard  = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+
+        if (!postCard) {
+          currentCommunityFilter = null;
+          await loadPostsFromDB();
+          postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+        }
+
+        if (!postCard) { showToast('Post not found', 'info'); return; }
+
+        postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        postCard.classList.add('post-highlighted');
+        setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+      });
+    });
+
+  } catch (err) {
+    console.error('Error loading announcements:', err);
+    widget.innerHTML = '<div class="ann-widget-loading">Could not load announcements.</div>';
+  }
+}
+
+// "View all" → switch feed to ssg-announcements
+document.getElementById('viewAllAnnouncements')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  currentCommunityFilter = 'ssg-announcements';
+
+  document.querySelectorAll('.community-item').forEach(i => i.classList.remove('active'));
+
+  document.getElementById('feedTitle').textContent = 'SSG Announcements';
+  document.getElementById('feedSub').textContent   = 'Official campus-wide announcements';
+  document.getElementById('feedHeaderIcon').innerHTML = '<i class="fas fa-bullhorn"></i>';
+  document.getElementById('feedHeaderIcon').className = 'feed-icon ci-general';
+
+  await loadPostsFromDB();
+});
+
+// Load announcements on page load (after user is ready)
+setTimeout(() => {
+  if (loggedInUser) loadAnnouncementsWidget();
+}, 1200);
+
+
+// ══════════════════════════════════════════════════════════════════
+// UPCOMING EVENTS WIDGET — pulls from campus_events table
+// ══════════════════════════════════════════════════════════════════
+
+async function loadEventsWidget() {
+  const eventsList = document.querySelector('.events-list');
+  if (!eventsList) return;
+
+  try {
+    const { data: events, error } = await db
+      .from('campus_events')
+      .select('*')
+      .eq('is_active', true)
+      .gte('event_date', new Date().toISOString().split('T')[0]) // only future events
+      .order('event_date', { ascending: true })
+      .limit(3);
+
+    if (error) throw error;
+
+    if (!events || events.length === 0) {
+      eventsList.innerHTML = '<div style="text-align:center;padding:1rem;font-size:.8rem;color:var(--gray-400);">No upcoming events.</div>';
+      return;
+    }
+
+    eventsList.innerHTML = events.map(ev => {
+      const d   = new Date(ev.event_date);
+      const day = d.getDate();
+      const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      return `
+        <div class="event-item">
+          <div class="event-date">
+            <span class="event-day">${day}</span>
+            <span class="event-month">${mon}</span>
+          </div>
+          <div class="event-info">
+            <div class="event-name">${escapeHtml(ev.title)}</div>
+            <div class="event-loc"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(ev.location || 'CRMC Campus')}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading events widget:', err);
+  }
+}
+
+// Load events widget on page load
+setTimeout(() => {
+  if (loggedInUser) loadEventsWidget();
+}, 1300);
+
+
+// ══════════════════════════════════════════════════════════════════
+// SEARCH BAR — searches posts and students
+// ══════════════════════════════════════════════════════════════════
+
+const searchInput    = document.getElementById('searchInput');
+const searchDropdown = document.getElementById('searchDropdown');
+let searchTimeout    = null;
+
+function highlightMatch(text, query) {
+  if (!text || !query) return escapeHtml(text || '');
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escapeHtml(text).replace(
+    new RegExp(`(${escaped})`, 'gi'),
+    '<span class="search-result-highlight">$1</span>'
+  );
+}
+
+async function runSearch(query) {
+  if (!query || query.length < 2) {
+    searchDropdown.hidden = true;
+    return;
+  }
+
+  searchDropdown.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+  searchDropdown.hidden = false;
+
+  try {
+    const [postsRes, studentsRes] = await Promise.all([
+      db.from('posts')
+        .select('id, title, content, created_at, communities:community_id(name, slug)')
+        .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+        .eq('is_flagged', false)
+        .order('created_at', { ascending: false })
+        .limit(5),
+
+      db.from('profiles')
+        .select('id, first_name, last_name, department, student_id')
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,student_id.ilike.%${query}%`)
+        .eq('admin_role', 'student')
+        .limit(4)
+    ]);
+
+    const posts    = postsRes.data   || [];
+    const students = studentsRes.data || [];
+
+    if (posts.length === 0 && students.length === 0) {
+      searchDropdown.innerHTML = `<div class="search-empty">No results for "<strong>${escapeHtml(query)}</strong>"</div>`;
+      return;
+    }
+
+    let html = '';
+
+    if (posts.length > 0) {
+      html += `<div class="search-section-label"><i class="fas fa-newspaper"></i> Posts</div>`;
+      html += posts.map(post => {
+        const text    = post.title || post.content;
+        const preview = text.length > 80 ? text.substring(0, 80) + '…' : text;
+        const comm    = post.communities?.name || 'General';
+        const timeAgo = formatTimeAgo(new Date(post.created_at));
+        return `
+          <div class="search-result-item" data-type="post" data-id="${post.id}">
+            <div class="search-result-avatar" style="border-radius:6px;background:linear-gradient(135deg,var(--maroon),#8b1525);">
+              <i class="fas fa-newspaper" style="font-size:.65rem;"></i>
+            </div>
+            <div>
+              <div class="search-result-title">${highlightMatch(text.substring(0, 60), query)}</div>
+              <div class="search-result-meta">${comm} · ${timeAgo}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    if (students.length > 0) {
+      html += `<div class="search-section-label"><i class="fas fa-user"></i> Students</div>`;
+      html += students.map(s => {
+        const fullName = `${s.first_name} ${s.last_name}`;
+        const initials = (s.first_name[0] + s.last_name[0]).toUpperCase();
+        const deptShort = s.department?.match(/\(([^)]+)\)/)?.[1] || s.department || '';
+        return `
+          <div class="search-result-item" data-type="student" data-id="${s.id}">
+            <div class="search-result-avatar">${initials}</div>
+            <div>
+              <div class="search-result-title">${highlightMatch(fullName, query)}</div>
+              <div class="search-result-meta">${deptShort} · ${s.student_id}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    searchDropdown.innerHTML = html;
+
+    // Click on post result → scroll to post in feed
+    searchDropdown.querySelectorAll('.search-result-item[data-type="post"]').forEach(item => {
+      item.addEventListener('click', async () => {
+        const postId = item.dataset.id;
+        searchDropdown.hidden = true;
+        searchInput.value = '';
+
+        let postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+        if (!postCard) {
+          currentCommunityFilter = null;
+          await loadPostsFromDB();
+          postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+        }
+        if (!postCard) { showToast('Post not found', 'info'); return; }
+
+        postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        postCard.classList.add('post-highlighted');
+        setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+      });
+    });
+
+    // Click on student → go to their profile page
+    searchDropdown.querySelectorAll('.search-result-item[data-type="student"]').forEach(item => {
+      item.addEventListener('click', () => {
+        const userId = item.dataset.id;
+        searchDropdown.hidden = true;
+        searchInput.value = '';
+        window.location.href = `profile.html?id=${userId}`;
+      });
+    });
+
+  } catch (err) {
+    console.error('Search error:', err);
+    searchDropdown.innerHTML = '<div class="search-empty">Search failed. Try again.</div>';
+  }
+}
+
+// Debounced input handler
+searchInput?.addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  const query = e.target.value.trim();
+  if (!query) { searchDropdown.hidden = true; return; }
+  searchTimeout = setTimeout(() => runSearch(query), 350);
+});
+
+// Close on click outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#searchWrapper')) {
+    searchDropdown.hidden = true;
+  }
+});
+
+// Close on Escape
+searchInput?.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    searchDropdown.hidden = true;
+    searchInput.value = '';
+  }
+});

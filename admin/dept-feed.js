@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPT COMMUNITY FEED — Live feed with admin powers
 // ═══════════════════════════════════════════════════════════════
 
@@ -61,7 +61,7 @@ const DEPT_COLORS = {
     .from('communities')
     .select('id, name, description')
     .eq('type', 'department')
-    .eq('department', DEPT_FULL[dept])
+    .ilike('department', DEPT_FULL[dept])
     .single();
 
   if (community) {
@@ -80,7 +80,7 @@ async function loadCommStats() {
 
   const [{ count: postCount }, { count: memberCount }] = await Promise.all([
     db.from('posts').select('*', { count: 'exact', head: true }).eq('community_id', deptCommunityId),
-    db.from('profiles').select('*', { count: 'exact', head: true }).eq('department', DEPT_FULL[adminUser.admin_role]),
+    db.from('profiles').select('*', { count: 'exact', head: true }).ilike('department', DEPT_FULL[adminUser.admin_role]),
   ]);
 
   document.getElementById('statPosts').textContent   = postCount   || 0;
@@ -452,7 +452,7 @@ document.getElementById('imgInput').addEventListener('change', e => {
 async function loadRecentMembers() {
   const { data: members } = await db.from('profiles')
     .select('first_name, last_name, student_id, created_at')
-    .eq('department', DEPT_FULL[adminUser.admin_role])
+    .ilike('department', DEPT_FULL[adminUser.admin_role])
     .order('created_at', { ascending: false })
     .limit(5);
 
@@ -525,3 +525,4 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+

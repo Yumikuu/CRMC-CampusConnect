@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPT ANALYTICS — Stats, charts, and top contributors
 // ═══════════════════════════════════════════════════════════════
 
@@ -36,7 +36,7 @@ const DEPT_FULL = {
     .from('communities')
     .select('id')
     .eq('type', 'department')
-    .eq('department', DEPT_FULL[profile.admin_role])
+    .ilike('department', DEPT_FULL[profile.admin_role])
     .single();
 
   if (community) deptCommunityId = community.id;
@@ -56,7 +56,7 @@ async function loadStatCards() {
   // Student count
   const { count: studentCount } = await db.from('profiles')
     .select('id', { count: 'exact', head: true })
-    .eq('department', deptFull)
+    .ilike('department', deptFull)
     .is('admin_role', null);
 
   // Post count
@@ -179,7 +179,7 @@ async function loadDoughnutChart() {
   for (const status of statuses) {
     const { count } = await db.from('profiles')
       .select('id', { count: 'exact', head: true })
-      .eq('department', deptFull)
+      .ilike('department', deptFull)
       .eq('account_status', status)
       .is('admin_role', null);
     counts.push(count || 0);
@@ -313,3 +313,4 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+

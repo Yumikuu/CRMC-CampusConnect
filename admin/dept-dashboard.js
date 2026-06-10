@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPARTMENT ADMIN DASHBOARD — Limited Department Access
 // ═══════════════════════════════════════════════════════════════
 
@@ -40,7 +40,7 @@ const DEPT_COLORS = {
     .from('communities')
     .select('id, name')
     .eq('type', 'department')
-    .eq('department', DEPT_FULL_NAMES[profile.admin_role])
+    .ilike('department', DEPT_FULL_NAMES[profile.admin_role])
     .single();
 
   if (community) departmentCommunityId = community.id;
@@ -74,7 +74,7 @@ async function loadDepartmentStats() {
     const deptFull = DEPT_FULL_NAMES[adminUser.admin_role];
 
     const { count: userCount } = await db.from('profiles')
-      .select('*', { count: 'exact', head: true }).eq('department', deptFull);
+      .select('*', { count: 'exact', head: true }).ilike('department', deptFull);
 
     let postCount = 0, commentCount = 0, flaggedCount = 0;
 
@@ -145,7 +145,7 @@ async function loadRecentUsers() {
   const container = document.getElementById('recentUsers');
   const deptFull = DEPT_FULL_NAMES[adminUser.admin_role];
   const { data: users, error } = await db.from('profiles')
-    .select('*').eq('department', deptFull)
+    .select('*').ilike('department', deptFull)
     .order('created_at', { ascending: false }).limit(5);
 
   if (error || !users?.length) {
@@ -303,3 +303,4 @@ function escapeHtml(text) {
 }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+

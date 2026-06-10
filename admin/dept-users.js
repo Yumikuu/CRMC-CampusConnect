@@ -7,9 +7,11 @@ let allUsers = [];
 let currentFilter = 'all';
 
 const DEPT_FULL = {
-  'CTE':'College of Teacher Education (CTE)', 'CSS':'College of Computer Studies (CSS)',
-  'CBE':'College of Business Education (CBE)', 'PSYCH':'Psychology (PSYCH)',
-  'CCJE':'College of Criminal Justice Education (CCJE)'
+  'CTE':  'college of teacher education (cte)',
+  'CSS':  'college of computer studies (css)',
+  'CBE':  'college of business education (cbe)',
+  'PSYCH':'psychology (psych)',
+  'CCJE': 'college of criminal justice education (ccje)'
 };
 
 const STATUS_COLORS = {
@@ -45,7 +47,7 @@ async function loadUsers() {
   const { data: users, error } = await db
     .from('profiles')
     .select('*')
-    .eq('department', DEPT_FULL[adminUser.admin_role])
+    .ilike('department', DEPT_FULL[adminUser.admin_role])
     .not('admin_role', 'in', '("SSG","SSG_OFFICER","CTE","CSS","CBE","PSYCH","CCJE")')
     .order('created_at', { ascending: false });
 

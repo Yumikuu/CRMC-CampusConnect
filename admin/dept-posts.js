@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPT POSTS — View, create, and moderate department posts
 // ═══════════════════════════════════════════════════════════════
 
@@ -31,7 +31,7 @@ const DEPT_FULL = {
   document.getElementById('pageSubtitle').textContent = `Manage posts in the ${profile.admin_role} community`;
   document.querySelectorAll('.deptLabel').forEach(el => el.textContent = profile.admin_role);
 
-  const { data: community } = await db.from('communities').select('id').eq('type','department').eq('department', DEPT_FULL[profile.admin_role]).single();
+  const { data: community } = await db.from('communities').select('id').eq('type','department').ilike('department', DEPT_FULL[profile.admin_role]).single();
   if (community) deptCommunityId = community.id;
 
   await loadPosts();
@@ -253,3 +253,4 @@ function formatTimeAgo(date) {
 function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div');d.textContent=t;return d.innerHTML; }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+

@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPT MODERATION — Flagged posts and activity log
 // ═══════════════════════════════════════════════════════════════
 
@@ -47,7 +47,7 @@ const ACTION_LABELS = {
     .from('communities')
     .select('id')
     .eq('type', 'department')
-    .eq('department', DEPT_FULL[profile.admin_role])
+    .ilike('department', DEPT_FULL[profile.admin_role])
     .single();
 
   if (community) deptCommunityId = community.id;
@@ -240,3 +240,4 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+

@@ -70,6 +70,13 @@ const DEPT_CONFIG = {
     return;
   }
 
+  // ── Block rejected accounts ──
+  if (profile.account_status === 'rejected') {
+    await db.auth.signOut();
+    window.location.href = 'landing-page/index.html';
+    return;
+  }
+
   // Determine department slug from URL param or profile
   const urlParams  = new URLSearchParams(window.location.search);
   const deptSlug   = urlParams.get('dept') || 'general';
@@ -359,6 +366,38 @@ document.addEventListener('keydown', (e) => {
 // BACKEND INTEGRATION - Added for database functionality
 // ══════════════════════════════════════════════════════════════════
 
+// ── ACCOUNT STATUS BANNER ──
+function showAccountStatusBanner(status) {
+  const isPending   = status === 'pending';
+  const banner = document.createElement('div');
+  banner.id = 'accountStatusBanner';
+  banner.style.cssText = `
+    position:sticky;top:60px;z-index:1500;
+    background:${isPending ? '#fef3c7' : '#fee2e2'};
+    border-bottom:2px solid ${isPending ? '#f59e0b' : '#ef4444'};
+    padding:.75rem 1.5rem;
+    display:flex;align-items:center;gap:.75rem;
+    font-family:'Poppins',sans-serif;font-size:.85rem;font-weight:500;
+    color:${isPending ? '#92400e' : '#991b1b'};
+  `;
+  banner.innerHTML = `
+    <i class="fas ${isPending ? 'fa-clock' : 'fa-ban'}" style="font-size:1rem;flex-shrink:0;"></i>
+    <span>${isPending
+      ? '<strong>Account pending approval.</strong> Your account is waiting for your department admin to approve it. You can browse but cannot post or comment until approved.'
+      : '<strong>Account suspended.</strong> Your account has been suspended. Please contact your department admin.'}</span>
+  `;
+  document.body.insertBefore(banner, document.body.firstChild);
+
+  // Disable posting
+  setTimeout(() => {
+    const btn = document.getElementById('openCreatePost');
+    if (btn) { btn.disabled = true; btn.style.cssText += 'cursor:not-allowed;opacity:.5;'; }
+    const card = document.querySelector('.create-post-card');
+    if (card) card.style.opacity = '.6';
+    document.querySelectorAll('.create-action-btn').forEach(b => b.disabled = true);
+  }, 200);
+}
+
 // Toast notification function
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -398,7 +437,11 @@ let loggedInUser = null;
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (profile) {
     loggedInUser = profile;
-    console.log('User loaded:', profile);
+
+    // ── Show pending banner and block posting if not approved ──
+    if (profile.account_status === 'pending' || profile.account_status === 'suspended') {
+      showAccountStatusBanner(profile.account_status);
+    }
     
     // Update UI with real user data
     const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();

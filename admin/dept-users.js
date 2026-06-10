@@ -46,7 +46,7 @@ async function loadUsers() {
     .from('profiles')
     .select('*')
     .eq('department', DEPT_FULL[adminUser.admin_role])
-    .is('admin_role', null)
+    .not('admin_role', 'in', '("SSG","SSG_OFFICER","CTE","CSS","CBE","PSYCH","CCJE")')
     .order('created_at', { ascending: false });
 
   if (error) {

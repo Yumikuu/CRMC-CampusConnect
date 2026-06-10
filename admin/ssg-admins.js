@@ -6,12 +6,13 @@ let adminUser = null;
 let searchTimer = null;
 
 const ROLES = {
-  SSG:     { label: 'SSG Admin',  color: '#6B0F1A', bg: 'rgba(107,15,26,0.1)',  icon: 'fa-crown'       },
-  CTE:     { label: 'CTE Admin',  color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', icon: 'fa-chalkboard-teacher' },
-  CSS:     { label: 'CSS Admin',  color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: 'fa-laptop-code'  },
-  CBE:     { label: 'CBE Admin',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: 'fa-briefcase'    },
-  PSYCH:   { label: 'PSYCH Admin',color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', icon: 'fa-brain'        },
-  CCJE:    { label: 'CCJE Admin', color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  icon: 'fa-gavel'        },
+  SSG:         { label: 'Main Admin',    color: '#6B0F1A', bg: 'rgba(107,15,26,0.1)',  icon: 'fa-crown'              },
+  SSG_OFFICER: { label: 'SSG Officer',  color: '#b7950b', bg: 'rgba(183,149,11,0.1)', icon: 'fa-star'               },
+  CTE:         { label: 'CTE Admin',    color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', icon: 'fa-chalkboard-teacher' },
+  CSS:         { label: 'CSS Admin',    color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: 'fa-laptop-code'        },
+  CBE:         { label: 'CBE Admin',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: 'fa-briefcase'          },
+  PSYCH:       { label: 'PSYCH Admin',  color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', icon: 'fa-brain'              },
+  CCJE:        { label: 'CCJE Admin',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)',  icon: 'fa-gavel'              },
 };
 
 (async () => {
@@ -63,7 +64,7 @@ async function loadAdminsTable() {
   const { data: admins, error } = await db
     .from('profiles')
     .select('*')
-    .in('admin_role', ['SSG', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE'])
+    .in('admin_role', ['SSG', 'SSG_OFFICER', 'CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE'])
     .order('admin_role')
     .order('last_name');
 

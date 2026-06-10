@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manage Admins â€” CRMC CampusHub Admin</title>
+  <title>Manage Admins â€” CRMC CampusConnect Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -18,7 +18,7 @@
 <aside class="admin-sidebar">
   <div class="sidebar-header">
     <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
-    <div class="sidebar-brand"><span class="brand-crmc">CRMC</span><span class="brand-cc">CampusHub</span></div>
+    <div class="sidebar-brand"><span class="brand-crmc">CRMC</span><span class="brand-cc">CampusConnect</span></div>
   </div>
   <nav class="sidebar-nav">
     <a href="ssg-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
@@ -113,12 +113,12 @@
       <div>
         <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Assign Role</label>
         <select id="roleSelect" style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
-          <option value="SSG">ðŸ‘‘ SSG â€” Supreme Student Government (Full Access)</option>
-          <option value="CTE">ðŸ« CTE â€” College of Teacher Education</option>
-          <option value="CSS">ðŸ’» CSS â€” College of Computer Studies</option>
-          <option value="CBE">ðŸ’¼ CBE â€” College of Business Education</option>
-          <option value="PSYCH">ðŸ§  PSYCH â€” Psychology</option>
-          <option value="CCJE">âš–ï¸ CCJE â€” College of Criminal Justice Education</option>
+          <option value="SSG">SSG - Main Administrator (Full Access)</option>
+          <option value="CTE">CTE Admin - College of Teacher Education</option>
+          <option value="CSS">CSS Admin - College of Computer Studies</option>
+          <option value="CBE">CBE Admin - College of Business Education</option>
+          <option value="PSYCH">PSYCH Admin - Psychology</option>
+          <option value="CCJE">CCJE Admin - College of Criminal Justice Education</option>
         </select>
       </div>
     </div>
@@ -141,13 +141,13 @@
       <div>
         <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">New Role</label>
         <select id="newRoleSelect" style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
-          <option value="SSG">ðŸ‘‘ SSG â€” Full Access</option>
-          <option value="CTE">ðŸ« CTE Admin</option>
-          <option value="CSS">ðŸ’» CSS Admin</option>
-          <option value="CBE">ðŸ’¼ CBE Admin</option>
-          <option value="PSYCH">ðŸ§  PSYCH Admin</option>
-          <option value="CCJE">âš–ï¸ CCJE Admin</option>
-          <option value="student">ðŸ‘¤ Student (Remove Admin)</option>
+          <option value="SSG">SSG - Main Administrator (Full Access)</option>
+          <option value="CTE">CTE Admin - College of Teacher Education</option>
+          <option value="CSS">CSS Admin - College of Computer Studies</option>
+          <option value="CBE">CBE Admin - College of Business Education</option>
+          <option value="PSYCH">PSYCH Admin - Psychology</option>
+          <option value="CCJE">CCJE Admin - College of Criminal Justice Education</option>
+          <option value="student">Student (Remove Admin Access)</option>
         </select>
       </div>
       <input type="hidden" id="changeRoleUserId" />
@@ -162,5 +162,8 @@
 <script src="ssg-admins.js"></script>
 </body>
 </html>
+
+
+
 
 

@@ -64,14 +64,12 @@ async function loadPostsByCommunityChart() {
   const { data: communities } = await db.from('communities').select('id, name').order('name');
   if (!communities?.length) return;
 
-  const counts = await Promise.all(
-    communities.map(async c => {
-      const { count } = await db.from('posts').select('*', { count: 'exact', head: true }).eq('community_id', c.id);
-      return { name: c.name, count: count || 0 };
-    })
-  );
+  // Batch: get all posts and count per community
+  const { data: allPosts } = await db.from('posts').select('community_id');
+  const countMap = {};
+  (allPosts || []).forEach(p => { countMap[p.community_id] = (countMap[p.community_id] || 0) + 1; });
 
-  // Sort by count descending, take top 8
+  const counts = communities.map(c => ({ name: c.name, count: countMap[c.id] || 0 }));
   counts.sort((a, b) => b.count - a.count);
   const top = counts.slice(0, 8);
 
@@ -234,13 +232,11 @@ async function loadTopCommunities() {
   const { data: communities } = await db.from('communities').select('id, name, type');
   if (!communities?.length) return;
 
-  const counts = await Promise.all(
-    communities.map(async c => {
-      const { count } = await db.from('posts').select('*', { count: 'exact', head: true }).eq('community_id', c.id);
-      return { name: c.name, type: c.type, count: count || 0 };
-    })
-  );
+  const { data: allPosts } = await db.from('posts').select('community_id');
+  const countMap = {};
+  (allPosts || []).forEach(p => { countMap[p.community_id] = (countMap[p.community_id] || 0) + 1; });
 
+  const counts = communities.map(c => ({ name: c.name, type: c.type, count: countMap[c.id] || 0 }));
   counts.sort((a, b) => b.count - a.count);
   const top5 = counts.slice(0, 5);
   const maxCount = top5[0]?.count || 1;
@@ -319,7 +315,6 @@ document.getElementById('logoutBtn').addEventListener('click', async () => { awa
 
 // ── POSTS BY CATEGORY (Lost & Found, Academic, General, Marketplace) ──
 async function loadPostsByCategoryChart() {
-  // Categories are determined by community slug
   const CATEGORIES = [
     { label: 'Lost & Found',      slugs: ['lostandfound', 'lost-and-found', 'lost_found'],  color: '#ef4444' },
     { label: 'Academic',          slugs: ['academic'],                                        color: '#3b82f6' },
@@ -328,22 +323,19 @@ async function loadPostsByCategoryChart() {
     { label: 'Department Feeds',  slugs: ['cte', 'css', 'cbe', 'psych', 'ccje'],             color: '#10b981' },
   ];
 
-  // Fetch all communities with post counts
-  const { data: communities } = await db.from('communities').select('id, slug, name');
-  if (!communities?.length) return;
+  const { data: communities } = await db.from('communities').select('id, slug');
+  const { data: allPosts }    = await db.from('posts').select('community_id');
 
-  const commCounts = await Promise.all(
-    communities.map(async c => {
-      const { count } = await db.from('posts').select('*', { count: 'exact', head: true }).eq('community_id', c.id);
-      return { slug: c.slug?.toLowerCase(), count: count || 0 };
-    })
-  );
+  if (!communities || !allPosts) return;
 
-  // Bucket into categories
+  const countMap = {};
+  allPosts.forEach(p => { countMap[p.community_id] = (countMap[p.community_id] || 0) + 1; });
+
   const categoryCounts = CATEGORIES.map(cat => {
-    const total = commCounts
-      .filter(c => cat.slugs.some(s => c.slug?.includes(s)))
-      .reduce((sum, c) => sum + c.count, 0);
+    const matchedIds = communities
+      .filter(c => cat.slugs.some(s => c.slug?.toLowerCase().includes(s)))
+      .map(c => c.id);
+    const total = matchedIds.reduce((sum, id) => sum + (countMap[id] || 0), 0);
     return { label: cat.label, count: total, color: cat.color };
   });
 

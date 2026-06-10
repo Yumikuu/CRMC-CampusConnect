@@ -82,18 +82,27 @@ const DEPT_CONFIG = {
   const deptLabel  = deptConf ? deptConf.label : 'Student';
 
   // ── Topbar ──
-  document.getElementById('topbarAvatar').textContent = initials;
-  document.getElementById('topbarName').textContent   = shortName;
+  const topbarAvatar = document.getElementById('topbarAvatar');
+  topbarAvatar.innerHTML = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
+    : initials;
+  document.getElementById('topbarName').textContent = shortName;
 
   // ── Profile dropdown ──
-  document.getElementById('ddAvatar').textContent   = initials;
+  const ddAvatar = document.getElementById('ddAvatar');
+  ddAvatar.innerHTML = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
+    : initials;
   document.getElementById('ddFullName').textContent = fullName;
   document.getElementById('ddDeptId').textContent   = `${deptLabel} · ${profile.student_id}`;
 
   // ── Sidebar user card ──
-  document.getElementById('sidebarAvatar').textContent = initials;
-  document.getElementById('sidebarName').textContent   = fullName;
-  document.getElementById('sidebarDept').textContent   = deptLabel;
+  const sidebarAvatar = document.getElementById('sidebarAvatar');
+  sidebarAvatar.innerHTML = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
+    : initials;
+  document.getElementById('sidebarName').textContent = fullName;
+  document.getElementById('sidebarDept').textContent = deptLabel;
 
   // ── Department community item ──
   if (deptConf) {
@@ -116,8 +125,11 @@ const DEPT_CONFIG = {
   }
 
   // ── Create post greeting ──
-  document.getElementById('createPostAvatar').textContent    = initials;
-  document.getElementById('createPostGreeting').textContent  = `What's on your mind, ${profile.first_name}?`;
+  const cpAvatar = document.getElementById('createPostAvatar');
+  cpAvatar.innerHTML = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
+    : initials;
+  document.getElementById('createPostGreeting').textContent = `What's on your mind, ${profile.first_name}?`;
 
   // ── Logout ──
   document.getElementById('logoutBtn').addEventListener('click', async (e) => {
@@ -644,8 +656,7 @@ async function loadPostsFromDB() {
     // ── Step 2: Build query with community filter ──
     let query = db
       .from('posts')
-      .select(`*, profiles:author_id (first_name, last_name), communities:community_id (name, slug)`)
-      .in('community_id', communityIds);
+      .select(`*, profiles:author_id (first_name, last_name, avatar_url), communities:community_id (name, slug)`)
 
     // ── Step 3: Apply tab filter ──
     if (currentFeedTab === 'pinned') {
@@ -756,7 +767,14 @@ function createPostElement(post) {
   if (!isAnon && author) {
     authorName = `${author.first_name} ${author.last_name}`;
     const initials = (author.first_name[0] + author.last_name[0]).toUpperCase();
-    authorAvatar = `<div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">${initials}</div>`;
+    // Show avatar photo if available, otherwise initials
+    if (author.avatar_url) {
+      authorAvatar = `<div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);overflow:hidden;">
+        <img src="${author.avatar_url}" style="width:100%;height:100%;object-fit:cover;" alt="${authorName}" />
+      </div>`;
+    } else {
+      authorAvatar = `<div class="post-avatar" style="background:linear-gradient(135deg,#6B0F1A,#8b1525);">${initials}</div>`;
+    }
   }
   
   const communityName = post.communities?.name || 'General';

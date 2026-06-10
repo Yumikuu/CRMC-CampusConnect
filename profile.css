@@ -274,3 +274,212 @@
   color: var(--gray-400);
   font-style: italic;
 }
+
+/* ── EDIT PROFILE BUTTON ── */
+.profile-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem 1rem;
+  background: var(--maroon);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: .8rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+}
+.profile-edit-btn:hover { background: var(--maroon-dark); transform: scale(1.02); }
+
+/* ── EDIT PROFILE MODAL ── */
+.edit-profile-modal {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  position: relative;
+  animation: slideModal .22s ease;
+}
+
+.edit-profile-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  position: relative;
+}
+
+.edit-field label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.edit-field input,
+.edit-field textarea {
+  padding: .65rem .85rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color .2s;
+  resize: none;
+}
+
+.edit-field input:focus,
+.edit-field textarea:focus { border-color: var(--maroon); }
+
+.edit-bio-count {
+  font-size: .7rem;
+  color: var(--gray-400);
+  text-align: right;
+  margin-top: 2px;
+}
+
+.edit-profile-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+
+.edit-cancel-btn {
+  padding: .55rem 1.1rem;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: background .2s;
+}
+.edit-cancel-btn:hover { background: var(--gray-200); }
+
+.edit-save-btn {
+  padding: .55rem 1.25rem;
+  background: var(--maroon);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  transition: background .2s;
+}
+.edit-save-btn:hover { background: var(--maroon-dark); }
+.edit-save-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── AVATAR IMAGE ── */
+.profile-avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--white);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+/* ── EDIT MODAL AVATAR SECTION ── */
+.edit-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 1.25rem .75rem;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  text-align: center;
+}
+
+.edit-avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.edit-avatar-initials {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-light));
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-avatar-preview img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.edit-avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .45rem 1rem;
+  background: var(--maroon);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+.edit-avatar-upload-btn:hover { background: var(--maroon-dark); }
+
+.edit-avatar-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .35rem .85rem;
+  background: none;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-500);
+  border-radius: var(--radius-full);
+  font-size: .72rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+}
+.edit-avatar-remove-btn:hover { border-color: #dc2626; color: #dc2626; }
+
+.edit-avatar-hint {
+  font-size: .7rem;
+  color: var(--gray-400);
+}

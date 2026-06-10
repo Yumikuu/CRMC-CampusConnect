@@ -47,10 +47,14 @@ function renderProfileHeader(profile, isOwn) {
   const deptShort = profile.department?.match(/\(([^)]+)\)/)?.[1] || profile.department || '';
   const joined    = new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+  const avatarHTML = profile.avatar_url
+    ? `<img src="${profile.avatar_url}" alt="${escapeHtml(fullName)}" class="profile-avatar-large profile-avatar-img" />`
+    : `<div class="profile-avatar-large">${initials}</div>`;
+
   document.getElementById('profileHeaderCard').innerHTML = `
     <div class="profile-cover">
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar-large">${initials}</div>
+        ${avatarHTML}
       </div>
     </div>
     <div class="profile-info">
@@ -71,7 +75,13 @@ function renderProfileHeader(profile, isOwn) {
           <span>${escapeHtml(profile.email)}</span>
         </div>` : ''}
       </div>
-      ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : ''}
+      ${profile.bio ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>` : `${isOwn ? '<div class="profile-bio" style="color:var(--gray-300);font-style:italic;">No bio yet. Click Edit Profile to add one.</div>' : ''}`}
+      ${isOwn ? `
+        <div style="margin-top:.75rem;">
+          <button class="profile-edit-btn" id="editProfileBtn">
+            <i class="fas fa-pen"></i> Edit Profile
+          </button>
+        </div>` : ''}
       ${isOwn ? `<div class="profile-own-badge"><i class="fas fa-user-circle"></i> Your Profile</div>` : ''}
     </div>
     <div class="profile-stats-row" id="profileStatsRow">
@@ -196,4 +206,181 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ── EDIT PROFILE ──
+let selectedAvatarFile = null;
+let removeAvatar = false;
+
+function openEditModal(profile) {
+  const modal = document.getElementById('editProfileModal');
+  selectedAvatarFile = null;
+  removeAvatar = false;
+
+  // Set bio
+  document.getElementById('editBio').value = profile.bio || '';
+  document.getElementById('bioCharCount').textContent = (profile.bio || '').length;
+
+  // Set avatar preview
+  renderEditAvatarPreview(profile);
+  document.getElementById('removeAvatarBtn').style.display = profile.avatar_url ? '' : 'none';
+
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('editBio').focus();
+}
+
+function renderEditAvatarPreview(profile) {
+  const preview = document.getElementById('editAvatarPreview');
+  const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
+
+  if (profile.avatar_url) {
+    preview.innerHTML = `<img src="${profile.avatar_url}" alt="Avatar" class="edit-avatar-img" />`;
+  } else {
+    preview.innerHTML = `<div class="edit-avatar-initials">${initials}</div>`;
+  }
+}
+
+// Handle avatar file selection — show preview immediately
+document.getElementById('avatarFileInput')?.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showProfileToast('Please select an image file', 'error');
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    showProfileToast('Image must be under 2MB', 'error');
+    return;
+  }
+
+  selectedAvatarFile = file;
+  removeAvatar = false;
+  document.getElementById('removeAvatarBtn').style.display = '';
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('editAvatarPreview').innerHTML =
+      `<img src="${ev.target.result}" alt="Preview" class="edit-avatar-img" />`;
+  };
+  reader.readAsDataURL(file);
+
+  // Reset input so same file can be re-selected
+  e.target.value = '';
+});
+
+// Remove avatar button
+document.getElementById('removeAvatarBtn')?.addEventListener('click', () => {
+  selectedAvatarFile = null;
+  removeAvatar = true;
+  document.getElementById('removeAvatarBtn').style.display = 'none';
+  const initials = (profileUser.first_name[0] + profileUser.last_name[0]).toUpperCase();
+  document.getElementById('editAvatarPreview').innerHTML =
+    `<div class="edit-avatar-initials">${initials}</div>`;
+});
+
+function closeEditModal() {
+  document.getElementById('editProfileModal').hidden = true;
+  document.body.style.overflow = '';
+}
+
+// Bio character counter
+document.getElementById('editBio')?.addEventListener('input', function() {
+  const len = this.value.length;
+  if (len > 150) this.value = this.value.substring(0, 150);
+  document.getElementById('bioCharCount').textContent = Math.min(len, 150);
+});
+
+// Open modal when Edit Profile button is clicked (uses event delegation since button is rendered dynamically)
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#editProfileBtn')) {
+    openEditModal(profileUser);
+  }
+});
+
+document.getElementById('closeEditProfile')?.addEventListener('click', closeEditModal);
+document.getElementById('cancelEditProfile')?.addEventListener('click', closeEditModal);
+document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('editProfileModal')) closeEditModal();
+});
+
+document.getElementById('saveEditProfile')?.addEventListener('click', async () => {
+  const bio = document.getElementById('editBio').value.trim();
+  const btn = document.getElementById('saveEditProfile');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+  try {
+    let avatarUrl = profileUser.avatar_url || null;
+
+    // Handle avatar upload
+    if (selectedAvatarFile) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading photo...';
+      const ext      = selectedAvatarFile.name.split('.').pop();
+      const fileName = `${loggedInUser.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await db.storage
+        .from('avatars')
+        .upload(fileName, selectedAvatarFile, { upsert: true, cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = db.storage.from('avatars').getPublicUrl(fileName);
+      avatarUrl = urlData.publicUrl + '?t=' + Date.now(); // cache bust
+    } else if (removeAvatar) {
+      avatarUrl = null;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const { error } = await db
+      .from('profiles')
+      .update({
+        bio:        bio || null,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', loggedInUser.id);
+
+    if (error) throw error;
+
+    // Update local state
+    profileUser.bio        = bio;
+    profileUser.avatar_url = avatarUrl;
+    loggedInUser.bio       = bio;
+    loggedInUser.avatar_url = avatarUrl;
+
+    // Re-render header
+    renderProfileHeader(profileUser, true);
+
+    closeEditModal();
+    showProfileToast('Profile updated!', 'success');
+
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    showProfileToast('Failed to save: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Save Changes';
+  }
+});
+
+function showProfileToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed;bottom:2rem;right:2rem;
+    background:${type === 'success' ? '#22c55e' : '#dc2626'};
+    color:white;padding:1rem 1.5rem;border-radius:.5rem;
+    box-shadow:0 10px 40px rgba(0,0,0,.2);z-index:10000;
+    font-weight:500;font-family:'Poppins',sans-serif;font-size:.85rem;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity .3s';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }

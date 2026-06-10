@@ -53,6 +53,44 @@
 
 </div>
 
+<!-- ── EDIT PROFILE MODAL ── -->
+<div class="modal-overlay" id="editProfileModal" hidden role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
+  <div class="modal edit-profile-modal">
+    <button class="modal-close" id="closeEditProfile" aria-label="Close"><i class="fas fa-times"></i></button>
+    <h2 class="edit-profile-title" id="editProfileTitle"><i class="fas fa-pen"></i> Edit Profile</h2>
+
+    <div class="edit-profile-form">
+      <!-- Avatar upload section -->
+      <div class="edit-avatar-section">
+        <div class="edit-avatar-preview" id="editAvatarPreview">
+          <!-- filled by JS -->
+        </div>
+        <label for="avatarFileInput" class="edit-avatar-upload-btn">
+          <i class="fas fa-camera"></i> Change Photo
+        </label>
+        <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
+        <button type="button" class="edit-avatar-remove-btn" id="removeAvatarBtn" style="display:none;">
+          <i class="fas fa-trash"></i> Remove Photo
+        </button>
+        <span class="edit-avatar-hint">Max 2MB · JPG, PNG</span>
+      </div>
+
+      <div class="edit-field">
+        <label for="editBio">Bio <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+        <textarea id="editBio" rows="4" placeholder="Tell others a bit about yourself..."></textarea>
+        <div class="edit-bio-count"><span id="bioCharCount">0</span>/150</div>
+      </div>
+    </div>
+
+    <div class="edit-profile-footer">
+      <button class="edit-cancel-btn" id="cancelEditProfile">Cancel</button>
+      <button class="edit-save-btn" id="saveEditProfile">
+        <i class="fas fa-check"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="profile.js"></script>
 </body>
 </html>

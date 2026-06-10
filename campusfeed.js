@@ -685,67 +685,73 @@ async function loadPostsFromDB() {
     const { data: posts, error } = await query;
     
     if (error) throw error;
-    
-    console.log('Loaded posts:', posts);
-    
-    // Debug: Log image_url for each post
-    posts.forEach((post, index) => {
-      console.log(`Post ${index + 1} image_url:`, post.image_url, 'Type:', typeof post.image_url, 'IsArray:', Array.isArray(post.image_url));
-    });
-    
+
     // Clear posts and empty state
     const mainFeed = document.querySelector('.main-feed');
     mainFeed.querySelectorAll('.post-card, .feed-empty-state').forEach(p => p.remove());
-    
-    // Get actual comment counts from database for each post
-    for (const post of posts) {
-      const { count } = await db
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', post.id);
-      
-      post.comment_count = count || 0;
-      
-      // Check if current user has liked this post
-      const { data: likeData } = await db
-        .from('post_likes')
-        .select('id')
-        .eq('post_id', post.id)
-        .eq('user_id', loggedInUser.id)
-        .maybeSingle();  // use maybeSingle instead of single — returns null if not found instead of 406 error
-      
-      post.user_has_liked = !!likeData;
-      
-      // Get actual like count
-      const { count: likeCount } = await db
-        .from('post_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', post.id);
-      
-      post.like_count = likeCount || 0;
-    }
-    
-    // Render real posts
-    if (posts.length === 0) {
+
+    if (!posts || posts.length === 0) {
       const emptyMsg = {
         pinned:   { icon: 'fa-thumbtack', text: 'No pinned posts yet.' },
         trending: { icon: 'fa-fire',      text: 'No trending posts in the last 7 days.' },
         latest:   { icon: 'fa-clock',     text: 'No posts yet. Be the first to post!' },
         all:      { icon: 'fa-newspaper', text: 'No posts yet. Be the first to post!' },
       }[currentFeedTab] || { icon: 'fa-newspaper', text: 'No posts found.' };
-
       const emptyEl = document.createElement('div');
       emptyEl.className = 'feed-empty-state';
-      emptyEl.innerHTML = `
-        <i class="fas ${emptyMsg.icon}"></i>
-        <p>${emptyMsg.text}</p>`;
+      emptyEl.innerHTML = `<i class="fas ${emptyMsg.icon}"></i><p>${emptyMsg.text}</p>`;
       mainFeed.appendChild(emptyEl);
-    } else {
-      posts.forEach(post => {
-        const postEl = createPostElement(post);
-        mainFeed.appendChild(postEl);
-      });
+      return;
     }
+
+    const postIds = posts.map(p => p.id);
+
+    // ── Batch fetch all likes and comments in just 2 queries ──
+    const [likesRes, commentsRes, userLikesRes] = await Promise.all([
+      // All like counts for these posts
+      db.from('post_likes')
+        .select('post_id')
+        .in('post_id', postIds),
+
+      // All comment counts for these posts
+      db.from('comments')
+        .select('post_id')
+        .in('post_id', postIds),
+
+      // Which of these posts the current user liked
+      db.from('post_likes')
+        .select('post_id')
+        .in('post_id', postIds)
+        .eq('user_id', loggedInUser.id)
+    ]);
+
+    // Build lookup maps
+    const likeCountMap   = {};
+    const commentCountMap = {};
+    const userLikedSet   = new Set();
+
+    (likesRes.data || []).forEach(row => {
+      likeCountMap[row.post_id] = (likeCountMap[row.post_id] || 0) + 1;
+    });
+    (commentsRes.data || []).forEach(row => {
+      commentCountMap[row.post_id] = (commentCountMap[row.post_id] || 0) + 1;
+    });
+    (userLikesRes.data || []).forEach(row => {
+      userLikedSet.add(row.post_id);
+    });
+
+    // Attach counts to each post
+    posts.forEach(post => {
+      post.like_count     = likeCountMap[post.id]    || 0;
+      post.comment_count  = commentCountMap[post.id] || 0;
+      post.user_has_liked = userLikedSet.has(post.id);
+    });
+    
+    // Render posts
+    posts.forEach(post => {
+      const postEl = createPostElement(post);
+      mainFeed.appendChild(postEl);
+    });
     
   } catch (err) {
     console.error('Error loading posts:', err);

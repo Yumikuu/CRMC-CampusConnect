@@ -386,21 +386,7 @@ function setupEventListeners() {
 }
 
 // ── HELPER FUNCTIONS ──
-function formatTimeAgo(date) {
-  const seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// formatTimeAgo, escapeHtml, and showToast are provided by admin-utils.js
 
 function showSuccess(message) { showToast(message, 'success'); }
 function showError(message)   { showToast(message, 'error');   }

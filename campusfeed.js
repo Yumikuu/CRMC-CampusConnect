@@ -488,6 +488,8 @@ let loggedInUser = null;
           option.textContent = comm.name;
           communitySelect.appendChild(option);
         });
+      // Default selection to General
+      communitySelect.value = 'general';
     }
   }
 })();

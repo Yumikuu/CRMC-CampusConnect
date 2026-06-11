@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSG Community Feed — SSG Officer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+  <style>
+    .post-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+    .post-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--maroon), #8b1525);
+      color: white;
+      font-size: .8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .post-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .post-body { flex: 1; min-width: 0; }
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .35rem;
+    }
+    .post-author { font-weight: 700; font-size: .9rem; color: var(--gray-900); }
+    .post-time { font-size: .75rem; color: var(--gray-400); margin-left: auto; }
+    .post-content { font-size: .875rem; color: var(--gray-700); line-height: 1.6; margin-bottom: .75rem; white-space: pre-wrap; word-break: break-word; }
+    .post-images { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: .75rem; }
+    .post-images img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--gray-200); cursor: pointer; }
+    .post-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .action-btn {
+      padding: .35rem .8rem;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: Poppins, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      border: 1px solid var(--gray-200);
+      transition: opacity .15s;
+    }
+    .action-btn:hover { opacity: .85; }
+    .btn-reply   { background: rgba(107,15,26,.07); color: var(--maroon); }
+    .btn-flag    { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .btn-unflag  { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+    .btn-delete  { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .btn-pin     { background: rgba(107,15,26,.07); color: var(--maroon); }
+    .post-stats  { margin-left: auto; display: flex; gap: 1rem; color: var(--gray-400); font-size: 13px; }
+
+    /* Reply box */
+    .reply-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+      display: none;
+    }
+    .reply-box.open { display: block; }
+    .reply-input-row {
+      display: flex;
+      gap: .5rem;
+      align-items: flex-end;
+    }
+    .reply-textarea {
+      flex: 1;
+      padding: .6rem .75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: Poppins, sans-serif;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+    }
+    .reply-send-btn {
+      padding: .6rem 1rem;
+      background: var(--maroon);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: Poppins, sans-serif;
+      white-space: nowrap;
+    }
+
+    /* Comments list */
+    .comments-section {
+      margin-top: .75rem;
+      display: none;
+    }
+    .comments-section.open { display: block; }
+    .comment-item {
+      display: flex;
+      gap: .6rem;
+      padding: .6rem 0;
+      border-top: 1px solid var(--gray-100);
+    }
+    .comment-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gray-300);
+      color: white;
+      font-size: .65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .comment-body { flex: 1; min-width: 0; }
+    .comment-author { font-size: .8rem; font-weight: 700; color: var(--gray-800); }
+    .comment-text { font-size: .8rem; color: var(--gray-700); line-height: 1.5; margin-top: .1rem; }
+    .comment-time { font-size: .7rem; color: var(--gray-400); margin-top: .2rem; }
+
+    /* Anon badge */
+    .anon-badge {
+      font-size: .72rem;
+      background: var(--gray-100);
+      color: var(--gray-500);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .ssg-reply-badge {
+      font-size: .72rem;
+      background: #fef3c7;
+      color: #b7950b;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand">
+      <span class="brand-crmc">CRMC</span>
+      <span class="brand-cc">CampusConnect</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="ssg-officer-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="ssg-officer-feed.html" class="nav-item active"><i class="fas fa-comments"></i><span>SSG Community Feed</span></a>
+    <a href="ssg-officer-posts.html" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="ssg-officer-events.html" class="nav-item"><i class="fas fa-calendar-check"></i><span>Events</span></a>
+    <a href="ssg-officer-moderation.html" class="nav-item"><i class="fas fa-flag"></i><span>Moderation</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+  </div>
+</aside>
+
+<main class="admin-main">
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title">SSG Community Feed</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">
+        <i class="fas fa-star" style="color:var(--gold);margin-right:4px;"></i>
+        Student posts in SSG — Student Government community
+      </p>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar" style="background:linear-gradient(135deg,#b7950b,#d4ac0d);">SSG</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role">SSG Officer</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats row -->
+  <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:1.5rem;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(244,197,66,.15);color:#b7950b;"><i class="fas fa-comments"></i></div>
+      <div class="stat-content"><div class="stat-value" id="statPosts">-</div><div class="stat-label">Total Posts</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(59,130,246,.1);color:#2563eb;"><i class="fas fa-comment"></i></div>
+      <div class="stat-content"><div class="stat-value" id="statComments">-</div><div class="stat-label">Comments</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-flag"></i></div>
+      <div class="stat-content"><div class="stat-value" id="statFlagged">-</div><div class="stat-label">Flagged</div></div>
+    </div>
+  </div>
+
+  <!-- Filter tabs + search -->
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;">
+    <div class="filter-tabs" style="flex:1;flex-wrap:wrap;">
+      <button class="tab-btn active" data-filter="all"><i class="fas fa-list"></i> All</button>
+      <button class="tab-btn" data-filter="flagged"><i class="fas fa-flag"></i> Flagged</button>
+      <button class="tab-btn" data-filter="unanswered"><i class="fas fa-clock"></i> Unanswered</button>
+    </div>
+    <div style="position:relative;min-width:220px;">
+      <i class="fas fa-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:.85rem;"></i>
+      <input type="text" id="searchInput" placeholder="Search posts..." style="width:100%;padding:.65rem .75rem .65rem 2.25rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;font-family:Poppins,sans-serif;" />
+    </div>
+  </div>
+
+  <!-- Feed -->
+  <div id="feedContainer" style="display:flex;flex-direction:column;gap:1rem;">
+    <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--gray-400);">
+      <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+      <p style="margin-top:1rem;">Loading posts...</p>
+    </div></div>
+  </div>
+
+  <!-- Load more -->
+  <div style="text-align:center;margin-top:1.5rem;">
+    <button id="loadMoreBtn" style="display:none;padding:.75rem 2rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+      Load More
+    </button>
+  </div>
+</main>
+
+<script src="ssg-officer-feed.js"></script>
+</body>
+</html>

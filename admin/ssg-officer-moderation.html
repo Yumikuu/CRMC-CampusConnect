@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moderation — SSG Officer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+</head>
+<body>
+
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand">
+      <span class="brand-crmc">CRMC</span>
+      <span class="brand-cc">CampusConnect</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="ssg-officer-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="ssg-officer-posts.html" class="nav-item"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="ssg-officer-events.html" class="nav-item"><i class="fas fa-calendar-check"></i><span>Events</span></a>
+    <a href="ssg-officer-moderation.html" class="nav-item active"><i class="fas fa-flag"></i><span>Moderation</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+  </div>
+</aside>
+
+<main class="admin-main">
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title">Moderation</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">Review flagged posts in SSG communities</p>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar" style="background:linear-gradient(135deg,#b7950b,#d4ac0d);">SSG</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role">SSG Officer</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:1.5rem;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-flag"></i></div>
+      <div class="stat-content"><div class="stat-value" id="totalFlagged">-</div><div class="stat-label">Flagged Posts</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-clock"></i></div>
+      <div class="stat-content"><div class="stat-value" id="pendingReview">-</div><div class="stat-label">Pending Review</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-content"><div class="stat-value" id="approvedToday">-</div><div class="stat-label">Approved Posts</div></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-tab="flagged"><i class="fas fa-flag"></i> Flagged Posts <span id="countFlagged"></span></button>
+    <button class="tab-btn" data-tab="all"><i class="fas fa-newspaper"></i> All SSG Posts <span id="countAll"></span></button>
+  </div>
+
+  <!-- Flagged Tab -->
+  <div id="tabFlagged" style="margin-top:1.25rem;">
+    <div id="flaggedContainer" style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:1rem;">Loading flagged posts...</p></div></div>
+    </div>
+  </div>
+
+  <!-- All Posts Tab -->
+  <div id="tabAll" style="margin-top:1.25rem;display:none;">
+    <div id="allContainer" style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:1rem;">Loading posts...</p></div></div>
+    </div>
+  </div>
+</main>
+
+<!-- Post Detail Modal -->
+<div id="postModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Post Details</h3>
+      <button class="modal-close" id="closePostModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="postModalBody"></div>
+    <div class="modal-footer" id="postModalFooter"></div>
+  </div>
+</div>
+
+<script src="ssg-officer-moderation.js"></script>
+</body>
+</html>

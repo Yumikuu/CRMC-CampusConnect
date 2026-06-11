@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Announcements — SSG Officer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase.js"></script>
+  <script src="admin-utils.js"></script>
+</head>
+<body>
+
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <img src="../Images/logo.png" alt="CRMC Logo" class="sidebar-logo" />
+    <div class="sidebar-brand">
+      <span class="brand-crmc">CRMC</span>
+      <span class="brand-cc">CampusConnect</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="ssg-officer-dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="ssg-officer-posts.html" class="nav-item active"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+    <a href="ssg-officer-events.html" class="nav-item"><i class="fas fa-calendar-check"></i><span>Events</span></a>
+    <a href="ssg-officer-moderation.html" class="nav-item"><i class="fas fa-flag"></i><span>Moderation</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+  </div>
+</aside>
+
+<main class="admin-main">
+  <header class="admin-topbar">
+    <div>
+      <h1 class="page-title">Announcements</h1>
+      <p style="color:var(--gray-600);font-size:14px;margin-top:4px;">Manage official SSG announcements visible to all students</p>
+    </div>
+    <div class="topbar-right">
+      <button id="createPostBtn" style="padding:0.625rem 1.25rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-plus"></i> New Announcement
+      </button>
+      <div class="admin-profile">
+        <div class="admin-avatar" id="adminAvatar" style="background:linear-gradient(135deg,#b7950b,#d4ac0d);">SSG</div>
+        <div>
+          <div class="admin-name" id="adminName">Loading...</div>
+          <div class="admin-role">SSG Officer</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-filter="all"><i class="fas fa-bullhorn"></i> All <span id="countAll"></span></button>
+    <button class="tab-btn" data-filter="pinned"><i class="fas fa-thumbtack"></i> Pinned <span id="countPinned"></span></button>
+    <button class="tab-btn" data-filter="flagged"><i class="fas fa-flag"></i> Flagged <span id="countFlagged"></span></button>
+  </div>
+
+  <!-- Search -->
+  <div class="card" style="margin-top:1.25rem;">
+    <div class="card-body">
+      <div style="position:relative;">
+        <i class="fas fa-search" style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--gray-400);"></i>
+        <input type="text" id="searchInput" placeholder="Search announcements..." style="width:100%;padding:.75rem 1rem .75rem 2.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Posts List -->
+  <div id="postsContainer" style="margin-top:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+    <div class="card"><div class="card-body" style="text-align:center;padding:3rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:1rem;">Loading...</p></div></div>
+  </div>
+</main>
+
+<!-- Create / Edit Post Modal -->
+<div id="postModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="postModalTitle">Create Announcement</h3>
+      <button class="modal-close" id="closePostModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem;">
+      <div style="padding:.5rem .875rem;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:var(--radius-sm);font-size:13px;color:#92400e;font-weight:600;">
+        <i class="fas fa-bullhorn"></i> Posted as an official SSG announcement visible to all students
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Title (optional)</label>
+        <input type="text" id="postTitle" placeholder="e.g. Foundation Day Celebration" style="width:100%;padding:.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Content *</label>
+        <textarea id="postContent" rows="5" placeholder="Write your announcement here..." style="width:100%;padding:.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;resize:vertical;line-height:1.6;"></textarea>
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Attach Images (optional, max 5)</label>
+        <div id="imagePreviewRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"></div>
+        <label for="postImages" style="display:inline-flex;align-items:center;gap:6px;padding:.5rem 1rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-700);">
+          <i class="fas fa-image"></i> Add Photos
+        </label>
+        <input type="file" id="postImages" accept="image/*" multiple style="display:none;" />
+      </div>
+      <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.75rem;background:var(--gray-50);border-radius:var(--radius-sm);">
+        <input type="checkbox" id="pinPost" style="width:16px;height:16px;accent-color:var(--maroon);" />
+        <div>
+          <div style="font-size:13px;font-weight:600;"><i class="fas fa-thumbtack" style="color:var(--maroon);margin-right:4px;"></i> Pin this announcement</div>
+          <div style="font-size:12px;color:var(--gray-500);">Pinned posts appear at the top of the announcements widget</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button id="cancelPostBtn" style="padding:.625rem 1.25rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+      <button id="submitPostBtn" style="padding:.625rem 1.5rem;background:var(--maroon);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
+        <i class="fas fa-paper-plane"></i> Publish
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-body" style="text-align:center;padding:2rem;">
+      <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <i class="fas fa-trash" style="font-size:1.75rem;color:#dc2626;"></i>
+      </div>
+      <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:.5rem;">Delete Announcement?</h3>
+      <p style="color:var(--gray-600);font-size:14px;">This action cannot be undone.</p>
+      <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
+        <button id="cancelDeleteBtn" style="flex:1;padding:.75rem;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Cancel</button>
+        <button id="confirmDeleteBtn" style="flex:1;padding:.75rem;background:#dc2626;color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="ssg-officer-posts.js"></script>
+</body>
+</html>

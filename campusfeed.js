@@ -481,6 +481,7 @@ let loggedInUser = null;
       communitySelect.innerHTML = '';
       (communities || [])
         .filter(c => c.type === 'public' || c.slug === userDeptSlug)
+        .filter(c => c.slug !== 'ssg-announcements') // admin-only, not for student posts
         .forEach(comm => {
           const option = document.createElement('option');
           option.value = comm.slug;

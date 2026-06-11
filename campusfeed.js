@@ -677,12 +677,23 @@ async function loadPostsFromDB() {
     let communityIds = [];
 
     if (currentCommunityFilter) {
-      const { data: comm } = await db
-        .from('communities')
-        .select('id')
-        .eq('slug', currentCommunityFilter)
-        .single();
-      if (comm) communityIds = [comm.id];
+      // Check if this is a department filter (matches a key in DEPT_CONFIG)
+      if (DEPT_CONFIG[currentCommunityFilter]) {
+        // Dept community — look up by department column
+        const { data: comms } = await db
+          .from('communities')
+          .select('id')
+          .eq('department', currentCommunityFilter);
+        communityIds = (comms || []).map(c => c.id);
+      } else {
+        // Public community — look up by slug
+        const { data: comm } = await db
+          .from('communities')
+          .select('id')
+          .eq('slug', currentCommunityFilter)
+          .single();
+        if (comm) communityIds = [comm.id];
+      }
     } else {
       const { data: communities } = await db
         .from('communities')
@@ -700,6 +711,7 @@ async function loadPostsFromDB() {
     let query = db
       .from('posts')
       .select(`*, profiles:author_id (first_name, last_name, avatar_url), communities:community_id (name, slug)`)
+      .in('community_id', communityIds)
 
     // ── Step 3: Apply tab filter ──
     if (currentFeedTab === 'pinned') {
@@ -1572,14 +1584,21 @@ document.querySelectorAll('.community-item').forEach(item => {
       feedIcon.className = 'feed-icon';
       currentCommunityFilter = null;
     } else if (feedSlug === 'dept') {
-      // Department community - need to get user's department
-      const deptConf = DEPT_CONFIG['css']; // You can make this dynamic later
+      // Department community — use the logged-in user's actual department
+      const userDept = loggedInUser?.department?.toLowerCase();
+      const deptConf = DEPT_CONFIG[userDept];
       if (deptConf) {
         feedTitle.textContent = deptConf.title;
         feedSub.textContent = deptConf.sub;
-        feedIcon.innerHTML = `<img src="${deptConf.img}" style="width:100%;height:100%;object-fit:contain;" />`;
+        feedIcon.className = `feed-icon ${deptConf.iconClass}`;
+        feedIcon.innerHTML = `<img src="${deptConf.img}" alt="${deptConf.imgAlt}" style="width:100%;height:100%;object-fit:contain;" />`;
+      } else {
+        feedTitle.textContent = 'My Department';
+        feedSub.textContent = 'Department posts';
+        feedIcon.className = 'feed-icon';
+        feedIcon.innerHTML = '<i class="fas fa-graduation-cap"></i>';
       }
-      currentCommunityFilter = 'css';
+      currentCommunityFilter = userDept || 'dept';
     } else {
       // Public community
       const communityNames = {
@@ -1745,6 +1764,43 @@ setTimeout(async () => {
     updateNotifBadge(count || 0);
   } catch (err) {
     console.error('Error loading notification count:', err);
+  }
+
+  // ── Load real post counts for Active Communities widget ──
+  try {
+    const slugs = ['lostandfound', 'academic', 'general'];
+    const { data: communities } = await db
+      .from('communities')
+      .select('id, slug')
+      .in('slug', slugs);
+
+    if (communities && communities.length > 0) {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      await Promise.all(communities.map(async (comm) => {
+        const { count } = await db
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('community_id', comm.id)
+          .gte('created_at', weekAgo);
+
+        const idMap = {
+          'lostandfound': 'activePostsLostandfound',
+          'academic':     'activePostsAcademic',
+          'general':      'activePostsGeneral',
+        };
+        const el = document.getElementById(idMap[comm.slug]);
+        if (el) {
+          el.textContent = count > 0 ? `${count} post${count === 1 ? '' : 's'} this week` : 'No recent posts';
+        }
+      }));
+    }
+  } catch (err) {
+    console.error('Error loading active community counts:', err);
+    ['activePostsLostandfound', 'activePostsAcademic', 'activePostsGeneral'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '';
+    });
   }
 }, 1500);
 

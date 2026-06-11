@@ -122,7 +122,6 @@
           <div class="comm-name" id="deptCommName">My Department</div>
           <div class="comm-sub">Your department</div>
         </div>
-        <span class="comm-badge">3</span>
       </a>
     </div>
 
@@ -136,12 +135,10 @@
       <a href="#" class="community-item" data-feed="general">
         <div class="comm-icon ci-general"><i class="fas fa-comments"></i></div>
         <div class="comm-info"><div class="comm-name">General</div><div class="comm-sub">Open discussions</div></div>
-        <span class="comm-badge">12</span>
       </a>
       <a href="#" class="community-item" data-feed="lostandfound">
         <div class="comm-icon ci-lost"><i class="fas fa-search"></i></div>
         <div class="comm-info"><div class="comm-name">Lost & Found</div><div class="comm-sub">Report lost items</div></div>
-        <span class="comm-badge">5</span>
       </a>
       <a href="#" class="community-item" data-feed="marketplace">
         <div class="comm-icon ci-market"><i class="fas fa-handshake"></i></div>
@@ -150,7 +147,6 @@
       <a href="#" class="community-item" data-feed="academic">
         <div class="comm-icon ci-academic"><i class="fas fa-book-open"></i></div>
         <div class="comm-info"><div class="comm-name">Academic Help</div><div class="comm-sub">Study &amp; schedules</div></div>
-        <span class="comm-badge">8</span>
       </a>
       <a href="#" class="community-item" data-feed="campus">
         <div class="comm-icon ci-campus"><i class="fas fa-university"></i></div>
@@ -159,7 +155,6 @@
       <a href="#" class="community-item" data-feed="support">
         <div class="comm-icon ci-support"><i class="fas fa-hands-helping"></i></div>
         <div class="comm-info"><div class="comm-name">Student Support</div><div class="comm-sub">Help &amp; guidance</div></div>
-        <span class="comm-badge">2</span>
       </a>
     </div>
 
@@ -249,20 +244,20 @@
     <!-- Active Communities -->
     <div class="widget-card">
       <div class="widget-title"><i class="fas fa-fire"></i> Active Communities</div>
-      <div class="active-comm-list">
+      <div class="active-comm-list" id="activeCommList">
         <div class="active-comm-item">
           <div class="comm-icon ci-lost" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-search"></i></div>
-          <div class="active-comm-info"><div class="active-comm-name">Lost &amp; Found</div><div class="active-comm-posts">5 new posts</div></div>
+          <div class="active-comm-info"><div class="active-comm-name">Lost &amp; Found</div><div class="active-comm-posts" id="activePostsLostandfound">Loading...</div></div>
           <span class="active-dot"></span>
         </div>
         <div class="active-comm-item">
           <div class="comm-icon ci-academic" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-book-open"></i></div>
-          <div class="active-comm-info"><div class="active-comm-name">Academic Help</div><div class="active-comm-posts">8 new posts</div></div>
+          <div class="active-comm-info"><div class="active-comm-name">Academic Help</div><div class="active-comm-posts" id="activePostsAcademic">Loading...</div></div>
           <span class="active-dot"></span>
         </div>
         <div class="active-comm-item">
           <div class="comm-icon ci-general" style="width:32px;height:32px;font-size:.8rem;"><i class="fas fa-comments"></i></div>
-          <div class="active-comm-info"><div class="active-comm-name">General</div><div class="active-comm-posts">12 new posts</div></div>
+          <div class="active-comm-info"><div class="active-comm-name">General</div><div class="active-comm-posts" id="activePostsGeneral">Loading...</div></div>
           <span class="active-dot"></span>
         </div>
       </div>

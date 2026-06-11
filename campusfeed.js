@@ -77,10 +77,16 @@ const DEPT_CONFIG = {
     return;
   }
 
-  // Determine department slug from URL param or profile
-  const urlParams  = new URLSearchParams(window.location.search);
-  const deptSlug   = urlParams.get('dept') || 'general';
-  const deptConf   = DEPT_CONFIG[deptSlug];
+  // Determine department slug from profile's department field
+  const deptSlugMap = {
+    'college of teacher education (cte)':              'cte',
+    'college of business education (cbe)':             'cbe',
+    'college of criminal justice education (ccje)':    'ccje',
+    'college of computer studies (css)':               'css',
+    'psychology (psych)':                              'psych',
+  };
+  const deptSlug   = deptSlugMap[(profile.department || '').toLowerCase().trim()] || null;
+  const deptConf   = deptSlug ? DEPT_CONFIG[deptSlug] : null;
 
   // Build initials and display name
   const initials   = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
@@ -456,21 +462,31 @@ let loggedInUser = null;
     // Build community dropdown dynamically
     const communitySelect = document.querySelector('.post-community-select');
     if (communitySelect) {
-      // Fetch communities user can post to
+      // Map full department name to community slug
+      const deptSlugMap = {
+        'college of teacher education (cte)':              'cte',
+        'college of business education (cbe)':             'cbe',
+        'college of criminal justice education (ccje)':    'ccje',
+        'college of computer studies (css)':               'css',
+        'psychology (psych)':                              'psych',
+      };
+      const userDeptSlug = deptSlugMap[(profile.department || '').toLowerCase().trim()];
+
+      // Fetch all communities then filter client-side (avoids .or() issues with special chars)
       const { data: communities } = await db
         .from('communities')
         .select('*')
-        .or(`type.eq.public,department.eq.${profile.department}`)
         .order('type', { ascending: false }); // department first
-      
+
       communitySelect.innerHTML = '';
-      
-      communities?.forEach(comm => {
-        const option = document.createElement('option');
-        option.value = comm.slug;
-        option.textContent = comm.name;
-        communitySelect.appendChild(option);
-      });
+      (communities || [])
+        .filter(c => c.type === 'public' || c.slug === userDeptSlug)
+        .forEach(comm => {
+          const option = document.createElement('option');
+          option.value = comm.slug;
+          option.textContent = comm.name;
+          communitySelect.appendChild(option);
+        });
     }
   }
 })();
@@ -677,29 +693,32 @@ async function loadPostsFromDB() {
     let communityIds = [];
 
     if (currentCommunityFilter) {
-      // Check if this is a department filter (matches a key in DEPT_CONFIG)
-      if (DEPT_CONFIG[currentCommunityFilter]) {
-        // Dept community — look up by department column
-        const { data: comms } = await db
-          .from('communities')
-          .select('id')
-          .eq('department', currentCommunityFilter);
-        communityIds = (comms || []).map(c => c.id);
-      } else {
-        // Public community — look up by slug
-        const { data: comm } = await db
-          .from('communities')
-          .select('id')
-          .eq('slug', currentCommunityFilter)
-          .single();
-        if (comm) communityIds = [comm.id];
-      }
-    } else {
-      const { data: communities } = await db
+      // Single community — always look up by slug (works for both dept slugs like 'css' and public slugs like 'general')
+      const { data: comm } = await db
         .from('communities')
         .select('id')
-        .or(`type.eq.public,department.eq.${loggedInUser.department}`);
-      communityIds = (communities || []).map(c => c.id);
+        .eq('slug', currentCommunityFilter)
+        .single();
+      if (comm) communityIds = [comm.id];
+    } else {
+      // All posts — fetch public communities + user's dept community by slug
+      const deptSlugMap = {
+        'college of teacher education (cte)':              'cte',
+        'college of business education (cbe)':             'cbe',
+        'college of criminal justice education (ccje)':    'ccje',
+        'college of computer studies (css)':               'css',
+        'psychology (psych)':                              'psych',
+      };
+      const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
+
+      // Fetch all public communities + user's dept community
+      const { data: communities } = await db
+        .from('communities')
+        .select('id, slug, type');
+
+      communityIds = (communities || [])
+        .filter(c => c.type === 'public' || c.slug === userDeptSlug)
+        .map(c => c.id);
     }
 
     if (communityIds.length === 0) {
@@ -1584,9 +1603,20 @@ document.querySelectorAll('.community-item').forEach(item => {
       feedIcon.className = 'feed-icon';
       currentCommunityFilter = null;
     } else if (feedSlug === 'dept') {
-      // Department community — use the logged-in user's actual department
-      const userDept = loggedInUser?.department?.toLowerCase();
-      const deptConf = DEPT_CONFIG[userDept];
+      // Department community — map the user's full department string to a DEPT_CONFIG slug
+      // profiles.department stores e.g. "College of Computer Studies (CSS)"
+      // DEPT_CONFIG keys are the community slugs: cte, css, cbe, ccje, psych
+      const deptSlugMap = {
+        'college of teacher education (cte)':              'cte',
+        'college of business education (cbe)':             'cbe',
+        'college of criminal justice education (ccje)':    'ccje',
+        'college of computer studies (css)':               'css',
+        'psychology (psych)':                              'psych',
+      };
+      const userDeptFull  = (loggedInUser?.department || '').toLowerCase().trim();
+      const deptSlug      = deptSlugMap[userDeptFull] || null;
+      const deptConf      = deptSlug ? DEPT_CONFIG[deptSlug] : null;
+
       if (deptConf) {
         feedTitle.textContent = deptConf.title;
         feedSub.textContent = deptConf.sub;
@@ -1598,7 +1628,8 @@ document.querySelectorAll('.community-item').forEach(item => {
         feedIcon.className = 'feed-icon';
         feedIcon.innerHTML = '<i class="fas fa-graduation-cap"></i>';
       }
-      currentCommunityFilter = userDept || 'dept';
+      // Store the community slug (e.g. 'css') so loadPostsFromDB can do .eq('slug', ...)
+      currentCommunityFilter = deptSlug || 'dept';
     } else {
       // Public community
       const communityNames = {

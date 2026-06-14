@@ -80,7 +80,7 @@ document.getElementById('adminLoginForm').addEventListener('submit', async (e) =
     
     setTimeout(() => {
       if (profile.admin_role === 'SSG') {
-        window.location.href = 'ssg-dashboard.html';
+        window.location.href = 'main-dashboard.html';
       } else if (profile.admin_role === 'SSG_OFFICER') {
         window.location.href = 'ssg-officer-dashboard.html';
       } else {
@@ -130,7 +130,7 @@ async function checkExistingSession() {
     if (profile && profile.admin_role && profile.admin_role !== 'student') {
       // Already logged in as admin, redirect to dashboard
       if (profile.admin_role === 'SSG') {
-        window.location.href = 'ssg-dashboard.html';
+        window.location.href = 'main-dashboard.html';
       } else if (profile.admin_role === 'SSG_OFFICER') {
         window.location.href = 'ssg-officer-dashboard.html';
       } else {

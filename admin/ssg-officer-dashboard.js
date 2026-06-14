@@ -18,7 +18,7 @@ let selectedImages = [];
   // Only SSG_OFFICER can access this dashboard
   if (profile.admin_role !== 'SSG_OFFICER') {
     if (profile.admin_role === 'SSG') {
-      window.location.href = 'ssg-dashboard.html';
+      window.location.href = 'main-dashboard.html';
     } else if (['CTE','CSS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
       window.location.href = 'dept-dashboard.html';
     } else {

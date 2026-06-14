@@ -1,0 +1,9 @@
+# Local config with API keys — never commit this
+config.js
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

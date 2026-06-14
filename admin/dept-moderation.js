@@ -30,7 +30,7 @@ const ACTION_LABELS = {
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (!profile || !['CTE','CSS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
-    window.location.href = profile?.admin_role === 'SSG' ? 'ssg-dashboard.html' : '../campusfeed.html';
+    window.location.href = profile?.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;
   }
   adminUser = profile;

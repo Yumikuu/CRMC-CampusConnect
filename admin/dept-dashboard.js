@@ -29,7 +29,7 @@ const DEPT_COLORS = {
 
   const validDeptRoles = ['CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE'];
   if (!validDeptRoles.includes(profile.admin_role)) {
-    window.location.href = profile.admin_role === 'SSG' ? 'ssg-dashboard.html' : '../campusfeed.html';
+    window.location.href = profile.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;
   }
 

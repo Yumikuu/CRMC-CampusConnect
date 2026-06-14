@@ -11,7 +11,7 @@ const SENTIMENT_CONFIG = {
 
   // Store your HuggingFace token in a safe place — never commit real tokens to GitHub
   // To use: replace the empty string below with your hf_... token locally
-  apiKey: '',
+  apiKey: window.HF_API_KEY || '',
 
   // Score thresholds for flagging decisions
   thresholds: {

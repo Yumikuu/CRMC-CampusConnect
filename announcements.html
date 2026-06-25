@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Announcements — CRMC CampusConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="campusfeed.css" />
+  <link rel="stylesheet" href="announcements.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+
+<!-- ── TOP NAVBAR ── -->
+<nav class="topbar" role="navigation" aria-label="Main navigation">
+  <div class="topbar-left">
+    <a href="campusfeed.html" class="topbar-brand" aria-label="Back to Feed">
+      <img src="Images/logo.png" alt="Logo" class="topbar-logo" />
+      <span class="topbar-name"><span class="t-crmc">CRMC</span><span class="t-cc">CampusConnect</span></span>
+    </a>
+  </div>
+  <div class="topbar-right">
+    <a href="campusfeed.html" class="btn-back-feed"><i class="fas fa-arrow-left"></i> Back to Feed</a>
+  </div>
+</nav>
+
+<!-- ── PAGE CONTENT ── -->
+<div class="ann-page">
+
+  <!-- Header -->
+  <header class="ann-page-header">
+    <div class="ann-header-icon"><i class="fas fa-bullhorn"></i></div>
+    <div>
+      <h1 class="ann-header-title">Announcements & Events</h1>
+      <p class="ann-header-sub">Stay updated with official campus announcements, department news, and upcoming events</p>
+    </div>
+  </header>
+
+  <!-- Filter Tabs -->
+  <div class="ann-filters">
+    <button class="ann-filter-btn active" data-filter="all"><i class="fas fa-layer-group"></i> All</button>
+    <button class="ann-filter-btn" data-filter="official"><i class="fas fa-star"></i> Official (SSG)</button>
+    <button class="ann-filter-btn" data-filter="department"><i class="fas fa-graduation-cap"></i> My Department</button>
+    <button class="ann-filter-btn" data-filter="events"><i class="fas fa-calendar-check"></i> Events</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="ann-content">
+
+    <!-- Announcements List -->
+    <section class="ann-list-section">
+      <div class="ann-list" id="annList">
+        <div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading announcements...</div>
+      </div>
+    </section>
+
+    <!-- Sidebar: Upcoming Events -->
+    <aside class="ann-sidebar">
+      <div class="ann-events-card">
+        <div class="ann-events-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</div>
+        <div class="ann-events-list" id="annEventsList">
+          <div class="ann-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="ann-stats-card">
+        <div class="ann-stats-title"><i class="fas fa-chart-bar"></i> Quick Stats</div>
+        <div class="ann-stat-row">
+          <span class="ann-stat-label">Total Announcements</span>
+          <span class="ann-stat-value" id="statTotalAnn">-</span>
+        </div>
+        <div class="ann-stat-row">
+          <span class="ann-stat-label">This Week</span>
+          <span class="ann-stat-value" id="statWeekAnn">-</span>
+        </div>
+        <div class="ann-stat-row">
+          <span class="ann-stat-label">Upcoming Events</span>
+          <span class="ann-stat-value" id="statEvents">-</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script src="announcements.js"></script>
+</body>
+</html>

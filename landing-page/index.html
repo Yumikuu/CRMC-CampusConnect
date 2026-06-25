@@ -413,11 +413,31 @@
           <label class="checkbox-label">
             <input type="checkbox" /> Remember me
           </label>
-          <a href="#" class="form-link">Forgot password?</a>
+          <a href="#" class="form-link" id="openForgotPassword">Forgot password?</a>
         </div>
         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
       </form>
       <p class="modal-switch">Don't have an account? <a href="#" id="switchToRegister">Register here</a></p>
+    </div>
+  </div>
+
+  <!-- ── FORGOT PASSWORD MODAL ── -->
+  <div class="modal-overlay" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" hidden>
+    <div class="modal">
+      <button class="modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+      <div class="modal-logo">
+        <img src="../Images/logo.png" alt="CRMC CampusConnect" />
+      </div>
+      <h2 class="modal-title" id="forgotTitle">Reset your password</h2>
+      <p class="modal-sub">Enter your email address and we'll send you a link to reset your password.</p>
+      <form class="modal-form" id="forgotPasswordForm" novalidate>
+        <div class="form-group">
+          <label for="forgotEmail">Email Address</label>
+          <input type="email" id="forgotEmail" placeholder="you@crmc.edu.ph" autocomplete="email" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Send Reset Link</button>
+      </form>
+      <p class="modal-switch"><a href="#" id="backToLogin"><i class="fas fa-arrow-left"></i> Back to Login</a></p>
     </div>
   </div>
 

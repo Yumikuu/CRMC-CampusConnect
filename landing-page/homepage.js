@@ -310,4 +310,90 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     }
   });
 
+  // ── FORGOT PASSWORD ──
+  const forgotModal = document.getElementById('forgotPasswordModal');
+
+  // Open forgot password modal
+  document.getElementById('openForgotPassword').addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModal(loginModal);
+    openModal(forgotModal);
+  });
+
+  // Back to login
+  document.getElementById('backToLogin').addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModal(forgotModal);
+    openModal(loginModal);
+  });
+
+  // Close forgot modal with X button
+  forgotModal.querySelector('.modal-close').addEventListener('click', () => {
+    closeModal(forgotModal);
+  });
+
+  // Close on overlay click
+  forgotModal.addEventListener('click', (e) => {
+    if (e.target === forgotModal) closeModal(forgotModal);
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal(forgotModal);
+  });
+
+  // Handle forgot password form submit
+  document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = form.querySelector('.btn-primary');
+    clearFormError(form);
+
+    const email = document.getElementById('forgotEmail').value.trim();
+
+    if (!email) {
+      return showFormError(form, 'Please enter your email address.');
+    }
+
+    if (!email.includes('@')) {
+      return showFormError(form, 'Please enter a valid email address (not student ID).');
+    }
+
+    setLoading(submitBtn, true);
+
+    try {
+      // Build the reset page URL based on current location
+      const currentPath = window.location.pathname;
+      const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+      const resetUrl = window.location.origin + basePath + '/reset-password.html';
+
+      const { error } = await db.auth.resetPasswordForEmail(email, {
+        redirectTo: resetUrl,
+      });
+
+      if (error) throw error;
+
+      // Show success message
+      form.innerHTML = `
+        <div style="text-align:center;padding:1rem 0;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;font-size:1.3rem;color:#16a34a;">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#1f2937;">Check your email</h3>
+          <p style="font-size:.82rem;color:#6b7280;line-height:1.5;">
+            We sent a password reset link to <strong>${email}</strong>. Click the link in your email to set a new password.
+          </p>
+          <p style="font-size:.75rem;color:#9ca3af;margin-top:.75rem;">
+            Didn't receive it? Check your spam folder or try again.
+          </p>
+        </div>
+      `;
+
+    } catch (err) {
+      console.error('Reset password error:', err);
+      showFormError(form, err.message || 'Failed to send reset link. Please try again.');
+      setLoading(submitBtn, false);
+    }
+  });
+
 })();

@@ -676,6 +676,9 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
         console.warn('⚠️ Post flagged by AI:', result.reason);
       }
     });
+
+    // ── Parse @mentions in post content ──
+    processMentions(content + ' ' + (title || ''), data.id);
     
   } catch (err) {
     console.error(err);
@@ -732,7 +735,7 @@ async function loadPostsFromDB() {
     // ── Step 2: Build query with community filter ──
     let query = db
       .from('posts')
-      .select(`*, profiles:author_id (first_name, last_name, avatar_url), communities:community_id (name, slug)`)
+      .select(`*, profiles:author_id (first_name, last_name, avatar_url, admin_role), communities:community_id (name, slug)`)
       .in('community_id', communityIds)
 
     // ── Step 3: Apply tab filter ──
@@ -844,6 +847,12 @@ function createPostElement(post) {
   const isAnon = post.is_anonymous;
   const author = post.profiles;
   
+  // ── Detect if this is an announcement ──
+  const isAnnouncement = post.content?.startsWith('📢 [ANNOUNCEMENT]') 
+    || post.is_pinned 
+    || post.communities?.slug === 'ssg-announcements';
+  const displayContent = post.content?.replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '') || post.content;
+  
   let authorName = 'Anonymous';
   let authorAvatar = '<div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>';
   
@@ -872,13 +881,29 @@ function createPostElement(post) {
   
   // Check if current user is the author (can delete/edit)
   const isAuthor = loggedInUser && post.author_id === loggedInUser.id;
+
+  // ── Detect admin author ──
+  const authorRole = author?.admin_role || null;
+  const isAdmin = authorRole && authorRole !== 'student';
+  // No separate admin badge — the account name already identifies them (e.g., "CSS Admin")
+
+  // ── Announcement badge HTML ──
+  const announcementBadge = isAnnouncement
+    ? `<span class="post-announcement-badge"><i class="fas fa-bullhorn"></i> Announcement</span>`
+    : '';
+
+  // ── Add highlight class for announcements ──
+  if (isAnnouncement) {
+    article.classList.add('post-card--announcement');
+  }
   
   article.innerHTML = `
     <div class="post-left">${authorAvatar}</div>
     <div class="post-body">
       <div class="post-meta">
         <span class="post-author">${authorName}</span>
-        <span class="post-dept-tag ${tagClass}">${communityName}</span>
+        ${announcementBadge}
+        <span class="post-dept-tag ${isAdmin && !isAnon ? 'tag-admin' : tagClass}">${communityName}</span>
         <span class="post-time"><i class="fas fa-clock"></i> ${timeAgo}</span>
         ${isAuthor ? `
           <div class="post-menu-wrapper">
@@ -897,10 +922,24 @@ function createPostElement(post) {
               </button>
             </div>
           </div>
-        ` : ''}
+        ` : `
+          <div class="post-menu-wrapper">
+            <button class="post-menu-btn" data-post-id="${post.id}" aria-label="Post options">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="post-menu-dropdown" id="post-menu-${post.id}" hidden>
+              <button class="post-menu-item post-copy-link-btn" data-post-id="${post.id}">
+                <i class="fas fa-link"></i> Copy Link
+              </button>
+              <button class="post-menu-item post-report-btn" data-post-id="${post.id}">
+                <i class="fas fa-flag"></i> Report Post
+              </button>
+            </div>
+          </div>
+        `}
       </div>
       ${post.title ? `<h2 class="post-title">${escapeHtml(post.title)}</h2>` : ''}
-      <p class="post-content">${escapeHtml(post.content)}</p>
+      <p class="post-content">${escapeHtml(displayContent)}</p>
       ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? (() => {
         const imgs = post.image_url;
         const shown = imgs.slice(0, 5);
@@ -1035,6 +1074,17 @@ document.addEventListener('click', async (e) => {
     const btn = e.target.closest('.post-copy-link-btn');
     const postId = btn.dataset.postId;
     copyPostLink(postId);
+    return;
+  }
+
+  // Handle report post
+  if (e.target.closest('.post-report-btn')) {
+    const btn = e.target.closest('.post-report-btn');
+    const postId = btn.dataset.postId;
+    // Close the menu dropdown
+    const dropdown = btn.closest('.post-menu-dropdown');
+    if (dropdown) dropdown.hidden = true;
+    openReportModal(postId);
     return;
   }
   
@@ -1301,6 +1351,98 @@ document.getElementById('deleteConfirmModal')?.addEventListener('click', functio
   }
 });
 
+// ══════════════════════════════════════════════════════════════════
+// REPORT POST — Module 2 Enhancement
+// ══════════════════════════════════════════════════════════════════
+
+let postToReport = null;
+
+function openReportModal(postId) {
+  postToReport = postId;
+  const modal = document.getElementById('reportPostModal');
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  // Reset form
+  document.querySelectorAll('input[name="reportReason"]').forEach(r => r.checked = false);
+  document.getElementById('reportDescription').value = '';
+}
+
+// Close report modal
+document.getElementById('closeReportModal')?.addEventListener('click', () => {
+  document.getElementById('reportPostModal').hidden = true;
+  document.body.style.overflow = '';
+  postToReport = null;
+});
+document.getElementById('cancelReportBtn')?.addEventListener('click', () => {
+  document.getElementById('reportPostModal').hidden = true;
+  document.body.style.overflow = '';
+  postToReport = null;
+});
+document.getElementById('reportPostModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.hidden = true;
+    document.body.style.overflow = '';
+    postToReport = null;
+  }
+});
+
+// Submit report
+document.getElementById('submitReportBtn')?.addEventListener('click', async function() {
+  if (!postToReport || !loggedInUser) return;
+
+  const selectedReason = document.querySelector('input[name="reportReason"]:checked');
+  if (!selectedReason) {
+    showToast('Please select a reason for reporting', 'error');
+    return;
+  }
+
+  const reason = selectedReason.value;
+  const description = document.getElementById('reportDescription').value.trim();
+
+  this.disabled = true;
+  this.textContent = 'Submitting...';
+
+  try {
+    // Check if user already reported this post
+    const { data: existing } = await db
+      .from('post_reports')
+      .select('id')
+      .eq('post_id', postToReport)
+      .eq('reporter_id', loggedInUser.id)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      showToast('You have already reported this post', 'error');
+      document.getElementById('reportPostModal').hidden = true;
+      document.body.style.overflow = '';
+      postToReport = null;
+      return;
+    }
+
+    // Insert report
+    const { error } = await db.from('post_reports').insert({
+      post_id: postToReport,
+      reporter_id: loggedInUser.id,
+      reason: reason,
+      description: description || null,
+    });
+
+    if (error) throw error;
+
+    showToast('Report submitted. An admin will review it.', 'success');
+    document.getElementById('reportPostModal').hidden = true;
+    document.body.style.overflow = '';
+    postToReport = null;
+
+  } catch (err) {
+    console.error('Error submitting report:', err);
+    showToast('Failed to submit report: ' + err.message, 'error');
+  } finally {
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-flag"></i> Submit Report';
+  }
+});
+
 // Edit a post
 async function editPost(postId) {
   if (!loggedInUser) {
@@ -1456,6 +1598,15 @@ function buildCommentHTML(comment, replies = []) {
   const timeAgo   = formatTimeAgo(new Date(comment.created_at));
   const isOwn     = loggedInUser && comment.author_id === loggedInUser.id;
 
+  // Detect admin commenter
+  const commentRole = author?.admin_role || null;
+  const isAdminComment = commentRole && commentRole !== 'student' && !isAnon;
+  const adminRoleLabels = { SSG: 'SSG', SSG_OFFICER: 'SSG Officer', CTE: 'CTE', CSS: 'CSS', CBE: 'CBE', PSYCH: 'PSYCH', CCJE: 'CCJE' };
+  const commentAdminBadge = isAdminComment
+    ? `<span class="comment-admin-badge"><i class="fas fa-shield-alt"></i> ${adminRoleLabels[commentRole] || 'Admin'}</span>`
+    : '';
+  const adminNameClass = isAdminComment ? ' comment-author--admin' : '';
+
   // Build nested replies HTML
   const repliesHTML = replies.length > 0
     ? `<div class="comment-replies">
@@ -1465,10 +1616,11 @@ function buildCommentHTML(comment, replies = []) {
 
   return `
     <div class="comment-item" data-comment-id="${comment.id}">
-      <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}">${authorInitials}</div>
+      <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}${isAdminComment ? ' comment-avatar--admin' : ''}">${authorInitials}</div>
       <div class="comment-content-wrapper">
         <div class="comment-header">
-          <span class="comment-author">${authorName}</span>
+          <span class="comment-author${adminNameClass}">${authorName}</span>
+          ${commentAdminBadge}
           <span class="comment-time">${timeAgo}</span>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
         </div>
@@ -1498,7 +1650,7 @@ async function loadComments(postId) {
     // Fetch all comments + replies for this post in one query
     const { data: allComments, error } = await db
       .from('comments')
-      .select(`*, profiles:author_id (first_name, last_name)`)
+      .select(`*, profiles:author_id (first_name, last_name, admin_role)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
@@ -1573,6 +1725,9 @@ async function submitComment(postId, inputElement, parentId = null) {
     if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
 
     showToast(parentId ? 'Reply posted!' : 'Comment posted!', 'success');
+
+    // ── Parse @mentions and send notifications ──
+    processMentions(content, postId);
 
   } catch (err) {
     console.error('Error posting comment:', err);
@@ -1717,13 +1872,36 @@ async function loadNotifications() {
       // Extract post ID from the link field (format: /campusfeed.html?post=UUID)
       const postId = n.link ? n.link.split('post=')[1] : null;
 
+      // Clean up message — strip 📢 [ANNOUNCEMENT] prefix for cleaner display
+      let displayMsg = (n.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
+      // Also strip trailing quote marks and leading quotes from "posted:" format
+      displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
+
+      // Highlight the person's name (bold it in the notification text)
+      // Handles: "Name liked...", "Name commented...", "Name replied...", "📢 Name: ...", "Name mentioned..."
+      const nameClass = n.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
+      displayMsg = displayMsg
+        .replace(/^(📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+        .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
+
+      // Type label for visual clarity
+      const typeLabels = {
+        like: 'Like',
+        comment: 'Comment',
+        reply: 'Reply',
+        announcement: 'Announcement',
+        mention: 'Mention',
+      };
+      const typeLabel = typeLabels[n.type] || '';
+
       return `
         <div class="notif-item ${unreadClass}" data-notif-id="${n.id}" ${postId ? `data-post-id="${postId}" style="cursor:pointer;"` : ''}>
           <div class="notif-icon-wrap ${typeInfo.cls}">
             <i class="fas ${typeInfo.icon}"></i>
           </div>
           <div class="notif-body">
-            <div class="notif-text">${n.message}</div>
+            <div class="notif-type-label notif-label--${n.type}">${typeLabel}</div>
+            <div class="notif-text">${displayMsg}</div>
             <div class="notif-time">${timeAgo}</div>
           </div>
         </div>`;
@@ -1786,9 +1964,106 @@ document.getElementById('markAllReadBtn')?.addEventListener('click', async (e) =
   await markAllNotificationsRead();
 });
 
-// Load unread count on page load (after user is set)
+// ── REALTIME NOTIFICATIONS — Supabase Realtime subscription ──
+let notifChannel = null;
+
+function setupRealtimeNotifications() {
+  if (!loggedInUser) return;
+
+  // Subscribe to INSERT events on notifications table filtered to this user
+  notifChannel = db
+    .channel('user-notifications')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${loggedInUser.id}`,
+      },
+      (payload) => {
+        const newNotif = payload.new;
+        console.log('🔔 New notification received:', newNotif.type);
+
+        // Update badge count (+1) with pulse animation
+        const badge = document.querySelector('#notifToggle .icon-badge');
+        const current = badge ? parseInt(badge.textContent) || 0 : 0;
+        updateNotifBadge(current + 1);
+
+        // Trigger pulse animation on badge
+        if (badge) {
+          badge.classList.remove('badge-pulse');
+          void badge.offsetWidth; // force reflow
+          badge.classList.add('badge-pulse');
+        }
+
+        // Show toast for the new notification (clean message)
+        const toastMsg = (newNotif.message || 'You have a new notification')
+          .replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '')
+          .replace(/\s*posted:\s*"(.+)"$/i, ': $1');
+        showToast(toastMsg, 'info');
+
+        // If dropdown is open, prepend the new notification
+        const notifList = document.getElementById('notifList');
+        if (notifList && !document.getElementById('notifDropdown')?.hidden) {
+          const typeInfo = NOTIF_ICONS[newNotif.type] || NOTIF_ICONS.mention;
+          const timeAgo  = formatTimeAgo(new Date(newNotif.created_at));
+          const postId   = newNotif.link ? newNotif.link.split('post=')[1] : null;
+
+          // Clean up message for display
+          let displayMsg = (newNotif.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
+          displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
+
+          // Highlight the person's name
+          const nameClass = newNotif.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
+          displayMsg = displayMsg
+            .replace(/^(📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+            .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
+
+          const typeLabels = { like: 'Like', comment: 'Comment', reply: 'Reply', announcement: 'Announcement', mention: 'Mention' };
+          const typeLabel = typeLabels[newNotif.type] || '';
+
+          const itemHTML = `
+            <div class="notif-item notif-unread" data-notif-id="${newNotif.id}" ${postId ? `data-post-id="${postId}" style="cursor:pointer;"` : ''}>
+              <div class="notif-icon-wrap ${typeInfo.cls}">
+                <i class="fas ${typeInfo.icon}"></i>
+              </div>
+              <div class="notif-body">
+                <div class="notif-type-label notif-label--${newNotif.type}">${typeLabel}</div>
+                <div class="notif-text">${displayMsg}</div>
+                <div class="notif-time">${timeAgo}</div>
+              </div>
+            </div>`;
+
+          // Remove "no notifications" message if present
+          const emptyMsg = notifList.querySelector('[style*="text-align:center"]');
+          if (emptyMsg) emptyMsg.remove();
+
+          notifList.insertAdjacentHTML('afterbegin', itemHTML);
+        }
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Realtime notifications connected');
+      }
+    });
+}
+
+// Clean up subscription when page unloads
+window.addEventListener('beforeunload', () => {
+  if (notifChannel) {
+    db.removeChannel(notifChannel);
+  }
+});
+
+// Load unread count on page load (after user is set) + start realtime
 setTimeout(async () => {
   if (!loggedInUser) return;
+
+  // Start realtime subscription
+  setupRealtimeNotifications();
+
   try {
     const { count } = await db
       .from('notifications')
@@ -1837,6 +2112,58 @@ setTimeout(async () => {
     });
   }
 }, 1500);
+
+// ══════════════════════════════════════════════════════════════════
+// @MENTION DETECTION — Module 4 Enhancement
+// Parses @FirstName LastName patterns and creates notifications
+// ══════════════════════════════════════════════════════════════════
+
+async function processMentions(text, postId) {
+  if (!text || !loggedInUser) return;
+
+  // Match @FirstName LastName patterns (two words after @)
+  const mentionPattern = /@([A-Za-z]+)\s+([A-Za-z]+)/g;
+  const mentions = [];
+  let match;
+
+  while ((match = mentionPattern.exec(text)) !== null) {
+    mentions.push({ firstName: match[1], lastName: match[2] });
+  }
+
+  if (mentions.length === 0) return;
+
+  // Look up each mentioned user in the database
+  for (const mention of mentions) {
+    try {
+      const { data: mentionedUsers } = await db
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .ilike('first_name', mention.firstName)
+        .ilike('last_name', mention.lastName)
+        .limit(1);
+
+      if (!mentionedUsers || mentionedUsers.length === 0) continue;
+
+      const mentionedUser = mentionedUsers[0];
+
+      // Don't notify yourself
+      if (mentionedUser.id === loggedInUser.id) continue;
+
+      // Insert mention notification
+      await db.from('notifications').insert({
+        user_id: mentionedUser.id,
+        type: 'mention',
+        title: 'You were mentioned',
+        message: `${loggedInUser.first_name} ${loggedInUser.last_name} mentioned you in a post`,
+        link: `/campusfeed.html?post=${postId}`,
+        is_read: false,
+      });
+
+    } catch (err) {
+      console.error('Error processing mention:', err);
+    }
+  }
+}
 
 // ── CLICK ON NOTIFICATION → scroll to post in feed ──
 document.getElementById('notifList')?.addEventListener('click', async (e) => {
@@ -1901,7 +2228,7 @@ async function openPostPreview(postId) {
   try {
     const { data: post, error } = await db
       .from('posts')
-      .select(`*, profiles:author_id (first_name, last_name), communities:community_id (name, slug)`)
+      .select(`*, profiles:author_id (first_name, last_name, admin_role), communities:community_id (name, slug)`)
       .eq('id', postId)
       .single();
 
@@ -1918,7 +2245,7 @@ async function openPostPreview(postId) {
     // Fetch comments
     const { data: comments } = await db
       .from('comments')
-      .select(`*, profiles:author_id (first_name, last_name)`)
+      .select(`*, profiles:author_id (first_name, last_name, admin_role)`)
       .eq('post_id', postId)
       .is('parent_id', null)
       .order('created_at', { ascending: true })
@@ -2105,7 +2432,7 @@ async function refreshPreviewComments(postId) {
   // Fetch ALL comments for this post (top-level + replies)
   const { data: allComments } = await db
     .from('comments')
-    .select(`*, profiles:author_id (first_name, last_name)`)
+    .select(`*, profiles:author_id (first_name, last_name, admin_role)`)
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
@@ -2288,19 +2615,10 @@ async function loadAnnouncementsWidget() {
   }
 }
 
-// "View all" → switch feed to ssg-announcements
-document.getElementById('viewAllAnnouncements')?.addEventListener('click', async (e) => {
-  e.preventDefault();
-  currentCommunityFilter = 'ssg-announcements';
-
-  document.querySelectorAll('.community-item').forEach(i => i.classList.remove('active'));
-
-  document.getElementById('feedTitle').textContent = 'SSG Announcements';
-  document.getElementById('feedSub').textContent   = 'Official campus-wide announcements';
-  document.getElementById('feedHeaderIcon').innerHTML = '<i class="fas fa-bullhorn"></i>';
-  document.getElementById('feedHeaderIcon').className = 'feed-icon ci-general';
-
-  await loadPostsFromDB();
+// "View all" → navigate to dedicated announcements page
+// (Link is now an <a href="announcements.html"> so no JS needed, but keep as fallback)
+document.getElementById('viewAllAnnouncements')?.addEventListener('click', (e) => {
+  // Allow default navigation to announcements.html
 });
 
 // Load announcements on page load (after user is ready)

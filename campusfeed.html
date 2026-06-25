@@ -211,7 +211,7 @@
       <div class="ann-widget-list" id="announcementsWidget">
         <div class="ann-widget-loading">Loading announcements...</div>
       </div>
-      <a href="#" class="widget-view-all" id="viewAllAnnouncements">View all <i class="fas fa-arrow-right"></i></a>
+      <a href="announcements.html" class="widget-view-all" id="viewAllAnnouncements">View all <i class="fas fa-arrow-right"></i></a>
     </div>
 
     <!-- Upcoming Events -->
@@ -371,6 +371,45 @@
     <div class="delete-modal-actions">
       <button class="btn btn-outline" id="cancelDeleteBtn">Cancel</button>
       <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── REPORT POST MODAL ── -->
+<div class="modal-overlay" id="reportPostModal" hidden role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+  <div class="modal report-modal">
+    <button class="modal-close" id="closeReportModal" aria-label="Close"><i class="fas fa-times"></i></button>
+    <div class="report-modal-icon">
+      <i class="fas fa-flag"></i>
+    </div>
+    <h2 class="report-modal-title" id="reportTitle">Report Post</h2>
+    <p class="report-modal-text">Why are you reporting this post? Your report will be reviewed by an admin.</p>
+    <div class="report-reasons">
+      <label class="report-reason-option">
+        <input type="radio" name="reportReason" value="spam" />
+        <span class="report-reason-label"><i class="fas fa-robot"></i> Spam</span>
+      </label>
+      <label class="report-reason-option">
+        <input type="radio" name="reportReason" value="harassment" />
+        <span class="report-reason-label"><i class="fas fa-user-slash"></i> Harassment or Bullying</span>
+      </label>
+      <label class="report-reason-option">
+        <input type="radio" name="reportReason" value="inappropriate" />
+        <span class="report-reason-label"><i class="fas fa-ban"></i> Inappropriate Content</span>
+      </label>
+      <label class="report-reason-option">
+        <input type="radio" name="reportReason" value="misinformation" />
+        <span class="report-reason-label"><i class="fas fa-exclamation-circle"></i> Misinformation</span>
+      </label>
+      <label class="report-reason-option">
+        <input type="radio" name="reportReason" value="other" />
+        <span class="report-reason-label"><i class="fas fa-ellipsis-h"></i> Other</span>
+      </label>
+    </div>
+    <textarea class="report-description" id="reportDescription" placeholder="Add more details (optional)..." rows="3"></textarea>
+    <div class="report-modal-actions">
+      <button class="btn btn-outline" id="cancelReportBtn">Cancel</button>
+      <button class="btn btn-danger" id="submitReportBtn"><i class="fas fa-flag"></i> Submit Report</button>
     </div>
   </div>
 </div>

@@ -892,10 +892,16 @@ function createPostElement(post) {
     ? `<span class="post-announcement-badge"><i class="fas fa-bullhorn"></i> Announcement</span>`
     : '';
 
-  // ── AI Flagged badge (visible to everyone as a warning) ──
-  const flaggedBadge = post.is_flagged
-    ? `<span class="post-flagged-badge"><i class="fas fa-exclamation-triangle"></i> AI Flagged</span>`
-    : '';
+  // ── AI Flagged badge (shows which detection method caught it) ──
+  let flaggedBadge = '';
+  if (post.is_flagged) {
+    const reason = (post.flag_reason || '').toLowerCase();
+    if (reason.includes('ai confidence') || reason.includes('ai sentiment') || reason.includes('sentiment')) {
+      flaggedBadge = `<span class="post-flagged-badge post-flagged--ai"><i class="fas fa-robot"></i> AI Detected</span>`;
+    } else {
+      flaggedBadge = `<span class="post-flagged-badge"><i class="fas fa-exclamation-triangle"></i> Keyword Flagged</span>`;
+    }
+  }
 
   // ── Add highlight class for announcements ──
   if (isAnnouncement) {

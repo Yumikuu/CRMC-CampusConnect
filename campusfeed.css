@@ -436,6 +436,12 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 }
 .post-flagged-badge i { font-size: .58rem; }
 
+/* AI-specific flagged badge (purple/blue instead of red) */
+.post-flagged--ai {
+  background: rgba(139,92,246,.12);
+  color: #7c3aed;
+}
+
 @keyframes flagPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .7; }

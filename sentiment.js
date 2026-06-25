@@ -77,6 +77,76 @@ const FILIPINO_KEYWORDS = [
   { word: 'inabuso',              severity: 'high'   },
 ];
 
+// ── SLANG / CODED WORDS DICTIONARY ──
+// Translates Filipino/Bisaya/social media slang into plain text for AI analysis
+const SLANG_DICTIONARY = {
+  // Number codes
+  '8080':     'bobo',
+  '8o8o':     'bobo',
+  '1431':     'i love you',
+  
+  // Tagalog coded/shortened
+  'g4g0':     'gago',
+  'gagu':     'gago',
+  'pota':     'putang ina',
+  'potangina':'putang ina',
+  'ptngina':  'putang ina',
+  'ptnginamo':'putang ina mo',
+  'tangina':  'tang ina',
+  'tanginamo':'tang ina mo',
+  'tnginamo': 'tang ina mo',
+  'kingina':  'tang ina',
+  'pkmo':     'puki mo',
+  'ulul':     'ulol',
+  'engot':    'tanga',
+  'ungas':    'tanga',
+  'inutil':   'walang silbi',
+  'tarantado':'tarantado',
+  'punyeta':  'punyeta',
+  'bwisit':   'bwisit',
+  'siraulo':  'sira ulo',
+  
+  // Bisaya slang
+  'buang':    'crazy person insult',
+  'buanga':   'crazy person insult',
+  'animal':   'animal insult',
+  'yawa':     'devil insult',
+  'bilat':    'genitals insult',
+  'piste':    'curse',
+  'pisteng yawa': 'strong curse',
+  'giatay':   'curse expression',
+  'atay':     'curse expression',
+  'bogo':     'stupid',
+  'bog0':     'stupid',
+  'pangit':   'ugly insult',
+  
+  // Social media coded language
+  'kms':      'kill myself',
+  'kys':      'kill yourself',
+  'fml':      'fuck my life',
+  'stfu':     'shut the fuck up',
+  'gtfo':     'get the fuck out',
+};
+
+/**
+ * Decode slang/coded words into plain text for better AI analysis
+ */
+function decodeSlang(text) {
+  if (!text) return text;
+  let decoded = text.toLowerCase();
+  
+  // Sort by length (longest first) to avoid partial matches
+  const entries = Object.entries(SLANG_DICTIONARY).sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [slang, meaning] of entries) {
+    const escaped = slang.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'gi');
+    decoded = decoded.replace(regex, `$1${meaning}$2`);
+  }
+  
+  return decoded;
+}
+
 /**
  * Analyze post content using HuggingFace NLP model + Filipino keyword fallback
  * @param {string} text - The post content to analyze
@@ -87,8 +157,16 @@ async function analyzeSentiment(text) {
     return { sentiment: 'neutral', score: 0, shouldFlag: false, reason: '', source: 'none' };
   }
 
+  // ── STEP 0: Decode slang/coded words before analysis ──
+  const decodedText = decodeSlang(text);
+  const hasSlangDecoded = decodedText !== text.toLowerCase();
+  if (hasSlangDecoded) {
+    console.log('🔤 Slang decoded:', text, '→', decodedText);
+  }
+
   // ── STEP 1: Check Filipino keywords first (instant, no API needed) ──
-  const lowerText = text.toLowerCase();
+  // Check both original text AND decoded text for keyword matches
+  const lowerText = decodedText; // Use decoded version for keyword matching
   const filipinoMatches = FILIPINO_KEYWORDS.filter(k => lowerText.includes(k.word));
 
   const hasCriticalFilipino = filipinoMatches.some(k => k.severity === 'critical');
@@ -117,6 +195,8 @@ async function analyzeSentiment(text) {
   }
 
   // ── STEP 2: Call HuggingFace API for real NLP analysis ──
+  // Send the DECODED text to AI so it understands slang
+  const textForAI = (hasSlangDecoded ? decodedText : text).substring(0, 512);
   let apiResult = null;
   try {
     const response = await fetch(SENTIMENT_CONFIG.apiUrl, {
@@ -125,7 +205,7 @@ async function analyzeSentiment(text) {
         'Authorization': `Bearer ${SENTIMENT_CONFIG.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ inputs: text.substring(0, 512) }) // API limit: 512 chars
+      body: JSON.stringify({ inputs: textForAI }) // API limit: 512 chars
     });
 
     if (response.ok) {      const data = await response.json();
@@ -279,12 +359,17 @@ async function saveSentimentResult(postId, result) {
 async function applyFlagToPost(postId, result) {
   if (!result.shouldFlag) return;
 
+  // Add source prefix so the frontend knows which method flagged it
+  const flagReason = result.source === 'ai' 
+    ? `[AI sentiment] ${result.reason}` 
+    : `[Keyword] ${result.reason}`;
+
   try {
     const { error } = await db
       .from('posts')
       .update({
         is_flagged:        true,
-        flag_reason:       result.reason,
+        flag_reason:       flagReason,
         moderation_status: 'pending'
       })
       .eq('id', postId);

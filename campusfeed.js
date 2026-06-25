@@ -892,9 +892,19 @@ function createPostElement(post) {
     ? `<span class="post-announcement-badge"><i class="fas fa-bullhorn"></i> Announcement</span>`
     : '';
 
+  // ── AI Flagged badge (visible to everyone as a warning) ──
+  const flaggedBadge = post.is_flagged
+    ? `<span class="post-flagged-badge"><i class="fas fa-exclamation-triangle"></i> AI Flagged</span>`
+    : '';
+
   // ── Add highlight class for announcements ──
   if (isAnnouncement) {
     article.classList.add('post-card--announcement');
+  }
+
+  // ── Add highlight class for AI flagged posts ──
+  if (post.is_flagged) {
+    article.classList.add('post-card--flagged');
   }
   
   article.innerHTML = `
@@ -903,6 +913,7 @@ function createPostElement(post) {
       <div class="post-meta">
         <span class="post-author">${authorName}</span>
         ${announcementBadge}
+        ${flaggedBadge}
         <span class="post-dept-tag ${isAdmin && !isAnon ? 'tag-admin' : tagClass}">${communityName}</span>
         <span class="post-time"><i class="fas fa-clock"></i> ${timeAgo}</span>
         ${isAuthor ? `

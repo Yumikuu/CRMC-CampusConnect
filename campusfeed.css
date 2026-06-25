@@ -423,6 +423,24 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 }
 .post-announcement-badge i { font-size: .6rem; }
 
+/* AI Flagged badge */
+.post-flagged-badge {
+  font-size: .62rem; font-weight: 700; padding: .2rem .55rem;
+  border-radius: var(--radius-full);
+  background: rgba(239,68,68,.12);
+  color: #dc2626;
+  display: inline-flex; align-items: center; gap: .25rem;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  animation: flagPulse 2s ease-in-out infinite;
+}
+.post-flagged-badge i { font-size: .58rem; }
+
+@keyframes flagPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+
 /* Admin author badge — shown next to admin names */
 .post-admin-badge {
   font-size: .62rem; font-weight: 700; padding: .15rem .5rem;
@@ -464,6 +482,12 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 .post-card--announcement {
   border-left: 3px solid #f59e0b;
   background: linear-gradient(135deg, rgba(245,158,11,.04), rgba(245,158,11,.01));
+}
+
+/* AI Flagged post card highlight */
+.post-card--flagged {
+  border-left: 3px solid #ef4444;
+  background: linear-gradient(135deg, rgba(239,68,68,.03), rgba(239,68,68,.01));
 }
 
 .post-time { font-size: .72rem; color: var(--gray-400); display: flex; align-items: center; gap: .3rem; margin-left: auto; }

@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Communities â€” CRMC CampusConnect Admin</title>
+  <title>Communities — CRMC CampusConnect Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -28,6 +28,7 @@
     <a href="main-moderation.html" class="nav-item"><i class="fas fa-flag"></i><span>Moderation</span></a>
     <a href="main-analytics.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
     <a href="main-admins.html" class="nav-item"><i class="fas fa-user-shield"></i><span>Manage Admins</span></a>
+    <a href="main-keywords.html" class="nav-item"><i class="fas fa-filter"></i><span>Keywords</span></a>
   </nav>
   <div class="sidebar-footer">
     <button class="nav-item nav-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
@@ -100,19 +101,19 @@
           <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Type *</label>
           <select id="commType" required
             style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
-            <option value="public">Public â€” open to all students</option>
-            <option value="department">Department â€” tied to a specific department</option>
+            <option value="public">Public — open to all students</option>
+            <option value="department">Department — tied to a specific department</option>
           </select>
         </div>
         <div id="deptSelectWrap" style="display:none;">
           <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--gray-700);">Department</label>
           <select id="commDept"
             style="width:100%;padding:0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:14px;font-family:Poppins,sans-serif;">
-            <option value="College of Teacher Education (CTE)">CTE â€” College of Teacher Education</option>
-            <option value="College of Computer Studies (CSS)">CSS â€” College of Computer Studies</option>
-            <option value="College of Business Education (CBE)">CBE â€” College of Business Education</option>
-            <option value="Psychology (PSYCH)">PSYCH â€” Psychology</option>
-            <option value="College of Criminal Justice Education (CCJE)">CCJE â€” College of Criminal Justice Education</option>
+            <option value="College of Teacher Education (CTE)">CTE — College of Teacher Education</option>
+            <option value="College of Computer Studies (CSS)">CSS — College of Computer Studies</option>
+            <option value="College of Business Education (CBE)">CBE — College of Business Education</option>
+            <option value="Psychology (PSYCH)">PSYCH — Psychology</option>
+            <option value="College of Criminal Justice Education (CCJE)">CCJE — College of Criminal Justice Education</option>
           </select>
         </div>
       </form>
@@ -144,6 +145,7 @@
 <script src="main-communities.js"></script>
 </body>
 </html>
+
 
 
 

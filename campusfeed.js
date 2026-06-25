@@ -896,7 +896,15 @@ function createPostElement(post) {
   let flaggedBadge = '';
   if (post.is_flagged) {
     const reason = (post.flag_reason || '').toLowerCase();
-    if (reason.includes('ai confidence') || reason.includes('ai sentiment') || reason.includes('sentiment')) {
+    // Slang/coded words that required "AI decoding" to understand
+    const slangCodes = ['8080','8o8o','g4g0','bog0','kms','kys','fml','stfu','gtfo','pota','ptngina','potangina','tangina','tanginamo','kingina','ulul','engot','ungas','buang','buanga','yawa','giatay','bogo','siraulo'];
+    
+    // Check if the flag reason mentions a slang/coded word
+    const isSlangDetected = slangCodes.some(code => reason.includes(code));
+    // Or if explicitly marked as AI
+    const isAIDetected = reason.includes('ai confidence') || reason.includes('ai sentiment') || reason.includes('coded/slang');
+    
+    if (isAIDetected || isSlangDetected) {
       flaggedBadge = `<span class="post-flagged-badge post-flagged--ai"><i class="fas fa-robot"></i> AI Detected</span>`;
     } else {
       flaggedBadge = `<span class="post-flagged-badge"><i class="fas fa-exclamation-triangle"></i> Keyword Flagged</span>`;

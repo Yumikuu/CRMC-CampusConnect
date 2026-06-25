@@ -23,23 +23,31 @@ let adminUser = null;
 })();
 
 async function loadStats() {
-  const [{ count: flaggedCount }, { count: reportsCount }] = await Promise.all([
-    db.from('posts').select('*', { count: 'exact', head: true }).eq('is_flagged', true),
-    db.from('post_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending').catch(() => ({ count: 0 }))
-  ]);
+  try {
+    const { count: flaggedCount } = await db.from('posts').select('*', { count: 'exact', head: true }).eq('is_flagged', true);
+    
+    let reportsCount = 0;
+    try {
+      const res = await db.from('post_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      reportsCount = res.count || 0;
+    } catch(e) { /* table may not exist */ }
 
-  // Reviewed today
-  const today = new Date(); today.setHours(0,0,0,0);
-  const { count: resolvedCount } = await db.from('admin_activity_logs')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', today.toISOString())
-    .catch(() => ({ count: 0 }));
+    // Reviewed today
+    let resolvedCount = 0;
+    try {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const res = await db.from('admin_activity_logs').select('*', { count: 'exact', head: true }).gte('created_at', today.toISOString());
+      resolvedCount = res.count || 0;
+    } catch(e) {}
 
-  document.getElementById('totalFlagged').textContent = flaggedCount || 0;
-  document.getElementById('pendingReports').textContent = reportsCount || 0;
-  document.getElementById('resolvedToday').textContent = resolvedCount || 0;
-  document.getElementById('countFlagged').textContent = `(${flaggedCount || 0})`;
-  document.getElementById('countReports').textContent = `(${reportsCount || 0})`;
+    document.getElementById('totalFlagged').textContent = flaggedCount || 0;
+    document.getElementById('pendingReports').textContent = reportsCount;
+    document.getElementById('resolvedToday').textContent = resolvedCount;
+    document.getElementById('countFlagged').textContent = `(${flaggedCount || 0})`;
+    document.getElementById('countReports').textContent = `(${reportsCount})`;
+  } catch(err) {
+    console.error('Error loading stats:', err);
+  }
 }
 
 async function loadFlaggedPosts() {

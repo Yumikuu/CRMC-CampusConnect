@@ -194,6 +194,19 @@ async function analyzeSentiment(text) {
     };
   }
 
+  // If medium-severity keyword found AND text was decoded from slang, flag it
+  // (Using coded language to hide bad words = intentional evasion)
+  const hasMediumFilipino = filipinoMatches.some(k => k.severity === 'medium');
+  if (hasMediumFilipino && hasSlangDecoded) {
+    return {
+      sentiment:  'negative',
+      score:      -0.6,
+      shouldFlag: true,
+      reason:     'Coded/slang content detected: ' + filipinoMatches.map(k => k.word).join(', '),
+      source:     'ai'  // Mark as AI since it required decoding intelligence
+    };
+  }
+
   // ── STEP 2: Call HuggingFace API for real NLP analysis ──
   // Send the DECODED text to AI so it understands slang
   const textForAI = (hasSlangDecoded ? decodedText : text).substring(0, 512);
@@ -314,12 +327,17 @@ async function analyzeSentiment(text) {
   // ── STEP 4: Pure keyword fallback (if API failed) ──
   if (filipinoMatches.length > 0) {
     const hasHigh = filipinoMatches.some(k => k.severity === 'high');
+    const hasMedium = filipinoMatches.some(k => k.severity === 'medium');
+    // Flag if high severity OR if medium + slang was decoded (intentional evasion)
+    const shouldFlag = hasHigh || (hasMedium && hasSlangDecoded);
     return {
-      sentiment:  hasHigh ? 'negative' : 'neutral',
-      score:      hasHigh ? -0.6 : -0.2,
-      shouldFlag: hasHigh,
-      reason:     'Inappropriate keywords detected: ' + filipinoMatches.map(k => k.word).join(', '),
-      source:     'keyword'
+      sentiment:  shouldFlag ? 'negative' : 'neutral',
+      score:      shouldFlag ? -0.6 : -0.2,
+      shouldFlag: shouldFlag,
+      reason:     shouldFlag
+        ? (hasSlangDecoded ? 'Coded/slang content detected: ' : 'Inappropriate keywords detected: ') + filipinoMatches.map(k => k.word).join(', ')
+        : '',
+      source:     hasSlangDecoded ? 'ai' : 'keyword'
     };
   }
 

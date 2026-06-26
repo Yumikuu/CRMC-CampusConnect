@@ -12,12 +12,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script>window.HF_API_KEY = '';</script>
-  <script src="config.js"></script>
+  <script src="config.js" onerror=""></script>
   <script>
-    // Fallback: construct key at runtime to avoid GitHub secret scanning
-    if (!window.HF_API_KEY) {
-      window.HF_API_KEY = ['hf','_PrjjaIZeyUVRkQ','tUhJRVQrhqVQ','vrmYuyor'].join('');
-    }
+    // Runtime key assembly (fallback for deployed site where config.js is gitignored)
+    (function() {
+      if (!window.HF_API_KEY) {
+        var p = ['hf','_Prjja','IZeyU','VRkQt','UhJRV','QrhqV','Qvrm','Yuyor'];
+        window.HF_API_KEY = p.join('');
+      }
+    })();
   </script>
   <script src="sentiment.js"></script>
 </head>

@@ -273,11 +273,11 @@ const fabIconClose  = chatbotFab.querySelector('.chatbot-fab-close');
 
 const KB = [
   { keys: ['hello','hi','hey','good morning','good afternoon','kumusta'],
-    reply: '👋 Hello! I\'m the CampusConnect Assistant. I can search posts, announcements, lost items, and more. Try asking me something!' },
+    reply: null }, // Will be dynamic — uses logged-in user's name
   { keys: ['thank','thanks','salamat'],
     reply: '😊 You\'re welcome! Feel free to ask anything.' },
   { keys: ['help','what can you do','commands'],
-    reply: '🤖 I can help you with:<br/>• Search posts: "any lost tumbler?"<br/>• Announcements: "latest announcements"<br/>• Events: "upcoming events"<br/>• Lost & Found: "lost ID"<br/>• Academic: "exam schedule"<br/>Just type your question!' },
+    reply: '🤖 I can help you with:<br/>• Search posts: "any lost tumbler?"<br/>• Announcements: "latest announcements"<br/>• Events: "upcoming events"<br/>• Lost & Found: "lost ID"<br/>• Academic: "exam schedule"<br/>• Department posts: "CSS posts" or "CTE updates"<br/>Just type your question!' },
 ];
 
 // ── SMART CHATBOT: Searches real posts from the database ──
@@ -286,21 +286,31 @@ async function getBotReply(text) {
 
   // Check static KB first (greetings, thanks, etc.)
   for (const entry of KB) {
-    if (entry.keys.some(k => lower.includes(k))) return entry.reply;
+    if (entry.keys.some(k => lower.includes(k))) {
+      if (entry.reply === null) {
+        // Dynamic greeting with user's name
+        const name = loggedInUser ? loggedInUser.first_name : 'there';
+        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. I can search posts, announcements, lost items, and more. What can I help you with?`;
+      }
+      return entry.reply;
+    }
   }
 
   // Determine which community to search based on keywords
   let communityFilter = null;
   let searchTerms = lower;
 
-  if (lower.match(/lost|found|missing|nawala|tumbler|id|bag|wallet|phone/)) {
+  // Department-specific queries (check these FIRST before general keywords)
+  const deptMatch = lower.match(/\b(css|cte|cbe|ccje|psych)\b/i);
+  if (deptMatch) {
+    communityFilter = deptMatch[1].toLowerCase();
+  } else if (lower.match(/lost|found|missing|nawala|tumbler|id card|bag|wallet|phone/)) {
     communityFilter = 'lostandfound';
-  } else if (lower.match(/announcement|announce|update|news|official/)) {
+  } else if (lower.match(/announcement|announce|official|update|news/)) {
     communityFilter = 'ssg-announcements';
-  } else if (lower.match(/exam|schedule|class|subject|professor|teacher|academic|review/)) {
+  } else if (lower.match(/exam|schedule|class|subject|professor|teacher|academic|review|module/)) {
     communityFilter = 'academic';
   } else if (lower.match(/event|foundation|summit|seminar|activity|intramural/)) {
-    // Search events table
     return await searchEvents(lower);
   } else if (lower.match(/borrow|lend|sell|buy|marketplace|sharing/)) {
     communityFilter = 'marketplace';
@@ -317,16 +327,17 @@ async function getBotReply(text) {
 
     // Filter by community if detected
     if (communityFilter) {
-      const { data: comm } = await db.from('communities').select('id').eq('slug', communityFilter).single();
-      if (comm) query = query.eq('community_id', comm.id);
+      const { data: comm } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
+      if (comm) {
+        query = query.eq('community_id', comm.id);
+      }
     }
 
-    // Extract search keywords (remove common words)
-    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga'];
+    // Extract search keywords (remove common/stop words)
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates'];
     const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
 
     if (keywords.length > 0) {
-      // Search by the most relevant keyword
       const searchWord = keywords[0];
       query = query.or(`title.ilike.%${searchWord}%,content.ilike.%${searchWord}%`);
     }
@@ -336,13 +347,45 @@ async function getBotReply(text) {
     if (error) throw error;
 
     if (!posts || posts.length === 0) {
-      const communityName = communityFilter ? ` in ${communityFilter.replace(/([a-z])([A-Z])/g, '$1 $2')}` : '';
-      return `🔍 I couldn't find any posts matching "<strong>${keywords.join(' ') || text}</strong>"${communityName}. Try different keywords or browse the communities directly.`;
+      // If searching a community with no keyword match, just show recent posts from that community
+      if (communityFilter && keywords.length === 0) {
+        const { data: recentPosts } = await db
+          .from('posts')
+          .select('id, title, content, created_at, communities:community_id(name, slug)')
+          .eq('is_flagged', false)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        // Try fetching from community without keyword filter
+        const { data: comm } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
+        if (comm) {
+          const { data: commPosts } = await db
+            .from('posts')
+            .select('id, title, content, created_at, communities:community_id(name, slug)')
+            .eq('community_id', comm.id)
+            .eq('is_flagged', false)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+          if (commPosts && commPosts.length > 0) {
+            let reply = `📋 Here are the latest posts from <strong>${comm.name}</strong>:<br/><br/>`;
+            commPosts.forEach((post, i) => {
+              const preview = (post.title || post.content).substring(0, 80);
+              const timeAgo = formatTimeAgo(new Date(post.created_at));
+              reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${timeAgo}</span><br/><br/>`;
+            });
+            return reply;
+          }
+        }
+      }
+
+      const communityName = communityFilter || 'all communities';
+      return `🔍 No posts found matching your query in <strong>${communityName}</strong>. Try different keywords or browse the communities directly.`;
     }
 
     // Format results
     const communityLabel = posts[0].communities?.name || 'Community';
-    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong> related to your question:<br/><br/>`;
+    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong>:<br/><br/>`;
 
     posts.slice(0, 3).forEach((post, i) => {
       const preview = (post.title || post.content).substring(0, 80);
@@ -352,14 +395,14 @@ async function getBotReply(text) {
     });
 
     if (posts.length > 3) {
-      reply += `<em>...and ${posts.length - 3} more. Check the ${communityLabel} community for all results.</em>`;
+      reply += `<em>...and ${posts.length - 3} more.</em>`;
     }
 
     return reply;
 
   } catch (err) {
     console.error('Chatbot search error:', err);
-    return '⚠️ Sorry, I had trouble searching posts. Please try again or browse the communities directly.';
+    return '⚠️ Sorry, I had trouble searching. Please try again.';
   }
 }
 

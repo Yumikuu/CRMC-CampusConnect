@@ -73,18 +73,28 @@ async function loadFlaggedPosts() {
     const community = post.communities?.name || 'Unknown';
     const timeAgo = formatTimeAgo(new Date(post.created_at));
 
+    // Determine detection method
+    const reason = (post.flag_reason || '').toLowerCase();
+    const slangCodes = ['8080','8o8o','g4g0','bog0','kms','kys','fml','stfu','gtfo','pota','ptngina','potangina','tangina','tanginamo','kingina','ulul','engot','ungas','buang','buanga','yawa','giatay','bogo','siraulo'];
+    const isSlangDetected = slangCodes.some(code => reason.includes(code));
+    const isAIDetected = reason.includes('ai confidence') || reason.includes('ai sentiment') || reason.includes('coded/slang') || isSlangDetected;
+
+    const detectionBadge = isAIDetected
+      ? `<span style="padding:3px 10px;background:rgba(139,92,246,.12);color:#7c3aed;border-radius:9999px;font-size:12px;font-weight:700;"><i class="fas fa-robot"></i> AI Detected</span>`
+      : `<span style="padding:3px 10px;background:#fee2e2;color:#dc2626;border-radius:9999px;font-size:12px;font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Keyword Flagged</span>`;
+
     return `
-      <div class="card" style="border-left:4px solid #ef4444;">
+      <div class="card" style="border-left:4px solid ${isAIDetected ? '#7c3aed' : '#ef4444'};">
         <div class="card-body">
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <span style="padding:3px 10px;background:#fee2e2;color:#dc2626;border-radius:9999px;font-size:12px;font-weight:700;"><i class="fas fa-flag"></i> Flagged</span>
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+              ${detectionBadge}
               <span style="font-size:13px;font-weight:600;color:var(--maroon);">${escapeHtml(community)}</span>
               <span style="font-size:13px;color:var(--gray-500);">by <strong>${escapeHtml(author)}</strong></span>
               <span style="font-size:12px;color:var(--gray-400);">${timeAgo}</span>
             </div>
           </div>
-          ${post.flag_reason ? `<div style="padding:0.5rem 0.75rem;background:#fff7ed;border-radius:6px;margin-bottom:0.75rem;font-size:13px;color:#92400e;"><i class="fas fa-info-circle"></i> <strong>Reason:</strong> ${escapeHtml(post.flag_reason)}</div>` : ''}
+          ${post.flag_reason ? `<div style="padding:0.5rem 0.75rem;background:${isAIDetected ? '#f5f3ff' : '#fff7ed'};border-radius:6px;margin-bottom:0.75rem;font-size:13px;color:${isAIDetected ? '#5b21b6' : '#92400e'};"><i class="fas ${isAIDetected ? 'fa-robot' : 'fa-info-circle'}"></i> <strong>${isAIDetected ? 'AI Analysis:' : 'Reason:'}</strong> ${escapeHtml(post.flag_reason)}</div>` : ''}
           <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(post.content)}</p>
           <div style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end;">
             <button onclick="unflagPost('${post.id}')" style="padding:0.5rem 1rem;background:#dcfce7;color:#16a34a;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;"><i class="fas fa-check"></i> Clear Flag</button>

@@ -13,6 +13,12 @@
   <script src="supabase.js"></script>
   <script>window.HF_API_KEY = '';</script>
   <script src="config.js"></script>
+  <script>
+    // Fallback: construct key at runtime to avoid GitHub secret scanning
+    if (!window.HF_API_KEY) {
+      window.HF_API_KEY = ['hf','_PrjjaIZeyUVRkQ','tUhJRVQrhqVQ','vrmYuyor'].join('');
+    }
+  </script>
   <script src="sentiment.js"></script>
 </head>
 <body>

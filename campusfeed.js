@@ -272,32 +272,123 @@ const fabIconOpen   = chatbotFab.querySelector('.chatbot-fab-open');
 const fabIconClose  = chatbotFab.querySelector('.chatbot-fab-close');
 
 const KB = [
-  { keys: ['exam','examination','final exam','midterm','test schedule'],
-    reply: '📅 <strong>Final Exam Schedule</strong><br/>The schedule for all departments has been released. Check the Announcements section or visit the Registrar\'s portal for your timetable.' },
-  { keys: ['class suspension','no class','suspended','suspension'],
-    reply: '🚫 <strong>Class Suspensions</strong><br/>No class suspensions announced at the moment. Check Announcements for real-time updates.' },
-  { keys: ['lost','found','lost and found','tumbler','missing'],
-    reply: '🔍 <strong>Lost & Found</strong><br/>Browse the Lost & Found community for recent posts. Students have posted about lost IDs, tumblers, and bags.' },
-  { keys: ['announcement','announcements','latest','update'],
-    reply: '📢 <strong>Latest Announcements</strong><br/>• 2nd Semester Enrollment is open<br/>• Foundation Day — May 28<br/>• Final Exam Schedule released<br/>• Library maintenance May 22, 8AM–12PM' },
-  { keys: ['enrollment','enroll','registration','semester'],
-    reply: '📝 <strong>Enrollment</strong><br/>2nd Semester enrollment is open! Visit the Registrar\'s portal for your schedule and required documents.' },
-  { keys: ['cte','teacher education'],
-    reply: '🎓 <strong>CTE Announcements</strong><br/>Check the CTE Community channel for the latest department-specific updates and announcements from your professors.' },
-  { keys: ['event','events','foundation day','activity'],
-    reply: '🎉 <strong>Upcoming Events</strong><br/>• Foundation Day — May 28<br/>• Leadership Summit — May 30<br/>• Final Exams — June 2' },
-  { keys: ['hello','hi','hey','good morning','good afternoon'],
-    reply: '👋 Hello, Juan! How can I help you today?' },
+  { keys: ['hello','hi','hey','good morning','good afternoon','kumusta'],
+    reply: '👋 Hello! I\'m the CampusConnect Assistant. I can search posts, announcements, lost items, and more. Try asking me something!' },
   { keys: ['thank','thanks','salamat'],
     reply: '😊 You\'re welcome! Feel free to ask anything.' },
+  { keys: ['help','what can you do','commands'],
+    reply: '🤖 I can help you with:<br/>• Search posts: "any lost tumbler?"<br/>• Announcements: "latest announcements"<br/>• Events: "upcoming events"<br/>• Lost & Found: "lost ID"<br/>• Academic: "exam schedule"<br/>Just type your question!' },
 ];
 
-function getBotReply(text) {
+// ── SMART CHATBOT: Searches real posts from the database ──
+async function getBotReply(text) {
   const lower = text.toLowerCase();
+
+  // Check static KB first (greetings, thanks, etc.)
   for (const entry of KB) {
     if (entry.keys.some(k => lower.includes(k))) return entry.reply;
   }
-  return "🤔 I'm not sure about that. Try asking about <strong>exams</strong>, <strong>suspensions</strong>, <strong>lost & found</strong>, or <strong>announcements</strong>.";
+
+  // Determine which community to search based on keywords
+  let communityFilter = null;
+  let searchTerms = lower;
+
+  if (lower.match(/lost|found|missing|nawala|tumbler|id|bag|wallet|phone/)) {
+    communityFilter = 'lostandfound';
+  } else if (lower.match(/announcement|announce|update|news|official/)) {
+    communityFilter = 'ssg-announcements';
+  } else if (lower.match(/exam|schedule|class|subject|professor|teacher|academic|review/)) {
+    communityFilter = 'academic';
+  } else if (lower.match(/event|foundation|summit|seminar|activity|intramural/)) {
+    // Search events table
+    return await searchEvents(lower);
+  } else if (lower.match(/borrow|lend|sell|buy|marketplace|sharing/)) {
+    communityFilter = 'marketplace';
+  }
+
+  // Search posts in the database
+  try {
+    let query = db
+      .from('posts')
+      .select('id, title, content, created_at, communities:community_id(name, slug)')
+      .eq('is_flagged', false)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // Filter by community if detected
+    if (communityFilter) {
+      const { data: comm } = await db.from('communities').select('id').eq('slug', communityFilter).single();
+      if (comm) query = query.eq('community_id', comm.id);
+    }
+
+    // Extract search keywords (remove common words)
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga'];
+    const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+
+    if (keywords.length > 0) {
+      // Search by the most relevant keyword
+      const searchWord = keywords[0];
+      query = query.or(`title.ilike.%${searchWord}%,content.ilike.%${searchWord}%`);
+    }
+
+    const { data: posts, error } = await query;
+
+    if (error) throw error;
+
+    if (!posts || posts.length === 0) {
+      const communityName = communityFilter ? ` in ${communityFilter.replace(/([a-z])([A-Z])/g, '$1 $2')}` : '';
+      return `🔍 I couldn't find any posts matching "<strong>${keywords.join(' ') || text}</strong>"${communityName}. Try different keywords or browse the communities directly.`;
+    }
+
+    // Format results
+    const communityLabel = posts[0].communities?.name || 'Community';
+    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong> related to your question:<br/><br/>`;
+
+    posts.slice(0, 3).forEach((post, i) => {
+      const preview = (post.title || post.content).substring(0, 80);
+      const timeAgo = formatTimeAgo(new Date(post.created_at));
+      const comm = post.communities?.name || 'General';
+      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span><br/><br/>`;
+    });
+
+    if (posts.length > 3) {
+      reply += `<em>...and ${posts.length - 3} more. Check the ${communityLabel} community for all results.</em>`;
+    }
+
+    return reply;
+
+  } catch (err) {
+    console.error('Chatbot search error:', err);
+    return '⚠️ Sorry, I had trouble searching posts. Please try again or browse the communities directly.';
+  }
+}
+
+// Search upcoming events
+async function searchEvents(text) {
+  try {
+    const { data: events } = await db
+      .from('campus_events')
+      .select('*')
+      .eq('is_active', true)
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('event_date', { ascending: true })
+      .limit(5);
+
+    if (!events || events.length === 0) {
+      return '📅 No upcoming events scheduled at the moment. Check back later or visit the Announcements page.';
+    }
+
+    let reply = '🎉 <strong>Upcoming Events:</strong><br/><br/>';
+    events.forEach(ev => {
+      const d = new Date(ev.event_date);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      reply += `📌 <strong>${escapeHtml(ev.title)}</strong><br/><span style="font-size:.75rem;color:#6b7280;">${dateStr} · ${escapeHtml(ev.location || 'CRMC Campus')}</span><br/><br/>`;
+    });
+
+    return reply;
+  } catch (err) {
+    return '⚠️ Could not load events. Please try again.';
+  }
 }
 
 function appendMsg(html, role) {
@@ -326,10 +417,15 @@ function sendMessage(text) {
   appendMsg(text, 'user');
   chatbotInput.value = '';
   const typing = showTyping();
-  setTimeout(() => {
+
+  // getBotReply is now async (queries database)
+  getBotReply(text).then(reply => {
     typing.remove();
-    appendMsg(getBotReply(text), 'bot');
-  }, 800 + Math.random() * 300);
+    appendMsg(reply, 'bot');
+  }).catch(() => {
+    typing.remove();
+    appendMsg('⚠️ Something went wrong. Please try again.', 'bot');
+  });
 }
 
 function openChatbot() {

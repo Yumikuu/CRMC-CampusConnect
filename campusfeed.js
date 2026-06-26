@@ -674,6 +674,8 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
     runSentimentAnalysis(data.id, content, title || '').then(result => {
       if (result.shouldFlag) {
         console.warn('⚠️ Post flagged by AI:', result.reason);
+        // Show warning to the user
+        showToast('⚠️ Your post has been flagged for review. Please ensure it follows community guidelines.', 'error');
       }
     });
 

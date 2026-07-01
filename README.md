@@ -1,6 +1,6 @@
 # CRMC CampusConnect
 
-A centralized student community platform for CRMC (Colegio de la Republica Montessori College) featuring AI-powered content moderation, real-time notifications, and department-based community interaction.
+A centralized student community platform for CRMC (Cebu Roosevelt Memorial Colleges) featuring AI-powered content moderation, real-time notifications, and department-based community interaction.
 
 ## Live Demo
 

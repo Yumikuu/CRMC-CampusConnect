@@ -146,7 +146,7 @@ The system uses a 3-layer approach:
 | System Analyst | Jameston Molejon |
 
 - **Course:** BSIT
-- **School:** Colegio de la Republica Montessori College (CRMC)
+- **School:** Cebu Roosevelt Memorial Colleges (CRMC)
 
 ## License
 

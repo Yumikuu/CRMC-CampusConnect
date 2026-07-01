@@ -138,8 +138,14 @@ The system uses a 3-layer approach:
 
 ## Team
 
-- **Developer:** [Your Name]
-- **Course:** [Your Course]
+| Role | Name |
+|------|------|
+| Team Leader | Albert Reyes |
+| Developer | Yumijoy Dela Rama |
+| Documentation Specialist | Kint Salas |
+| System Analyst | Jameston Molejon |
+
+- **Course:** BSIT
 - **School:** Colegio de la Republica Montessori College (CRMC)
 
 ## License

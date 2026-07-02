@@ -31,6 +31,7 @@ const STATUS_COLORS = {
     return;
   }
   adminUser = profile;
+  initAdminNotifications(profile.id);
 
   document.getElementById('adminAvatar').textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
@@ -256,3 +257,4 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+

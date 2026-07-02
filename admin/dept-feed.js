@@ -1,6 +1,6 @@
-﻿// ═══════════════════════════════════════════════════════════════
-// DEPT COMMUNITY FEED — Live feed with admin powers
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
+// DEPT COMMUNITY FEED � Live feed with admin powers
+// ---------------------------------------------------------------
 
 let adminUser = null;
 let deptCommunityId = null;
@@ -23,7 +23,7 @@ const DEPT_COLORS = {
   'PSYCH': '#8b5cf6', 'CCJE': '#ef4444',
 };
 
-// ── AUTH + INIT ──
+// -- AUTH + INIT --
 (async () => {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
@@ -35,6 +35,7 @@ const DEPT_COLORS = {
   }
 
   adminUser = profile;
+  initAdminNotifications(profile.id);
   const dept  = profile.admin_role;
   const color = DEPT_COLORS[dept] || 'var(--maroon)';
   const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
@@ -74,7 +75,7 @@ const DEPT_COLORS = {
   setupListeners();
 })();
 
-// ── LOAD COMMUNITY STATS ──
+// -- LOAD COMMUNITY STATS --
 async function loadCommStats() {
   if (!deptCommunityId) return;
 
@@ -87,7 +88,7 @@ async function loadCommStats() {
   document.getElementById('statMembers').textContent = memberCount || 0;
 }
 
-// ── LOAD FEED ──
+// -- LOAD FEED --
 async function loadFeed() {
   if (!deptCommunityId) {
     document.getElementById('feedContainer').innerHTML = `
@@ -106,7 +107,7 @@ async function loadFeed() {
 
   if (currentFilter === 'pinned')        query = query.eq('is_pinned', true);
   if (currentFilter === 'flagged')       query = query.eq('is_flagged', true);
-  if (currentFilter === 'announcements') query = query.ilike('content', '📢%');
+  if (currentFilter === 'announcements') query = query.ilike('content', '??%');
 
   const { data: posts, error } = await query;
   if (error) { console.error(error); return; }
@@ -136,10 +137,10 @@ async function loadFeed() {
   document.getElementById('feedContainer').innerHTML = allPosts.map(post => renderPost(post, likedSet)).join('');
 }
 
-// ── RENDER A SINGLE POST ──
+// -- RENDER A SINGLE POST --
 function renderPost(post, likedSet) {
   const isAnon   = post.is_anonymous;
-  const isAnn    = post.content?.startsWith('📢 [ANNOUNCEMENT]');
+  const isAnn    = post.content?.startsWith('?? [ANNOUNCEMENT]');
   const author   = isAnon ? 'Anonymous' : (post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown');
   const initials = isAnon ? 'A' : (post.profiles ? (post.profiles.first_name[0] + post.profiles.last_name[0]).toUpperCase() : '?');
   const isAdmin  = post.profiles?.admin_role && post.profiles.admin_role !== 'student';
@@ -154,7 +155,7 @@ function renderPost(post, likedSet) {
     isAnn && 'is-announcement',
   ].filter(Boolean).join(' ');
 
-  // Image grid — small thumbnails, full image visible
+  // Image grid � small thumbnails, full image visible
   let imageHtml = '';
   if (images.length) {
     const shown = images.slice(0, 5);
@@ -186,7 +187,7 @@ function renderPost(post, likedSet) {
         </div>
       </div>
 
-      <div class="post-content">${escapeHtml((post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</div>
+      <div class="post-content">${escapeHtml((post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, ''))}</div>
       ${imageHtml}
 
       <div class="post-actions">
@@ -229,7 +230,7 @@ function renderPost(post, likedSet) {
     </div>`;
 }
 
-// ── TOGGLE COMMENTS ──
+// -- TOGGLE COMMENTS --
 async function toggleComments(postId) {
   const section = document.getElementById(`comments-${postId}`);
   const isOpen  = section.style.display !== 'none';
@@ -298,7 +299,7 @@ async function sendComment(postId) {
   if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
 }
 
-// ── LIKE ──
+// -- LIKE --
 async function toggleLike(postId, liked) {
   if (liked) {
     await db.from('post_likes').delete().eq('post_id', postId).eq('user_id', adminUser.id);
@@ -319,7 +320,7 @@ async function toggleLike(postId, liked) {
   }
 }
 
-// ── PIN / FLAG / DELETE ──
+// -- PIN / FLAG / DELETE --
 async function togglePin(postId, current) {
   const { error } = await db.from('posts').update({ is_pinned: !current }).eq('id', postId);
   if (error) { showToast('Failed', 'error'); return; }
@@ -356,7 +357,7 @@ document.getElementById('confirmDeletePostBtn').addEventListener('click', async 
   await Promise.all([loadFeed(), loadCommStats()]);
 });
 
-// ── CREATE / PUBLISH POST ──
+// -- CREATE / PUBLISH POST --
 function openModal(type = 'post') {
   setType(type);
   document.getElementById('modalContent').value = '';
@@ -403,14 +404,14 @@ async function publishPost() {
     const { error } = await db.from('posts').insert({
       community_id: deptCommunityId,
       author_id:    adminUser.id,
-      content:      isAnn ? `📢 [ANNOUNCEMENT]\n\n${content}` : content,
+      content:      isAnn ? `?? [ANNOUNCEMENT]\n\n${content}` : content,
       is_anonymous: false,
       is_pinned:    isPinned,
       image_url:    imageUrls.length ? imageUrls : null,
     });
     if (error) throw error;
 
-    showToast(isAnn ? '📢 Announcement published!' : 'Post published!', 'success');
+    showToast(isAnn ? '?? Announcement published!' : 'Post published!', 'success');
     document.getElementById('createModal').style.display = 'none';
     document.getElementById('modalContent').value = '';
     selectedImages = [];
@@ -425,7 +426,7 @@ async function publishPost() {
   }
 }
 
-// ── IMAGE HANDLING ──
+// -- IMAGE HANDLING --
 document.getElementById('imgInput').addEventListener('change', e => {
   const toAdd = Array.from(e.target.files).slice(0, 5 - selectedImages.length);
   toAdd.forEach(file => {
@@ -448,7 +449,7 @@ document.getElementById('imgInput').addEventListener('change', e => {
   e.target.value = '';
 });
 
-// ── RECENT MEMBERS ──
+// -- RECENT MEMBERS --
 async function loadRecentMembers() {
   const { data: members } = await db.from('profiles')
     .select('first_name, last_name, student_id, created_at')
@@ -474,7 +475,7 @@ async function loadRecentMembers() {
   }).join('');
 }
 
-// ── EVENT LISTENERS ──
+// -- EVENT LISTENERS --
 function setupListeners() {
   // Open modal buttons
   document.getElementById('openCreatePost').addEventListener('click', () => openModal('post'));
@@ -504,7 +505,7 @@ function setupListeners() {
   });
 }
 
-// ── HELPERS ──
+// -- HELPERS --
 function formatTimeAgo(date) {
   const s = Math.floor((new Date() - date) / 1000);
   if (s < 60)     return 'just now';
@@ -525,4 +526,5 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+
 

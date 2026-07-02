@@ -1,6 +1,6 @@
-﻿// ═══════════════════════════════════════════════════════════════
-// DEPT ANALYTICS — Stats, charts, and top contributors
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
+// DEPT ANALYTICS � Stats, charts, and top contributors
+// ---------------------------------------------------------------
 
 let adminUser = null;
 let deptCommunityId = null;
@@ -23,6 +23,7 @@ const DEPT_FULL = {
     return;
   }
   adminUser = profile;
+  initAdminNotifications(profile.id);
 
   document.getElementById('adminAvatar').textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
@@ -49,7 +50,7 @@ const DEPT_FULL = {
   ]);
 })();
 
-// ── STAT CARDS ──
+// -- STAT CARDS --
 async function loadStatCards() {
   const deptFull = DEPT_FULL[adminUser.admin_role];
 
@@ -96,7 +97,7 @@ async function loadStatCards() {
   document.getElementById('statFlagged').textContent = flaggedCount;
 }
 
-// ── LINE CHART: Last 7 days post activity ──
+// -- LINE CHART: Last 7 days post activity --
 async function loadLineChart() {
   const labels = [];
   const counts = [];
@@ -169,7 +170,7 @@ async function loadLineChart() {
   });
 }
 
-// ── DOUGHNUT CHART: Account status breakdown ──
+// -- DOUGHNUT CHART: Account status breakdown --
 async function loadDoughnutChart() {
   const deptFull = DEPT_FULL[adminUser.admin_role];
   const statuses = ['approved', 'pending', 'suspended', 'rejected'];
@@ -229,7 +230,7 @@ async function loadDoughnutChart() {
   });
 }
 
-// ── TOP CONTRIBUTORS TABLE ──
+// -- TOP CONTRIBUTORS TABLE --
 async function loadTopContributors() {
   const tbody = document.getElementById('contributorsBody');
 
@@ -279,12 +280,12 @@ async function loadTopContributors() {
 
   const maxCount = top5[0][1];
 
-  const rankIcons = ['🥇','🥈','🥉','4','5'];
+  const rankIcons = ['??','??','??','4','5'];
 
   tbody.innerHTML = top5.map(([authorId, count], idx) => {
     const p = profileMap[authorId];
     const name = p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Unknown User';
-    const studentId = p?.student_id || '—';
+    const studentId = p?.student_id || '�';
     const initials = p ? ((p.first_name?.[0] || '') + (p.last_name?.[0] || '')).toUpperCase() : '?';
     const barPct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
 
@@ -313,4 +314,5 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+
 

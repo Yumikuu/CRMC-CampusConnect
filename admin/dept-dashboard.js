@@ -62,6 +62,9 @@ const DEPT_COLORS = {
   document.getElementById('deptUsersLabel').textContent = `${dept} Students`;
   document.getElementById('deptPostsLabel').textContent = `${dept} Posts`;
 
+  // Initialize notification bell
+  initAdminNotifications(adminUser.id);
+
   await loadDepartmentStats();
   await loadRecentPosts();
   await loadRecentUsers();

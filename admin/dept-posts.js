@@ -1,6 +1,6 @@
-﻿// ═══════════════════════════════════════════════════════════════
-// DEPT POSTS — View, create, and moderate department posts
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
+// DEPT POSTS � View, create, and moderate department posts
+// ---------------------------------------------------------------
 
 let adminUser = null;
 let deptCommunityId = null;
@@ -23,6 +23,7 @@ const DEPT_FULL = {
     window.location.href = profile?.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html'; return;
   }
   adminUser = profile;
+  initAdminNotifications(profile.id);
 
   document.getElementById('adminAvatar').textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
@@ -82,7 +83,7 @@ function renderPosts() {
     const initials = post.is_anonymous ? 'A' : (post.profiles ? (post.profiles.first_name[0]+post.profiles.last_name[0]).toUpperCase() : '?');
     const timeAgo = formatTimeAgo(new Date(post.created_at));
     const images = Array.isArray(post.image_url) ? post.image_url : (post.image_url ? [post.image_url] : []);
-    const isAnnouncement = post.content?.startsWith('📢 [ANNOUNCEMENT]');
+    const isAnnouncement = post.content?.startsWith('?? [ANNOUNCEMENT]');
 
     return `
       <div class="card" style="${post.is_flagged ? 'border-left:4px solid #ef4444;' : post.is_pinned ? 'border-left:4px solid #f59e0b;' : ''}">
@@ -97,7 +98,7 @@ function renderPosts() {
                 ${post.is_flagged ? '<span style="padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:9999px;font-size:11px;font-weight:600;"><i class="fas fa-flag"></i> Flagged</span>' : ''}
                 <span style="font-size:12px;color:var(--gray-400);margin-left:auto;">${timeAgo}</span>
               </div>
-              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml((post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
+              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml((post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
               ${images.length ? `<div style="display:flex;gap:4px;margin-top:0.5rem;">${images.slice(0,3).map(u=>`<img src="${u}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">`).join('')}${images.length>3?`<div style="width:60px;height:60px;background:var(--gray-200);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gray-600);">+${images.length-3}</div>`:''}</div>` : ''}
               <div style="display:flex;gap:0.5rem;margin-top:0.75rem;align-items:center;">
                 <span style="font-size:12px;color:var(--gray-500);"><i class="fas fa-heart"></i> ${post.like_count||0}</span>
@@ -154,7 +155,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
   await loadPosts();
 });
 
-// ── CREATE POST ──
+// -- CREATE POST --
 function setPostType(type) {
   const isAnn = type === 'announcement';
   document.getElementById('postType').value = type;
@@ -188,7 +189,7 @@ async function submitPost() {
     const { error } = await db.from('posts').insert({
       community_id: deptCommunityId,
       author_id: adminUser.id,
-      content: isAnn ? `📢 [ANNOUNCEMENT]\n\n${content}` : content,
+      content: isAnn ? `?? [ANNOUNCEMENT]\n\n${content}` : content,
       is_anonymous: false,
       is_pinned: isPinned,
       image_url: imageUrls.length ? imageUrls : null,
@@ -253,4 +254,5 @@ function formatTimeAgo(date) {
 function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div');d.textContent=t;return d.innerHTML; }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+
 

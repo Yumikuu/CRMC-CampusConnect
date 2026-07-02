@@ -1,6 +1,6 @@
-﻿// ═══════════════════════════════════════════════════════════════
-// DEPT MODERATION — Flagged posts and activity log
-// ═══════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------
+// DEPT MODERATION � Flagged posts and activity log
+// ---------------------------------------------------------------
 
 let adminUser = null;
 let deptCommunityId = null;
@@ -34,6 +34,7 @@ const ACTION_LABELS = {
     return;
   }
   adminUser = profile;
+  initAdminNotifications(profile.id);
 
   document.getElementById('adminAvatar').textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
@@ -56,7 +57,7 @@ const ACTION_LABELS = {
   setupTabs();
 })();
 
-// ── STATS ──
+// -- STATS --
 async function loadStats() {
   if (!deptCommunityId) {
     document.getElementById('statFlagged').textContent = '0';
@@ -83,7 +84,7 @@ async function loadStats() {
   document.getElementById('statReviewedToday').textContent = reviewedToday || 0;
 }
 
-// ── FLAGGED POSTS ──
+// -- FLAGGED POSTS --
 async function loadFlaggedPosts() {
   const container = document.getElementById('panelFlagged');
   container.innerHTML = `<div class="card"><div class="card-body" style="text-align:center;padding:2rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i><p style="margin-top:0.75rem;">Loading flagged posts...</p></div></div>`;
@@ -137,7 +138,7 @@ async function loadFlaggedPosts() {
                 <span style="font-size:12px;color:var(--gray-400);margin-left:auto;">${time}</span>
               </div>
               ${post.flag_reason ? `<div style="padding:0.5rem 0.75rem;background:#fff7ed;border-left:3px solid #f59e0b;border-radius:4px;font-size:13px;color:#92400e;margin-bottom:0.75rem;"><strong>Flag reason:</strong> ${escapeHtml(post.flag_reason)}</div>` : ''}
-              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(preview)}${post.content?.length > 200 ? '…' : ''}</p>
+              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(preview)}${post.content?.length > 200 ? '�' : ''}</p>
               <div style="display:flex;gap:0.5rem;margin-top:0.875rem;">
                 <button onclick="clearFlag('${post.id}')"
                   style="padding:0.375rem 0.875rem;background:#dcfce7;color:#166534;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
@@ -186,7 +187,7 @@ document.getElementById('deleteModal').addEventListener('click', e => {
   if (e.target.id === 'deleteModal') e.target.style.display = 'none';
 });
 
-// ── ACTIVITY LOG ──
+// -- ACTIVITY LOG --
 async function loadActivityLog() {
   const tbody = document.getElementById('logTableBody');
   tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>`;
@@ -206,11 +207,11 @@ async function loadActivityLog() {
   tbody.innerHTML = logs.map(log => {
     const meta = ACTION_LABELS[log.action_type] || { label: log.action_type, bg: '#f3f4f6', color: '#374151' };
     const targetTrunc = log.target_id
-      ? (log.target_id.length > 12 ? log.target_id.slice(0, 8) + '…' + log.target_id.slice(-4) : log.target_id)
-      : '—';
+      ? (log.target_id.length > 12 ? log.target_id.slice(0, 8) + '�' + log.target_id.slice(-4) : log.target_id)
+      : '�';
     const time = log.created_at
       ? formatTimeAgo(new Date(log.created_at))
-      : '—';
+      : '�';
 
     return `<tr style="border-bottom:1px solid var(--gray-200);" onmouseenter="this.style.background='var(--gray-50)'" onmouseleave="this.style.background=''">
       <td style="padding:0.875rem 1.25rem;">
@@ -222,7 +223,7 @@ async function loadActivityLog() {
   }).join('');
 }
 
-// ── TABS ──
+// -- TABS --
 function setupTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -240,4 +241,5 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+
 

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// DEPT POSTS — View, create, and moderate department posts
+// DEPT POSTS ï¿½ View, create, and moderate department posts
 // ---------------------------------------------------------------
 
 let adminUser = null;
@@ -32,8 +32,14 @@ const DEPT_FULL = {
   document.getElementById('pageSubtitle').textContent = `Manage posts in the ${profile.admin_role} community`;
   document.querySelectorAll('.deptLabel').forEach(el => el.textContent = profile.admin_role);
 
-  const { data: community } = await db.from('communities').select('id').eq('type','department').ilike('department', DEPT_FULL[profile.admin_role]).single();
-  if (community) deptCommunityId = community.id;
+  const { data: community } = await db.from('communities').select('id').eq('type','department').ilike('department', `%${profile.admin_role}%`).single();
+  if (community) {
+    deptCommunityId = community.id;
+  } else {
+    // Fallback: try matching by slug (slug = lowercase admin_role)
+    const { data: commBySlug } = await db.from('communities').select('id').eq('slug', profile.admin_role.toLowerCase()).single();
+    if (commBySlug) deptCommunityId = commBySlug.id;
+  }
 
   await loadPosts();
   setupListeners();

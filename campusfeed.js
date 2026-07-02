@@ -2060,13 +2060,21 @@ async function loadNotifications() {
       };
       const typeLabel = typeLabels[n.type] || '';
 
+      // Urgency level (from DB or inferred from type)
+      const urgency = n.urgency || (n.type === 'like' ? 'low' : n.type === 'announcement' ? 'urgent' : n.type === 'reply' ? 'important' : 'normal');
+      const urgencyClass = `notif-urgency--${urgency}`;
+
       return `
-        <div class="notif-item ${unreadClass}" data-notif-id="${n.id}" ${postId ? `data-post-id="${postId}" style="cursor:pointer;"` : ''}>
+        <div class="notif-item ${unreadClass} ${urgencyClass}" data-notif-id="${n.id}" ${postId ? `data-post-id="${postId}" style="cursor:pointer;"` : ''}>
           <div class="notif-icon-wrap ${typeInfo.cls}">
             <i class="fas ${typeInfo.icon}"></i>
           </div>
           <div class="notif-body">
-            <div class="notif-type-label notif-label--${n.type}">${typeLabel}</div>
+            <div class="notif-type-label notif-label--${n.type}">
+              ${typeLabel}
+              ${urgency === 'critical' ? '<span class="urgency-dot urgency-dot--critical"></span>' : ''}
+              ${urgency === 'urgent' ? '<span class="urgency-dot urgency-dot--urgent"></span>' : ''}
+            </div>
             <div class="notif-text">${displayMsg}</div>
             <div class="notif-time">${timeAgo}</div>
           </div>
@@ -2323,6 +2331,7 @@ async function processMentions(text, postId) {
         message: `${loggedInUser.first_name} ${loggedInUser.last_name} mentioned you in a post`,
         link: `/campusfeed.html?post=${postId}`,
         is_read: false,
+        urgency: 'important',
       });
 
     } catch (err) {

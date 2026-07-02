@@ -97,7 +97,7 @@ function renderPosts() {
                 ${post.is_flagged ? '<span style="padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:9999px;font-size:11px;font-weight:600;"><i class="fas fa-flag"></i> Flagged</span>' : ''}
                 <span style="font-size:12px;color:var(--gray-400);margin-left:auto;">${timeAgo}</span>
               </div>
-              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(post.content)}</p>
+              <p style="font-size:14px;color:var(--gray-700);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml((post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
               ${images.length ? `<div style="display:flex;gap:4px;margin-top:0.5rem;">${images.slice(0,3).map(u=>`<img src="${u}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">`).join('')}${images.length>3?`<div style="width:60px;height:60px;background:var(--gray-200);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gray-600);">+${images.length-3}</div>`:''}</div>` : ''}
               <div style="display:flex;gap:0.5rem;margin-top:0.75rem;align-items:center;">
                 <span style="font-size:12px;color:var(--gray-500);"><i class="fas fa-heart"></i> ${post.like_count||0}</span>

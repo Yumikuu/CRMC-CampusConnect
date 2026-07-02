@@ -175,7 +175,7 @@ function renderPost(post, likedSet) {
         </div>
       </div>
 
-      <div class="post-content">${escapeHtml(post.content)}</div>
+      <div class="post-content">${escapeHtml((post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</div>
       ${imageHtml}
 
       <div class="post-actions">

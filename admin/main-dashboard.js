@@ -52,6 +52,20 @@ var adminUser = null;
   await loadRecentPosts();
   await loadRecentUsers();
   await loadDepartmentStats();
+
+  // Load analytics charts (if canvas elements exist on this page)
+  if (typeof loadPostsByCommunityChart === 'function') {
+    await Promise.all([
+      loadPostsByCommunityChart(),
+      loadDeptDistributionChart(),
+      loadPostsOverTimeChart(),
+      loadTopCommunities(),
+      loadPostsByCategoryChart(),
+      loadSentimentChart(),
+      loadResponseTimeStats(),
+      loadActivitySummary(),
+    ].map(p => p.catch(e => console.warn('Chart load error:', e))));
+  }
 })();
 
 // ── LOAD DASHBOARD STATISTICS ──

@@ -13,10 +13,10 @@ const DEPT_LIST = [
   { key: 'CCJE', full: 'College of Criminal Justice Education (CCJE)', color: '#ef4444' },
 ];
 
-(async () => {
-  // If running standalone (main-analytics.html), do auth check
-  // If embedded in dashboard, adminUser is already set
-  if (!adminUser) {
+// Only run standalone init if NOT loaded from main-dashboard.html
+// (dashboard.js calls the chart functions directly)
+if (!document.querySelector('script[src="main-dashboard.js"]')) {
+  (async () => {
     const { data: { session } } = await db.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
@@ -30,22 +30,21 @@ const DEPT_LIST = [
     const nameEl = document.getElementById('adminName');
     if (avatarEl) avatarEl.textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
     if (nameEl) nameEl.textContent = `${profile.first_name} ${profile.last_name}`;
-  }
 
-  // Load charts — skip any that don't have their canvas element on the page
-  const loaders = [];
-  if (document.getElementById('statTotalUsers')) loaders.push(loadSummaryStats());
-  if (document.getElementById('postsByCommunityChart')) loaders.push(loadPostsByCommunityChart());
-  if (document.getElementById('deptDistributionChart')) loaders.push(loadDeptDistributionChart());
-  if (document.getElementById('postsOverTimeChart')) loaders.push(loadPostsOverTimeChart());
-  if (document.getElementById('topCommunitiesList')) loaders.push(loadTopCommunities());
-  if (document.getElementById('deptTableBody')) loaders.push(loadDeptTable());
-  if (document.getElementById('postsByCategoryChart')) loaders.push(loadPostsByCategoryChart());
-  if (document.getElementById('sentimentChart')) loaders.push(loadSentimentChart());
-  if (document.getElementById('responseTimeStats')) loaders.push(loadResponseTimeStats());
-  if (document.getElementById('activitySummary')) loaders.push(loadActivitySummary());
-  await Promise.all(loaders);
-})();
+    await Promise.all([
+      loadSummaryStats(),
+      loadPostsByCommunityChart(),
+      loadDeptDistributionChart(),
+      loadPostsOverTimeChart(),
+      loadTopCommunities(),
+      loadDeptTable(),
+      loadPostsByCategoryChart(),
+      loadSentimentChart(),
+      loadResponseTimeStats(),
+      loadActivitySummary(),
+    ]);
+  })();
+}
 
 // ── SUMMARY STATS ──
 async function loadSummaryStats() {

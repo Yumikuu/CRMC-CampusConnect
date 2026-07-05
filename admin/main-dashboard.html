@@ -12,6 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../supabase.js"></script>
   <script src="admin-utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -170,12 +171,59 @@
     </div>
   </div>
 
+  <!-- Analytics Charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-bar" style="color:var(--maroon);margin-right:8px;"></i>Posts by Community</h2></div>
+      <div class="card-body"><canvas id="postsByCommunityChart" height="260"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-pie" style="color:var(--maroon);margin-right:8px;"></i>Students by Department</h2></div>
+      <div class="card-body" style="display:flex;align-items:center;justify-content:center;"><canvas id="deptDistributionChart" height="260"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-top:1.25rem;">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-line" style="color:var(--maroon);margin-right:8px;"></i>Post Activity (Last 7 Days)</h2></div>
+      <div class="card-body"><canvas id="postsOverTimeChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-fire" style="color:#f59e0b;margin-right:8px;"></i>Most Active</h2></div>
+      <div class="card-body" style="padding:1rem;"><div id="topCommunitiesList" style="display:flex;flex-direction:column;gap:0.75rem;"><div class="loading">Loading...</div></div></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-tags" style="color:var(--maroon);margin-right:8px;"></i>Posts by Category</h2></div>
+      <div class="card-body"><canvas id="postsByCategoryChart" height="260"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-smile" style="color:var(--maroon);margin-right:8px;"></i>Content Sentiment</h2></div>
+      <div class="card-body" style="display:flex;align-items:center;justify-content:center;"><canvas id="sentimentChart" height="260"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;margin-bottom:1.25rem;">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-stopwatch" style="color:var(--maroon);margin-right:8px;"></i>Moderation Response Time</h2></div>
+      <div class="card-body"><div id="responseTimeStats" style="display:flex;flex-direction:column;gap:1rem;"><div class="loading">Loading...</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-area" style="color:var(--maroon);margin-right:8px;"></i>User Activity Summary</h2></div>
+      <div class="card-body"><div id="activitySummary" style="display:flex;flex-direction:column;gap:0.875rem;"><div class="loading">Loading...</div></div></div>
+    </div>
+  </div>
+
 </main>
 
 <script src="main-dashboard.js"></script>
+<script src="main-analytics.js"></script>
 
 </body>
 </html>
+
 
 
 

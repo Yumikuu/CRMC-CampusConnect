@@ -34,9 +34,48 @@ let currentFilter = 'all';
   document.getElementById('adminAvatar').textContent = initials;
   document.getElementById('adminName').textContent = fullName;
 
+  await loadRecentUsersQuick();
   await loadUsers();
   setupEventListeners();
 })();
+
+// Load recent users quick view
+async function loadRecentUsersQuick() {
+  const el = document.getElementById('recentUsersQuick');
+  if (!el) return;
+  try {
+    const { data: users } = await db.from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!users || users.length === 0) {
+      el.innerHTML = '<div style="color:var(--gray-400);font-size:13px;text-align:center;padding:1rem;">No users yet.</div>';
+      return;
+    }
+
+    const statusColors = { approved: '#16a34a', pending: '#d97706', rejected: '#dc2626', suspended: '#6b7280' };
+
+    el.innerHTML = users.map(u => {
+      const fullName = `${u.first_name} ${u.last_name}`;
+      const initials = (u.first_name[0] + u.last_name[0]).toUpperCase();
+      const dept = u.department?.match(/\(([^)]+)\)/)?.[1] || u.department || '';
+      const time = formatTimeAgo(new Date(u.created_at));
+      const statusColor = statusColors[u.account_status] || '#6b7280';
+      return `
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--gray-100);">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--maroon);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">${escapeHtml(fullName)}</div>
+            <div style="font-size:11px;color:var(--gray-400);">${dept} · ${u.student_id} · ${time}</div>
+          </div>
+          <span style="padding:2px 8px;background:${statusColor}18;color:${statusColor};border-radius:9999px;font-size:10px;font-weight:700;text-transform:capitalize;">${u.account_status}</span>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--gray-400);font-size:13px;">Failed to load.</div>';
+  }
+}
 
 // ── LOAD ALL USERS ──
 async function loadUsers() {

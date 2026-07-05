@@ -5,6 +5,10 @@
 // Don't redeclare adminUser if already set by main-dashboard.js
 if (typeof adminUser === 'undefined') var adminUser = null;
 
+// Chart instances (for destroy/rebuild on filter change)
+var communityChartInstance = null;
+var activityChartInstance = null;
+
 const DEPT_LIST = [
   { key: 'CTE', full: 'College of Teacher Education (CTE)', color: '#3b82f6' },
   { key: 'CSS', full: 'College of Computer Studies (CSS)', color: '#10b981' },
@@ -67,12 +71,19 @@ async function loadSummaryStats() {
 }
 
 // ── POSTS BY COMMUNITY BAR CHART ──
-async function loadPostsByCommunityChart() {
+async function loadPostsByCommunityChart(daysFilter) {
+  const filterDays = daysFilter || document.getElementById('communityChartFilter')?.value || '30';
   const { data: communities } = await db.from('communities').select('id, name').order('name');
   if (!communities?.length) return;
 
-  // Batch: get all posts and count per community
-  const { data: allPosts } = await db.from('posts').select('community_id');
+  // Build date filter
+  let query = db.from('posts').select('community_id');
+  if (filterDays !== 'all') {
+    const since = new Date(Date.now() - parseInt(filterDays) * 24 * 60 * 60 * 1000).toISOString();
+    query = query.gte('created_at', since);
+  }
+
+  const { data: allPosts } = await query;
   const countMap = {};
   (allPosts || []).forEach(p => { countMap[p.community_id] = (countMap[p.community_id] || 0) + 1; });
 
@@ -81,7 +92,8 @@ async function loadPostsByCommunityChart() {
   const top = counts.slice(0, 8);
 
   const ctx = document.getElementById('postsByCommunityChart').getContext('2d');
-  new Chart(ctx, {
+  if (communityChartInstance) communityChartInstance.destroy();
+  communityChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: top.map(c => c.name),
@@ -170,13 +182,13 @@ async function loadDeptDistributionChart() {
   });
 }
 
-// ── POSTS OVER TIME LINE CHART (Last 7 days) ──
-async function loadPostsOverTimeChart() {
-  const days = [];
+// ── POSTS OVER TIME LINE CHART ──
+async function loadPostsOverTimeChart(daysParam) {
+  const numDays = parseInt(daysParam || document.getElementById('activityChartFilter')?.value || '7');
   const labels = [];
   const counts = [];
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     d.setHours(0, 0, 0, 0);
@@ -188,12 +200,15 @@ async function loadPostsOverTimeChart() {
       .gte('created_at', d.toISOString())
       .lt('created_at', next.toISOString());
 
-    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    // Show shorter labels for longer periods
+    const labelFormat = numDays > 14 ? { month: 'short', day: 'numeric' } : { weekday: 'short', day: 'numeric' };
+    labels.push(d.toLocaleDateString('en-US', labelFormat));
     counts.push(count || 0);
   }
 
   const ctx = document.getElementById('postsOverTimeChart').getContext('2d');
-  new Chart(ctx, {
+  if (activityChartInstance) activityChartInstance.destroy();
+  activityChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
@@ -575,3 +590,13 @@ async function loadActivitySummary() {
     console.warn('Activity summary error:', err);
   }
 }
+
+
+// ── CHART FILTER EVENT LISTENERS ──
+document.getElementById('communityChartFilter')?.addEventListener('change', (e) => {
+  loadPostsByCommunityChart(e.target.value);
+});
+
+document.getElementById('activityChartFilter')?.addEventListener('change', (e) => {
+  loadPostsOverTimeChart(e.target.value);
+});

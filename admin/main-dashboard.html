@@ -47,10 +47,6 @@
       <i class="fas fa-flag"></i>
       <span>Moderation</span>
     </a>
-    <a href="main-analytics.html" class="nav-item">
-      <i class="fas fa-chart-bar"></i>
-      <span>Analytics</span>
-    </a>
     <a href="main-admins.html" class="nav-item">
       <i class="fas fa-user-shield"></i>
       <span>Manage Admins</span>
@@ -132,49 +128,18 @@
     </div>
   </div>
 
-  <!-- Recent Activity -->
-  <div class="content-grid">
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-title">Recent Posts</h2>
-        <a href="main-posts.html" class="card-link">View all ?</a>
-      </div>
-      <div class="card-body">
-        <div id="recentPosts" class="activity-list">
-          <div class="loading">Loading...</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-title">Recent Users</h2>
-        <a href="main-users.html" class="card-link">View all ?</a>
-      </div>
-      <div class="card-body">
-        <div id="recentUsers" class="activity-list">
-          <div class="loading">Loading...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Department Stats -->
-  <div class="card" style="margin-top: 1.25rem;">
-    <div class="card-header">
-      <h2 class="card-title">Department Statistics</h2>
-    </div>
-    <div class="card-body">
-      <div id="deptStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Analytics Charts -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;">
     <div class="card">
-      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-bar" style="color:var(--maroon);margin-right:8px;"></i>Posts by Community</h2></div>
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-chart-bar" style="color:var(--maroon);margin-right:8px;"></i>Posts by Community</h2>
+        <select id="communityChartFilter" style="padding:0.4rem 0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:12px;font-family:Poppins,sans-serif;font-weight:600;">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 3 months</option>
+          <option value="all">All time</option>
+        </select>
+      </div>
       <div class="card-body"><canvas id="postsByCommunityChart" height="260"></canvas></div>
     </div>
     <div class="card">
@@ -185,23 +150,20 @@
 
   <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-top:1.25rem;">
     <div class="card">
-      <div class="card-header"><h2 class="card-title"><i class="fas fa-chart-line" style="color:var(--maroon);margin-right:8px;"></i>Post Activity (Last 7 Days)</h2></div>
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-chart-line" style="color:var(--maroon);margin-right:8px;"></i>Post Activity</h2>
+        <select id="activityChartFilter" style="padding:0.4rem 0.75rem;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:12px;font-family:Poppins,sans-serif;font-weight:600;">
+          <option value="7" selected>Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 3 months</option>
+        </select>
+      </div>
       <div class="card-body"><canvas id="postsOverTimeChart" height="200"></canvas></div>
     </div>
     <div class="card">
       <div class="card-header"><h2 class="card-title"><i class="fas fa-fire" style="color:#f59e0b;margin-right:8px;"></i>Most Active</h2></div>
       <div class="card-body" style="padding:1rem;"><div id="topCommunitiesList" style="display:flex;flex-direction:column;gap:0.75rem;"><div class="loading">Loading...</div></div></div>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;">
-    <div class="card">
-      <div class="card-header"><h2 class="card-title"><i class="fas fa-tags" style="color:var(--maroon);margin-right:8px;"></i>Posts by Category</h2></div>
-      <div class="card-body"><canvas id="postsByCategoryChart" height="260"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><h2 class="card-title"><i class="fas fa-smile" style="color:var(--maroon);margin-right:8px;"></i>Content Sentiment</h2></div>
-      <div class="card-body" style="display:flex;align-items:center;justify-content:center;"><canvas id="sentimentChart" height="260"></canvas></div>
     </div>
   </div>
 

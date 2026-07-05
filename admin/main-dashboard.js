@@ -49,9 +49,6 @@ var adminUser = null;
 
   // Load dashboard data
   await loadDashboardStats();
-  await loadRecentPosts();
-  await loadRecentUsers();
-  await loadDepartmentStats();
 
   // Load analytics charts (if canvas elements exist on this page)
   if (typeof loadPostsByCommunityChart === 'function') {

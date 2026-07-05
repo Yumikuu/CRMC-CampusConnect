@@ -23,9 +23,47 @@ let currentPage = 0;
   document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
 
   await loadCommunities();
+  await loadRecentPostsQuick();
   await loadPosts();
   setupListeners();
 })();
+
+// Load recent posts quick view
+async function loadRecentPostsQuick() {
+  const el = document.getElementById('recentPostsQuick');
+  if (!el) return;
+  try {
+    const { data: posts } = await db.from('posts')
+      .select('*, profiles:author_id(first_name, last_name), communities:community_id(name)')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!posts || posts.length === 0) {
+      el.innerHTML = '<div style="color:var(--gray-400);font-size:13px;text-align:center;padding:1rem;">No posts yet.</div>';
+      return;
+    }
+
+    el.innerHTML = posts.map(p => {
+      const author = p.is_anonymous ? 'Anonymous' : (p.profiles ? `${p.profiles.first_name} ${p.profiles.last_name}` : 'Unknown');
+      const comm = p.communities?.name || 'General';
+      const time = formatTimeAgo(new Date(p.created_at));
+      const preview = (p.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '').substring(0, 60);
+      return `
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--gray-100);">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--maroon);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
+            ${p.is_anonymous ? '<i class="fas fa-user-secret"></i>' : (p.profiles ? (p.profiles.first_name[0] + p.profiles.last_name[0]).toUpperCase() : '?')}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(preview)}...</div>
+            <div style="font-size:11px;color:var(--gray-400);">${escapeHtml(author)} · ${comm} · ${time}</div>
+          </div>
+          ${p.is_flagged ? '<span style="padding:2px 6px;background:#fee2e2;color:#dc2626;border-radius:9999px;font-size:10px;font-weight:700;">Flagged</span>' : ''}
+        </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--gray-400);font-size:13px;">Failed to load.</div>';
+  }
+}
 
 async function loadCommunities() {
   const { data } = await db.from('communities').select('id, name').order('name');

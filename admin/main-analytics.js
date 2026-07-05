@@ -2,7 +2,8 @@
 // SSG ANALYTICS — Charts and data visualization
 // ═══════════════════════════════════════════════════════════════
 
-let adminUser = null;
+// Don't redeclare adminUser if already set by main-dashboard.js
+if (typeof adminUser === 'undefined') var adminUser = null;
 
 const DEPT_LIST = [
   { key: 'CTE', full: 'College of Teacher Education (CTE)', color: '#3b82f6' },
@@ -13,30 +14,37 @@ const DEPT_LIST = [
 ];
 
 (async () => {
-  const { data: { session } } = await db.auth.getSession();
-  if (!session) { window.location.href = 'login.html'; return; }
+  // If running standalone (main-analytics.html), do auth check
+  // If embedded in dashboard, adminUser is already set
+  if (!adminUser) {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
 
-  const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || profile.admin_role !== 'SSG') {
-    window.location.href = profile?.admin_role ? 'dept-dashboard.html' : '../campusfeed.html';
-    return;
+    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+    if (!profile || profile.admin_role !== 'SSG') {
+      window.location.href = profile?.admin_role ? 'dept-dashboard.html' : '../campusfeed.html';
+      return;
+    }
+    adminUser = profile;
+    const avatarEl = document.getElementById('adminAvatar');
+    const nameEl = document.getElementById('adminName');
+    if (avatarEl) avatarEl.textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
+    if (nameEl) nameEl.textContent = `${profile.first_name} ${profile.last_name}`;
   }
-  adminUser = profile;
-  document.getElementById('adminAvatar').textContent = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
-  document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
 
-  await Promise.all([
-    loadSummaryStats(),
-    loadPostsByCommunityChart(),
-    loadDeptDistributionChart(),
-    loadPostsOverTimeChart(),
-    loadTopCommunities(),
-    loadDeptTable(),
-    loadPostsByCategoryChart(),
-    loadSentimentChart(),
-    loadResponseTimeStats(),
-    loadActivitySummary(),
-  ]);
+  // Load charts — skip any that don't have their canvas element on the page
+  const loaders = [];
+  if (document.getElementById('statTotalUsers')) loaders.push(loadSummaryStats());
+  if (document.getElementById('postsByCommunityChart')) loaders.push(loadPostsByCommunityChart());
+  if (document.getElementById('deptDistributionChart')) loaders.push(loadDeptDistributionChart());
+  if (document.getElementById('postsOverTimeChart')) loaders.push(loadPostsOverTimeChart());
+  if (document.getElementById('topCommunitiesList')) loaders.push(loadTopCommunities());
+  if (document.getElementById('deptTableBody')) loaders.push(loadDeptTable());
+  if (document.getElementById('postsByCategoryChart')) loaders.push(loadPostsByCategoryChart());
+  if (document.getElementById('sentimentChart')) loaders.push(loadSentimentChart());
+  if (document.getElementById('responseTimeStats')) loaders.push(loadResponseTimeStats());
+  if (document.getElementById('activitySummary')) loaders.push(loadActivitySummary());
+  await Promise.all(loaders);
 })();
 
 // ── SUMMARY STATS ──

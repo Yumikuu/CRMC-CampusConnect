@@ -2,7 +2,7 @@
 // Main Admin DASHBOARD — Full System Access
 // ═══════════════════════════════════════════════════════════════
 
-let adminUser = null;
+var adminUser = null;
 
 // ── AUTH GUARD + LOAD Main Admin DATA ──
 (async () => {

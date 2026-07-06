@@ -658,7 +658,13 @@ let loggedInUser = null;
     // Update modal
     const modalAvatar = document.querySelector('.cf-modal .post-avatar');
     const modalName = document.querySelector('.cf-modal-user > div > div');
-    if (modalAvatar) modalAvatar.textContent = initials;
+    if (modalAvatar) {
+      if (profile.avatar_url) {
+        modalAvatar.innerHTML = `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`;
+      } else {
+        modalAvatar.textContent = initials;
+      }
+    }
     if (modalName) modalName.textContent = fullName;
     
     // Build community dropdown dynamically

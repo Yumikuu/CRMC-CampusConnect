@@ -597,6 +597,13 @@ let loggedInUser = null;
     if (greetingEl) {
       greetingEl.innerHTML = `👋 Hi ${profile.first_name}! I'm your <strong>CRMC Assistant</strong>. Ask me about exams, class suspensions, lost items, or campus announcements!`;
     }
+    // Update dept suggestion button to match user's department
+    const deptSugg = document.getElementById('cbDeptSugg');
+    if (deptSugg) {
+      const deptShort = profile.department?.match(/\(([^)]+)\)/)?.[1] || 'Dept';
+      deptSugg.textContent = `📢 ${deptShort} updates`;
+      deptSugg.dataset.q = `Latest ${deptShort} announcements?`;
+    }
 
     // ── Show pending banner and block posting if not approved ──
     if (profile.account_status === 'pending' || profile.account_status === 'suspended') {

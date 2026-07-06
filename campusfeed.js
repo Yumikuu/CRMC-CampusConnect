@@ -327,16 +327,25 @@ async function getBotReply(text) {
 
     // Filter by community if detected
     if (communityFilter) {
-      const { data: comm } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
+      // Try by slug first, then by name containing the filter
+      let comm = null;
+      const { data: bySlug } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
+      if (bySlug) {
+        comm = bySlug;
+      } else {
+        const { data: byName } = await db.from('communities').select('id, name').ilike('name', `%${communityFilter}%`).limit(1).single();
+        if (byName) comm = byName;
+      }
       if (comm) {
         query = query.eq('community_id', comm.id);
       }
     }
 
     // Extract search keywords (remove common/stop words)
-    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates'];
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on'];
     const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
 
+    // Only add keyword filter if we have meaningful search terms
     if (keywords.length > 0) {
       const searchWord = keywords[0];
       query = query.or(`title.ilike.%${searchWord}%,content.ilike.%${searchWord}%`);
@@ -582,6 +591,12 @@ let loggedInUser = null;
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (profile) {
     loggedInUser = profile;
+
+    // ── Update chatbot greeting with real name ──
+    const greetingEl = document.getElementById('chatbotGreeting');
+    if (greetingEl) {
+      greetingEl.innerHTML = `👋 Hi ${profile.first_name}! I'm your <strong>CRMC Assistant</strong>. Ask me about exams, class suspensions, lost items, or campus announcements!`;
+    }
 
     // ── Show pending banner and block posting if not approved ──
     if (profile.account_status === 'pending' || profile.account_status === 'suspended') {

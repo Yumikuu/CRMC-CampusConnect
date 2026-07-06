@@ -1897,11 +1897,25 @@ async function loadComments(postId) {
     }
 
     // Separate top-level comments from replies
+    // Facebook-style: all replies (even replies-to-replies) are flattened under the root comment
     const topLevel = allComments.filter(c => !c.parent_id);
     const replyMap = {};
+    
+    // Build a map of comment ID → comment for quick lookup
+    const commentById = {};
+    allComments.forEach(c => { commentById[c.id] = c; });
+    
+    // For each reply, trace back to the root top-level comment
     allComments.filter(c => c.parent_id).forEach(reply => {
-      if (!replyMap[reply.parent_id]) replyMap[reply.parent_id] = [];
-      replyMap[reply.parent_id].push(reply);
+      let rootId = reply.parent_id;
+      // Walk up the chain until we find a top-level comment
+      let safety = 10; // prevent infinite loop
+      while (commentById[rootId]?.parent_id && safety > 0) {
+        rootId = commentById[rootId].parent_id;
+        safety--;
+      }
+      if (!replyMap[rootId]) replyMap[rootId] = [];
+      replyMap[rootId].push(reply);
     });
 
     commentList.innerHTML = topLevel

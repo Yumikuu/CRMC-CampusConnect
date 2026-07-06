@@ -342,12 +342,18 @@ async function getBotReply(text) {
     }
 
     // Extract search keywords (remove common/stop words)
-    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on'];
-    const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on','it','to','of','that','this','was','has','been'];
+    // Important short words that should NOT be filtered out (even if <3 chars)
+    const importantShortWords = ['id','bag','key','usb','pen','pin','atm','sim','lab'];
+    const keywords = lower.split(/\s+/).filter(w => 
+      (importantShortWords.includes(w)) || (w.length > 2 && !stopWords.includes(w))
+    );
 
     // Only add keyword filter if we have meaningful search terms
     if (keywords.length > 0) {
-      const searchWord = keywords[0];
+      // Use multiple keywords for better accuracy (up to 2)
+      const searchWords = keywords.slice(0, 2);
+      const searchWord = searchWords[0];
       query = query.or(`title.ilike.%${searchWord}%,content.ilike.%${searchWord}%`);
     }
 
@@ -392,19 +398,21 @@ async function getBotReply(text) {
       return `🔍 No posts found matching your query in <strong>${communityName}</strong>. Try different keywords or browse the communities directly.`;
     }
 
-    // Format results
+    // Format results with context
     const communityLabel = posts[0].communities?.name || 'Community';
-    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong>:<br/><br/>`;
+    const searchContext = keywords.length > 0 ? ` matching "<strong>${keywords.join(' ')}</strong>"` : '';
+    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong>${searchContext} in ${communityLabel}:<br/><br/>`;
 
     posts.slice(0, 3).forEach((post, i) => {
-      const preview = (post.title || post.content).substring(0, 80);
+      const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const preview = content.substring(0, 100);
       const timeAgo = formatTimeAgo(new Date(post.created_at));
       const comm = post.communities?.name || 'General';
-      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span><br/><br/>`;
+      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span><br/><br/>`;
     });
 
     if (posts.length > 3) {
-      reply += `<em>...and ${posts.length - 3} more.</em>`;
+      reply += `<em>...and ${posts.length - 3} more. Browse the ${communityLabel} community for all posts.</em>`;
     }
 
     return reply;

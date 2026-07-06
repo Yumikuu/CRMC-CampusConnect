@@ -1310,11 +1310,66 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 
 @media (max-width: 640px) {
   .page-body { grid-template-columns: 1fr; padding: calc(var(--topbar-h) + 1rem) .75rem 2rem; }
-  .left-sidebar { display: none; position: fixed; top: var(--topbar-h); left: 0; bottom: 0; width: var(--sidebar-w); background: var(--white); z-index: 900; box-shadow: var(--shadow-lg); padding: 1rem; overflow-y: auto; }
+  .left-sidebar { display: none; position: fixed; top: var(--topbar-h); left: 0; bottom: 0; width: 280px; background: var(--white); z-index: 900; box-shadow: var(--shadow-lg); padding: 1rem; overflow-y: auto; }
   .left-sidebar.open { display: flex; }
   .topbar-search { display: none; }
   .chatbot-widget { bottom: 1rem; right: 1rem; }
-  .chatbot-panel { width: calc(100vw - 2rem); }
+  .chatbot-panel { width: calc(100vw - 2rem); right: -0.5rem; }
+  
+  /* Topbar mobile */
+  .topbar { padding: 0 .75rem; gap: .5rem; }
+  .topbar-name { display: none; }
+  .profile-name { display: none; }
+  .topbar-right { gap: .25rem; }
+  
+  /* Feed header compact */
+  .feed-header { padding: .85rem 1rem; }
+  .feed-title { font-size: .95rem; }
+  .feed-sub { font-size: .7rem; }
+  .btn-join { display: none; }
+  
+  /* Feed tabs scroll */
+  .feed-tabs { overflow-x: auto; padding-bottom: .25rem; }
+  .feed-tab { white-space: nowrap; font-size: .72rem; padding: .4rem .75rem; }
+  
+  /* Post cards compact */
+  .post-card { padding: 1rem; gap: .6rem; }
+  .post-avatar { width: 34px; height: 34px; font-size: .72rem; }
+  .post-meta { gap: .3rem; }
+  .post-author { font-size: .75rem; }
+  .post-dept-tag { font-size: .6rem; padding: .1rem .4rem; }
+  .post-time { font-size: .65rem; }
+  .post-content { font-size: .78rem; margin-bottom: .6rem; }
+  .post-title { font-size: .85rem; }
+  .post-action-btn { font-size: .78rem; padding: .5rem .7rem; }
+  .post-action-btn i { font-size: .85rem; }
+  .post-action-btn span { font-size: .78rem; }
+  .post-announcement-badge { font-size: .58rem; padding: .15rem .45rem; }
+  .post-flagged-badge { font-size: .56rem; padding: .15rem .4rem; }
+  
+  /* Create post compact */
+  .create-post-card { padding: .85rem 1rem; gap: .6rem; }
+  .create-post-actions { flex-wrap: wrap; gap: .35rem; }
+  .create-action-btn { font-size: .75rem; padding: .45rem .7rem; }
+  
+  /* Comments compact */
+  .comment-avatar { width: 28px; height: 28px; font-size: .6rem; }
+  .comment-content-wrapper { padding: .5rem .7rem; }
+  .comment-author { font-size: .72rem; }
+  .comment-text { font-size: .75rem; }
+  .comment-input { font-size: .75rem; }
+  
+  /* Modals full-width on mobile */
+  .modal-overlay .modal { width: 95vw; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .cf-modal { width: 95vw; max-width: 95vw; }
+  .report-modal { max-width: 95vw; }
+  .delete-modal { max-width: 95vw; }
+  
+  /* Notification dropdown full width */
+  .notif-dropdown { width: calc(100vw - 2rem); right: -1rem; }
+  
+  /* Post images grid */
+  .post-images-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ── IMAGE UPLOAD SECTION ── */

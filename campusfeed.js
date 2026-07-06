@@ -342,7 +342,7 @@ async function getBotReply(text) {
     }
 
     // Extract search keywords (remove common/stop words)
-    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on','it','to','of','that','this','was','has','been'];
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on','it','to','of','that','this','was','has','been','lost','found','missing','borrow','lend','sell','buy','exam','event','events'];
     // Important short words that should NOT be filtered out (even if <3 chars)
     const importantShortWords = ['id','bag','key','usb','pen','pin','atm','sim','lab'];
     const keywords = lower.split(/\s+/).filter(w => 
@@ -351,10 +351,10 @@ async function getBotReply(text) {
 
     // Only add keyword filter if we have meaningful search terms
     if (keywords.length > 0) {
-      // Use multiple keywords for better accuracy (up to 2)
-      const searchWords = keywords.slice(0, 2);
-      const searchWord = searchWords[0];
-      query = query.or(`title.ilike.%${searchWord}%,content.ilike.%${searchWord}%`);
+      // Search ALL keywords (each must appear in title OR content)
+      for (const kw of keywords.slice(0, 3)) {
+        query = query.or(`title.ilike.%${kw}%,content.ilike.%${kw}%`);
+      }
     }
 
     const { data: posts, error } = await query;

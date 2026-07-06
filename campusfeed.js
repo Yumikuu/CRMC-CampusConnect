@@ -408,7 +408,7 @@ async function getBotReply(text) {
       const preview = content.substring(0, 100);
       const timeAgo = formatTimeAgo(new Date(post.created_at));
       const comm = post.communities?.name || 'General';
-      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span><br/><br/>`;
+      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post →</a><br/><br/>`;
     });
 
     if (posts.length > 3) {
@@ -510,6 +510,39 @@ chatbotForm.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(
 document.addEventListener('click', (e) => {
   if (e.target.matches('.cb-sugg')) sendMessage(e.target.dataset.q);
   if (e.target.matches('.chatbot-sugg-btn')) { openChatbot(); sendMessage(e.target.textContent.replace(/^[^\w]+/, '').trim()); }
+
+  // Chatbot "View Post" link click → scroll to post in feed
+  if (e.target.closest('.cb-view-post')) {
+    e.preventDefault();
+    const postId = e.target.closest('.cb-view-post').dataset.postId;
+    if (!postId) return;
+
+    // Close chatbot
+    closeChatbot();
+
+    // Find post in feed or reload and scroll
+    let postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    if (postCard) {
+      postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      postCard.classList.add('post-highlighted');
+      setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+    } else {
+      // Post not in current feed view — reload all posts then scroll
+      currentCommunityFilter = null;
+      loadPostsFromDB().then(() => {
+        setTimeout(() => {
+          postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+          if (postCard) {
+            postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            postCard.classList.add('post-highlighted');
+            setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+          } else {
+            showToast('Post not found in current feed', 'info');
+          }
+        }, 500);
+      });
+    }
+  }
 });
 
 document.getElementById('openChatbotWidget').addEventListener('click', openChatbot);

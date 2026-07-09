@@ -1370,13 +1370,21 @@ document.addEventListener('click', async (e) => {
   if (e.target.closest('.comment-reply-btn')) {
     const btn        = e.target.closest('.comment-reply-btn');
     const commentId  = btn.dataset.commentId;
+    const authorName = btn.dataset.author || '';
     const replyBox   = document.getElementById(`reply-input-${commentId}`);
     if (!replyBox) return;
     const isHidden = replyBox.style.display === 'none';
     // Close all other open reply boxes first
     document.querySelectorAll('.reply-input-wrapper').forEach(b => b.style.display = 'none');
     replyBox.style.display = isHidden ? 'flex' : 'none';
-    if (isHidden) replyBox.querySelector('.reply-input')?.focus();
+    if (isHidden) {
+      const input = replyBox.querySelector('.reply-input');
+      if (input) {
+        // Auto-fill @name like Facebook
+        input.value = `@${authorName} `;
+        input.focus();
+      }
+    }
     return;
   }
 
@@ -1839,7 +1847,7 @@ function buildCommentHTML(comment, replies = []) {
           <span class="comment-time">${timeAgo}</span>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
         </div>
-        <div class="comment-text">${escapeHtml(comment.content)}</div>
+        <div class="comment-text">${escapeHtml(comment.content).replace(/^(@[A-Za-zÀ-ž\s]+?)(\s)/, '<strong class="comment-mention">$1</strong>$2')}</div>
         <button class="comment-reply-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" data-author="${authorName}">
           <i class="fas fa-reply"></i> Reply
         </button>

@@ -1380,38 +1380,23 @@ document.addEventListener('click', async (e) => {
     if (isHidden) {
       const input = replyBox.querySelector('.reply-input');
       if (input) {
-        // Auto-fill @name like Facebook
-        input.value = `@${authorName} `;
+        input.value = '';
         input.focus();
       }
     }
     return;
   }
 
-  // Handle comment delete button
+  // Handle comment delete button — show styled modal
   if (e.target.closest('.comment-delete-btn')) {
     const btn       = e.target.closest('.comment-delete-btn');
     const commentId = btn.dataset.commentId;
     const postId    = btn.dataset.postId;
-    if (!confirm('Delete this comment?')) return;
-    try {
-      const { error } = await db
-        .from('comments')
-        .delete()
-        .eq('id', commentId)
-        .eq('author_id', loggedInUser.id);
-      if (error) throw error;
-      await loadComments(postId);
-      const { count } = await db
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
-      const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${postId}"]`);
-      if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
-      showToast('Comment deleted', 'success');
-    } catch (err) {
-      showToast('Failed to delete comment: ' + err.message, 'error');
-    }
+    
+    // Store pending delete info and show modal
+    window._pendingCommentDelete = { commentId, postId };
+    document.getElementById('deleteCommentModal').hidden = false;
+    document.body.style.overflow = 'hidden';
     return;
   }
   
@@ -1571,6 +1556,52 @@ document.getElementById('deleteConfirmModal')?.addEventListener('click', functio
     this.hidden = true;
     document.body.style.overflow = '';
     postToDelete = null;
+  }
+});
+
+// ── DELETE COMMENT MODAL HANDLERS ──
+document.getElementById('confirmDeleteCommentBtn')?.addEventListener('click', async function() {
+  const pending = window._pendingCommentDelete;
+  if (!pending) return;
+
+  this.disabled = true;
+  this.textContent = 'Deleting...';
+
+  try {
+    const { error } = await db.from('comments').delete()
+      .eq('id', pending.commentId)
+      .eq('author_id', loggedInUser.id);
+    if (error) throw error;
+
+    await loadComments(pending.postId);
+    const { count } = await db.from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', pending.postId);
+    const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${pending.postId}"]`);
+    if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
+    showToast('Comment deleted', 'success');
+  } catch (err) {
+    showToast('Failed to delete: ' + err.message, 'error');
+  } finally {
+    this.disabled = false;
+    this.textContent = 'Delete';
+    document.getElementById('deleteCommentModal').hidden = true;
+    document.body.style.overflow = '';
+    window._pendingCommentDelete = null;
+  }
+});
+
+document.getElementById('cancelDeleteCommentBtn')?.addEventListener('click', function() {
+  document.getElementById('deleteCommentModal').hidden = true;
+  document.body.style.overflow = '';
+  window._pendingCommentDelete = null;
+});
+
+document.getElementById('deleteCommentModal')?.addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.hidden = true;
+    document.body.style.overflow = '';
+    window._pendingCommentDelete = null;
   }
 });
 

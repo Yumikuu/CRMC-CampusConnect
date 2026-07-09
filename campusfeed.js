@@ -2461,14 +2461,25 @@ async function openPostPreview(postId) {
     const timeAgo  = formatTimeAgo(new Date(post.created_at));
     const community = post.communities?.name || 'General';
 
-    // Fetch comments
-    const { data: comments } = await db
+    // Fetch ALL comments (top-level + replies) for this post
+    const { data: allComments } = await db
       .from('comments')
       .select(`*, profiles:author_id (first_name, last_name, admin_role)`)
       .eq('post_id', postId)
-      .is('parent_id', null)
-      .order('created_at', { ascending: true })
-      .limit(10);
+      .order('created_at', { ascending: true });
+
+    // Separate top-level and replies (flatten like main feed)
+    const commentById = {};
+    (allComments || []).forEach(c => { commentById[c.id] = c; });
+    const comments = (allComments || []).filter(c => !c.parent_id);
+    const previewReplyMap = {};
+    (allComments || []).filter(c => c.parent_id).forEach(reply => {
+      let rootId = reply.parent_id;
+      let safety = 10;
+      while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
+      if (!previewReplyMap[rootId]) previewReplyMap[rootId] = [];
+      previewReplyMap[rootId].push(reply);
+    });
 
     const userInitials = loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--';
 
@@ -2501,7 +2512,11 @@ async function openPostPreview(postId) {
     };
 
     const commentsHTML = (comments && comments.length > 0)
-      ? comments.map(c => buildPreviewComment(c, false)).join('')
+      ? comments.map(c => {
+          const replies = previewReplyMap[c.id] || [];
+          const repliesHtml = replies.map(r => buildPreviewComment(r, true)).join('');
+          return buildPreviewComment(c, false) + (repliesHtml ? `<div class="comment-replies" style="margin-left:1.5rem;border-left:2px solid var(--gray-200);padding-left:.75rem;">${repliesHtml}</div>` : '');
+        }).join('')
       : '<div class="no-comments">No comments yet. Be the first!</div>';
 
     content.innerHTML = `
@@ -2522,7 +2537,7 @@ async function openPostPreview(postId) {
         <div style="border-top:1px solid var(--gray-200);padding-top:.75rem;margin-bottom:.5rem;">
           <strong style="font-size:.82rem;color:var(--gray-600);">Comments</strong>
         </div>
-        <div class="comment-list" id="preview-comment-list-${post.id}" style="max-height:240px;overflow-y:auto;margin-bottom:.75rem;">
+        <div class="comment-list" id="preview-comment-list-${post.id}" style="max-height:400px;overflow-y:auto;margin-bottom:.75rem;">
           ${commentsHTML}
         </div>
         <div class="comment-input-wrapper" id="preview-new-comment-wrapper">

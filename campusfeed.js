@@ -511,7 +511,7 @@ document.addEventListener('click', (e) => {
   if (e.target.matches('.cb-sugg')) sendMessage(e.target.dataset.q);
   if (e.target.matches('.chatbot-sugg-btn')) { openChatbot(); sendMessage(e.target.textContent.replace(/^[^\w]+/, '').trim()); }
 
-  // Chatbot "View Post" link click → scroll to post in feed
+  // Chatbot "View Post" link click → open post in modal popup
   if (e.target.closest('.cb-view-post')) {
     e.preventDefault();
     const postId = e.target.closest('.cb-view-post').dataset.postId;
@@ -520,28 +520,8 @@ document.addEventListener('click', (e) => {
     // Close chatbot
     closeChatbot();
 
-    // Find post in feed or reload and scroll
-    let postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-    if (postCard) {
-      postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      postCard.classList.add('post-highlighted');
-      setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
-    } else {
-      // Post not in current feed view — reload all posts then scroll
-      currentCommunityFilter = null;
-      loadPostsFromDB().then(() => {
-        setTimeout(() => {
-          postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-          if (postCard) {
-            postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            postCard.classList.add('post-highlighted');
-            setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
-          } else {
-            showToast('Post not found in current feed', 'info');
-          }
-        }, 500);
-      });
-    }
+    // Open post in preview modal (like Facebook)
+    openPostPreview(postId);
   }
 });
 
@@ -2423,7 +2403,7 @@ async function processMentions(text, postId) {
   }
 }
 
-// ── CLICK ON NOTIFICATION → scroll to post in feed ──
+// ── CLICK ON NOTIFICATION → open post in modal popup ──
 document.getElementById('notifList')?.addEventListener('click', async (e) => {
   const item = e.target.closest('.notif-item[data-post-id]');
   if (!item) return;
@@ -2442,27 +2422,8 @@ document.getElementById('notifList')?.addEventListener('click', async (e) => {
   // Close notifications dropdown
   document.getElementById('notifDropdown').hidden = true;
 
-  // Find the post card in the feed
-  let postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-
-  // If post not in current feed, reload all posts first
-  if (!postCard) {
-    currentCommunityFilter = null;
-    await loadPostsFromDB();
-    postCard = document.querySelector(`.post-card[data-post-id="${postId}"]`);
-  }
-
-  if (!postCard) {
-    showToast('Post not found or may have been deleted', 'info');
-    return;
-  }
-
-  // Scroll post into view smoothly
-  postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-  // Highlight the post with a pulse animation
-  postCard.classList.add('post-highlighted');
-  setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+  // Open post in preview modal (like Facebook)
+  openPostPreview(postId);
 
   // Auto-open the comment section
   const commentSection = document.getElementById(`comments-${postId}`);

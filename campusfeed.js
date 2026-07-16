@@ -1266,6 +1266,9 @@ let currentCommunityFilter = null;
 
 // Toggle comment section
 document.addEventListener('click', async (e) => {
+  // Skip events from inside the post preview modal — it has its own handlers
+  if (e.target.closest('#postPreviewModal')) return;
+
   // Handle post menu toggle
   if (e.target.closest('.post-menu-btn')) {
     const btn = e.target.closest('.post-menu-btn');

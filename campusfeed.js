@@ -2811,6 +2811,7 @@ async function refreshPreviewComments(postId) {
         ${replies.map(r => {
           const rName = r.is_anonymous ? 'Anonymous' : (r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : 'Unknown');
           const rInit = r.is_anonymous ? '?' : (r.profiles ? (r.profiles.first_name[0] + r.profiles.last_name[0]).toUpperCase() : '?');
+          const rIsOwn = loggedInUser && r.author_id === loggedInUser.id;
           return `
             <div class="comment-item">
               <div class="comment-avatar" style="width:26px;height:26px;font-size:.6rem;">${rInit}</div>
@@ -2818,6 +2819,7 @@ async function refreshPreviewComments(postId) {
                 <div class="comment-header">
                   <span class="comment-author">${rName}</span>
                   <span class="comment-time">${formatTimeAgo(new Date(r.created_at))}</span>
+                  ${rIsOwn ? `<button class="comment-delete-btn preview-delete-comment" data-comment-id="${r.id}" data-post-id="${postId}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
                 <div class="comment-text">${formatCommentMention(escapeHtml(r.content))}</div>
                 <button class="comment-reply-btn preview-reply-btn" data-comment-id="${r.id}" data-post-id="${postId}" data-author="${rName}">
@@ -2843,8 +2845,9 @@ async function refreshPreviewComments(postId) {
           <div class="comment-header">
             <span class="comment-author">${cName}</span>
             <span class="comment-time">${formatTimeAgo(new Date(c.created_at))}</span>
+            ${loggedInUser && c.author_id === loggedInUser.id ? `<button class="comment-delete-btn preview-delete-comment" data-comment-id="${c.id}" data-post-id="${postId}" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
           </div>
-          <div class="comment-text">${escapeHtml(c.content)}</div>
+          <div class="comment-text">${formatCommentMention(escapeHtml(c.content))}</div>
           <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${postId}" data-author="${cName}">
             <i class="fas fa-reply"></i> Reply
           </button>

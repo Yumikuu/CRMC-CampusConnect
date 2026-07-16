@@ -1982,13 +1982,25 @@ async function submitComment(postId, inputElement, parentId = null) {
   }
 
   try {
+    // Trace parentId to root top-level comment (Facebook-style flat threading)
+    let rootParentId = parentId;
+    if (rootParentId) {
+      let safety = 10;
+      while (safety > 0) {
+        const { data: parentComment } = await db.from('comments').select('parent_id').eq('id', rootParentId).single();
+        if (!parentComment || !parentComment.parent_id) break;
+        rootParentId = parentComment.parent_id;
+        safety--;
+      }
+    }
+
     const payload = {
       post_id:      postId,
       author_id:    loggedInUser.id,
       is_anonymous: false,
       content:      content,
     };
-    if (parentId) payload.parent_id = parentId;
+    if (rootParentId) payload.parent_id = rootParentId;
 
     const { error } = await db.from('comments').insert(payload);
     if (error) throw error;
@@ -2699,13 +2711,25 @@ async function submitCommentPreview(postId, inputElement, parentId = null) {
   if (!loggedInUser) { showToast('You must be logged in to comment', 'error'); return; }
 
   try {
+    // Trace parentId to root top-level comment (so all replies stay in same thread)
+    let rootParentId = parentId;
+    if (rootParentId) {
+      let safety = 10;
+      while (safety > 0) {
+        const { data: parentComment } = await db.from('comments').select('parent_id').eq('id', rootParentId).single();
+        if (!parentComment || !parentComment.parent_id) break;
+        rootParentId = parentComment.parent_id;
+        safety--;
+      }
+    }
+
     const payload = {
       post_id:      postId,
       author_id:    loggedInUser.id,
       is_anonymous: false,
       content:      content,
     };
-    if (parentId) payload.parent_id = parentId;
+    if (rootParentId) payload.parent_id = rootParentId;
 
     const { error } = await db.from('comments').insert(payload);
     if (error) throw error;

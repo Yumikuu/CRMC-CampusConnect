@@ -825,7 +825,8 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 .comment-reply-btn:hover { color: var(--maroon); }
 
 /* @mention in comments */
-.comment-mention { color: var(--maroon); font-weight: 700; }
+.comment-mention { color: var(--maroon); font-weight: 700; cursor: pointer; }
+.comment-mention:hover { text-decoration: underline; }
 
 /* ── COMMENT DELETE BUTTON ── */
 .comment-delete-btn {

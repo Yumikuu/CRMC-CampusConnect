@@ -1215,6 +1215,20 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Format comment text — bold the mentioned name at the start of replies
+function formatCommentMention(text) {
+  if (!text) return '';
+  // Match a name pattern at start: "FirstName LastName rest of message"
+  // Names are typically 2-3 words with capital letters
+  const match = text.match(/^([A-Z][a-z]+ [A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\s/);
+  if (match) {
+    const name = match[1];
+    const rest = text.substring(name.length);
+    return `<strong class="comment-mention">${name}</strong>${rest}`;
+  }
+  return text;
+}
+
 // Load posts after user is initialized
 setTimeout(() => {
   if (loggedInUser) {
@@ -1380,8 +1394,11 @@ document.addEventListener('click', async (e) => {
     if (isHidden) {
       const input = replyBox.querySelector('.reply-input');
       if (input) {
-        input.value = '';
+        const replyToName = btn.dataset.author || '';
+        input.value = replyToName ? `${replyToName} ` : '';
         input.focus();
+        // Move cursor to end
+        input.setSelectionRange(input.value.length, input.value.length);
       }
     }
     return;
@@ -1878,7 +1895,7 @@ function buildCommentHTML(comment, replies = []) {
           <span class="comment-time">${timeAgo}</span>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
         </div>
-        <div class="comment-text">${escapeHtml(comment.content).replace(/^(@[A-Za-zÀ-ž\s]+?)(\s)/, '<strong class="comment-mention">$1</strong>$2')}</div>
+        <div class="comment-text">${formatCommentMention(escapeHtml(comment.content))}</div>
         <button class="comment-reply-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" data-author="${authorName}">
           <i class="fas fa-reply"></i> Reply
         </button>

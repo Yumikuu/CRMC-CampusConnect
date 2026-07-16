@@ -2553,19 +2553,18 @@ async function openPostPreview(postId) {
               <span class="comment-author">${cName}</span>
               <span class="comment-time">${formatTimeAgo(new Date(c.created_at))}</span>
             </div>
-            <div class="comment-text">${escapeHtml(c.content)}</div>
-            ${!isReply ? `
-              <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${post.id}" data-author="${cName}">
-                <i class="fas fa-reply"></i> Reply
+            <div class="comment-text">${formatCommentMention(escapeHtml(c.content))}</div>
+            <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${post.id}" data-author="${cName}">
+              <i class="fas fa-reply"></i> Reply
+            </button>
+            <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
+              <div class="comment-input-avatar">${userInitials}</div>
+              <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
+                     data-post-id="${post.id}" data-parent-id="${c.id}" />
+              <button class="comment-send-btn preview-reply-send" data-post-id="${post.id}" data-parent-id="${c.id}">
+                <i class="fas fa-paper-plane"></i>
               </button>
-              <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
-                <div class="comment-input-avatar">${userInitials}</div>
-                <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
-                       data-post-id="${post.id}" data-parent-id="${c.id}" />
-                <button class="comment-send-btn preview-reply-send" data-post-id="${post.id}" data-parent-id="${c.id}">
-                  <i class="fas fa-paper-plane"></i>
-                </button>
-              </div>` : ''}
+            </div>
           </div>
         </div>`;
     };
@@ -2632,12 +2631,20 @@ document.getElementById('postPreviewModal')?.addEventListener('click', async (e)
   if (e.target.closest('.preview-reply-btn')) {
     const btn       = e.target.closest('.preview-reply-btn');
     const commentId = btn.dataset.commentId;
+    const authorName = btn.dataset.author || '';
     const replyBox  = document.getElementById(`preview-reply-input-${commentId}`);
     if (!replyBox) return;
     const isHidden = replyBox.style.display === 'none';
     document.querySelectorAll('[id^="preview-reply-input-"]').forEach(b => b.style.display = 'none');
     replyBox.style.display = isHidden ? 'flex' : 'none';
-    if (isHidden) replyBox.querySelector('input')?.focus();
+    if (isHidden) {
+      const input = replyBox.querySelector('input');
+      if (input) {
+        input.value = authorName ? `${authorName} ` : '';
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
     return;
   }
 

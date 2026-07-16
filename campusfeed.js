@@ -1599,6 +1599,12 @@ document.getElementById('confirmDeleteCommentBtn')?.addEventListener('click', as
       .eq('post_id', pending.postId);
     const commentBtn = document.querySelector(`.post-comment-btn[data-post-id="${pending.postId}"]`);
     if (commentBtn) commentBtn.querySelector('span').textContent = count || 0;
+    
+    // Also refresh preview modal if delete came from there
+    if (pending.fromPreview) {
+      await refreshPreviewComments(pending.postId);
+    }
+    
     showToast('Comment deleted', 'success');
   } catch (err) {
     showToast('Failed to delete: ' + err.message, 'error');
@@ -2557,6 +2563,7 @@ async function openPostPreview(postId) {
     const buildPreviewComment = (c, isReply = false) => {
       const cName = c.is_anonymous ? 'Anonymous' : (c.profiles ? `${c.profiles.first_name} ${c.profiles.last_name}` : 'Unknown');
       const cInit = c.is_anonymous ? '?' : (c.profiles ? (c.profiles.first_name[0] + c.profiles.last_name[0]).toUpperCase() : '?');
+      const isOwn = loggedInUser && c.author_id === loggedInUser.id;
       return `
         <div class="comment-item ${isReply ? 'preview-reply' : ''}" data-comment-id="${c.id}">
           <div class="comment-avatar" style="${isReply ? 'width:26px;height:26px;font-size:.6rem;' : ''}">${cInit}</div>
@@ -2564,6 +2571,7 @@ async function openPostPreview(postId) {
             <div class="comment-header">
               <span class="comment-author">${cName}</span>
               <span class="comment-time">${formatTimeAgo(new Date(c.created_at))}</span>
+              ${isOwn ? `<button class="comment-delete-btn preview-delete-comment" data-comment-id="${c.id}" data-post-id="${post.id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
             </div>
             <div class="comment-text">${formatCommentMention(escapeHtml(c.content))}</div>
             <button class="comment-reply-btn preview-reply-btn" data-comment-id="${c.id}" data-post-id="${post.id}" data-author="${cName}">
@@ -2680,6 +2688,18 @@ document.getElementById('postPreviewModal')?.addEventListener('click', async (e)
     if (!input?.value.trim()) return;
     await submitCommentPreview(postId, input);
     await refreshPreviewComments(postId);
+    return;
+  }
+
+  // Delete comment from preview modal
+  if (e.target.closest('.preview-delete-comment')) {
+    const btn = e.target.closest('.preview-delete-comment');
+    const commentId = btn.dataset.commentId;
+    const postId = btn.dataset.postId;
+    
+    // Show delete comment modal
+    window._pendingCommentDelete = { commentId, postId, fromPreview: true };
+    document.getElementById('deleteCommentModal').hidden = false;
     return;
   }
 });

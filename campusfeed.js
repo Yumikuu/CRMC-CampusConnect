@@ -2743,12 +2743,18 @@ async function refreshPreviewComments(postId) {
     return;
   }
 
-  // Separate top-level from replies
+  // Separate top-level from replies — flatten all to root (Facebook-style)
   const topLevel = allComments.filter(c => !c.parent_id);
+  const commentById = {};
+  allComments.forEach(c => { commentById[c.id] = c; });
+  
   const replyMap = {};
   allComments.filter(c => c.parent_id).forEach(r => {
-    if (!replyMap[r.parent_id]) replyMap[r.parent_id] = [];
-    replyMap[r.parent_id].push(r);
+    let rootId = r.parent_id;
+    let safety = 10;
+    while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
+    if (!replyMap[rootId]) replyMap[rootId] = [];
+    replyMap[rootId].push(r);
   });
 
   const buildComment = (c) => {
@@ -2757,7 +2763,7 @@ async function refreshPreviewComments(postId) {
     const replies = replyMap[c.id] || [];
 
     const repliesHTML = replies.length > 0 ? `
-      <div class="comment-replies">
+      <div class="comment-replies" style="margin-left:1.5rem;border-left:2px solid var(--gray-200);padding-left:.75rem;">
         ${replies.map(r => {
           const rName = r.is_anonymous ? 'Anonymous' : (r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : 'Unknown');
           const rInit = r.is_anonymous ? '?' : (r.profiles ? (r.profiles.first_name[0] + r.profiles.last_name[0]).toUpperCase() : '?');
@@ -2769,7 +2775,18 @@ async function refreshPreviewComments(postId) {
                   <span class="comment-author">${rName}</span>
                   <span class="comment-time">${formatTimeAgo(new Date(r.created_at))}</span>
                 </div>
-                <div class="comment-text">${escapeHtml(r.content)}</div>
+                <div class="comment-text">${formatCommentMention(escapeHtml(r.content))}</div>
+                <button class="comment-reply-btn preview-reply-btn" data-comment-id="${r.id}" data-post-id="${postId}" data-author="${rName}">
+                  <i class="fas fa-reply"></i> Reply
+                </button>
+                <div class="reply-input-wrapper" id="preview-reply-input-${r.id}" style="display:none;">
+                  <div class="comment-input-avatar">${userInitials}</div>
+                  <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${rName}…"
+                         data-post-id="${postId}" data-parent-id="${r.id}" />
+                  <button class="comment-send-btn preview-reply-send" data-post-id="${postId}" data-parent-id="${r.id}">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
               </div>
             </div>`;
         }).join('')}

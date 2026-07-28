@@ -1959,8 +1959,14 @@ async function loadComments(postId) {
         rootId = commentById[rootId].parent_id;
         safety--;
       }
-      if (!replyMap[rootId]) replyMap[rootId] = [];
-      replyMap[rootId].push(reply);
+      // Only nest if root exists in top-level
+      if (topLevel.some(t => t.id === rootId)) {
+        if (!replyMap[rootId]) replyMap[rootId] = [];
+        replyMap[rootId].push(reply);
+      } else {
+        // Orphaned reply — show as top-level
+        topLevel.push(reply);
+      }
     });
 
     commentList.innerHTML = topLevel
@@ -2554,8 +2560,14 @@ async function openPostPreview(postId) {
       let rootId = reply.parent_id;
       let safety = 10;
       while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
-      if (!previewReplyMap[rootId]) previewReplyMap[rootId] = [];
-      previewReplyMap[rootId].push(reply);
+      // Only nest if root exists in top-level comments
+      if (comments.some(t => t.id === rootId)) {
+        if (!previewReplyMap[rootId]) previewReplyMap[rootId] = [];
+        previewReplyMap[rootId].push(reply);
+      } else {
+        // Orphaned reply — show as top-level
+        comments.push(reply);
+      }
     });
 
     const userInitials = loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--';
@@ -2785,8 +2797,14 @@ async function refreshPreviewComments(postId) {
     let rootId = r.parent_id;
     let safety = 10;
     while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
-    if (!replyMap[rootId]) replyMap[rootId] = [];
-    replyMap[rootId].push(r);
+    // Only add to replyMap if root exists in topLevel
+    if (topLevel.some(t => t.id === rootId)) {
+      if (!replyMap[rootId]) replyMap[rootId] = [];
+      replyMap[rootId].push(r);
+    } else {
+      // Orphaned reply — treat as top-level
+      topLevel.push(r);
+    }
   });
 
   const buildComment = (c) => {

@@ -1429,6 +1429,8 @@ document.addEventListener('click', async (e) => {
 // Handle Enter key for comment and reply inputs
 document.addEventListener('keypress', async (e) => {
   if (e.key !== 'Enter') return;
+  // Skip if inside preview modal — it has its own Enter handler
+  if (e.target.closest('#postPreviewModal')) return;
 
   if (e.target.classList.contains('reply-input')) {
     const input    = e.target;

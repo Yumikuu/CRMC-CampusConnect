@@ -2740,6 +2740,9 @@ async function submitCommentPreview(postId, inputElement, parentId = null) {
   if (!content) return;
   if (!loggedInUser) { showToast('You must be logged in to comment', 'error'); return; }
 
+  // Clear input immediately to prevent double-submit
+  inputElement.value = '';
+
   try {
     const payload = {
       post_id:      postId,
@@ -2752,8 +2755,6 @@ async function submitCommentPreview(postId, inputElement, parentId = null) {
     const { error } = await db.from('comments').insert(payload);
     if (error) throw error;
 
-    inputElement.value = '';
-
     // Hide reply box if it was a reply
     if (parentId) {
       const replyBox = document.getElementById(`preview-reply-input-${parentId}`);
@@ -2763,6 +2764,8 @@ async function submitCommentPreview(postId, inputElement, parentId = null) {
   } catch (err) {
     console.error('Preview comment error:', err);
     showToast('Failed to post: ' + err.message, 'error');
+    // Restore content on error
+    inputElement.value = content;
   }
 }
 

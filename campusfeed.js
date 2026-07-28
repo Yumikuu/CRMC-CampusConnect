@@ -1942,30 +1942,24 @@ async function loadComments(postId) {
     }
 
     // Separate top-level comments from replies
-    // Facebook-style: all replies (even replies-to-replies) are flattened under the root comment
     const topLevel = allComments.filter(c => !c.parent_id);
     const replyMap = {};
     
-    // Build a map of comment ID → comment for quick lookup
-    const commentById = {};
-    allComments.forEach(c => { commentById[c.id] = c; });
-    
-    // For each reply, trace back to the root top-level comment
     allComments.filter(c => c.parent_id).forEach(reply => {
-      let rootId = reply.parent_id;
-      // Walk up the chain until we find a top-level comment
-      let safety = 10; // prevent infinite loop
-      while (commentById[rootId]?.parent_id && safety > 0) {
-        rootId = commentById[rootId].parent_id;
-        safety--;
-      }
-      // Only nest if root exists in top-level
-      if (topLevel.some(t => t.id === rootId)) {
+      const parentExists = allComments.some(c => c.id === reply.parent_id);
+      if (!parentExists) {
+        topLevel.push(reply);
+      } else {
+        let rootId = reply.parent_id;
+        let safety = 20;
+        while (safety > 0) {
+          const parent = allComments.find(c => c.id === rootId);
+          if (!parent || !parent.parent_id) break;
+          rootId = parent.parent_id;
+          safety--;
+        }
         if (!replyMap[rootId]) replyMap[rootId] = [];
         replyMap[rootId].push(reply);
-      } else {
-        // Orphaned reply — show as top-level
-        topLevel.push(reply);
       }
     });
 
@@ -2557,16 +2551,20 @@ async function openPostPreview(postId) {
     const comments = (allComments || []).filter(c => !c.parent_id);
     const previewReplyMap = {};
     (allComments || []).filter(c => c.parent_id).forEach(reply => {
-      let rootId = reply.parent_id;
-      let safety = 10;
-      while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
-      // Only nest if root exists in top-level comments
-      if (comments.some(t => t.id === rootId)) {
+      const parentExists = (allComments || []).some(c => c.id === reply.parent_id);
+      if (!parentExists) {
+        comments.push(reply);
+      } else {
+        let rootId = reply.parent_id;
+        let safety = 20;
+        while (safety > 0) {
+          const parent = (allComments || []).find(c => c.id === rootId);
+          if (!parent || !parent.parent_id) break;
+          rootId = parent.parent_id;
+          safety--;
+        }
         if (!previewReplyMap[rootId]) previewReplyMap[rootId] = [];
         previewReplyMap[rootId].push(reply);
-      } else {
-        // Orphaned reply — show as top-level
-        comments.push(reply);
       }
     });
 
@@ -2787,23 +2785,32 @@ async function refreshPreviewComments(postId) {
     return;
   }
 
-  // Separate top-level from replies — flatten all to root (Facebook-style)
+  // Simple 2-level display: top-level comments + all their replies (any depth)
   const topLevel = allComments.filter(c => !c.parent_id);
-  const commentById = {};
-  allComments.forEach(c => { commentById[c.id] = c; });
   
+  // ALL comments with a parent_id are replies — group by their direct parent
+  // But show them ALL under whatever top-level ancestor they belong to
   const replyMap = {};
-  allComments.filter(c => c.parent_id).forEach(r => {
-    let rootId = r.parent_id;
-    let safety = 10;
-    while (commentById[rootId]?.parent_id && safety > 0) { rootId = commentById[rootId].parent_id; safety--; }
-    // Only add to replyMap if root exists in topLevel
-    if (topLevel.some(t => t.id === rootId)) {
+  const repliesOnly = allComments.filter(c => c.parent_id);
+  
+  // For orphaned replies (parent deleted), treat them as top-level
+  repliesOnly.forEach(r => {
+    // Check if parent exists in this set
+    const parentExists = allComments.some(c => c.id === r.parent_id);
+    if (!parentExists) {
+      topLevel.push(r);
+    } else {
+      // Find the top-level ancestor
+      let rootId = r.parent_id;
+      let safety = 20;
+      while (safety > 0) {
+        const parent = allComments.find(c => c.id === rootId);
+        if (!parent || !parent.parent_id) break;
+        rootId = parent.parent_id;
+        safety--;
+      }
       if (!replyMap[rootId]) replyMap[rootId] = [];
       replyMap[rootId].push(r);
-    } else {
-      // Orphaned reply — treat as top-level
-      topLevel.push(r);
     }
   });
 

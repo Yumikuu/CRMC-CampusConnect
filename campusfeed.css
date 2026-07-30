@@ -415,7 +415,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 .post-avatar--anon { background: linear-gradient(135deg, var(--gray-600), var(--gray-800)); }
 
 .post-body { flex: 1; min-width: 0; }
-.post-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .4rem; position: relative; }
+.post-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .4rem; position: relative; padding-right: 2rem; }
 .post-author { font-size: .82rem; font-weight: 700; color: var(--gray-900); }
 .post-author a:hover, .comment-author a:hover { text-decoration: underline; }
 .post-dept-tag {
@@ -519,8 +519,9 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 
 /* Post Menu (Three Dots) */
 .post-menu-wrapper {
-  position: relative;
-  margin-left: .25rem;
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .post-menu-btn {

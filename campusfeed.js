@@ -70,13 +70,6 @@ const DEPT_CONFIG = {
     return;
   }
 
-  // ── Block rejected accounts ──
-  if (profile.account_status === 'rejected') {
-    await db.auth.signOut();
-    window.location.href = 'landing-page/index.html';
-    return;
-  }
-
   // Determine department slug from profile's department field
   const deptSlugMap = {
     'college of teacher education (cte)':              'cte',
@@ -282,138 +275,137 @@ const KB = [
 
 // ── SMART CHATBOT: Searches real posts from the database ──
 async function getBotReply(text) {
-  const lower = text.toLowerCase();
+  const lower = text.toLowerCase().trim();
 
-  // Check static KB first (greetings, thanks, etc.)
+  // Check static KB first (greetings, thanks, help)
   for (const entry of KB) {
     if (entry.keys.some(k => lower.includes(k))) {
       if (entry.reply === null) {
-        // Dynamic greeting with user's name
         const name = loggedInUser ? loggedInUser.first_name : 'there';
-        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. I can search posts, announcements, lost items, and more. What can I help you with?`;
+        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. I can search posts, announcements, lost items, and more. Just ask me anything!`;
       }
       return entry.reply;
     }
   }
 
-  // Determine which community to search based on keywords
+  // ── Detect intent and community ──
   let communityFilter = null;
-  let searchTerms = lower;
+  let wantsAnnouncements = false;
+  let wantsLatest = lower.match(/\b(latest|recent|newest|new|last|ano.*bago|bagong)\b/) !== null;
 
-  // Department-specific queries (check these FIRST before general keywords)
-  const deptMatch = lower.match(/\b(css|cte|cbe|ccje|psych)\b/i);
-  if (deptMatch) {
-    communityFilter = deptMatch[1].toLowerCase();
-  } else if (lower.match(/lost|found|missing|nawala|tumbler|id card|bag|wallet|phone/)) {
-    communityFilter = 'lostandfound';
-  } else if (lower.match(/announcement|announce|official|update|news/)) {
-    communityFilter = 'ssg-announcements';
-  } else if (lower.match(/exam|schedule|class|subject|professor|teacher|academic|review|module/)) {
-    communityFilter = 'academic';
-  } else if (lower.match(/event|foundation|summit|seminar|activity|intramural/)) {
-    return await searchEvents(lower);
-  } else if (lower.match(/borrow|lend|sell|buy|marketplace|sharing/)) {
-    communityFilter = 'marketplace';
+  // "my/our department" → user's department
+  if (lower.match(/\b(my|our|aming|atin)\s*(dept|department|community|komunidad)\b/)) {
+    if (loggedInUser) {
+      const dm = loggedInUser.department?.match(/\(([^)]+)\)/);
+      if (dm) communityFilter = dm[1].toLowerCase();
+    }
   }
 
-  // Search posts in the database
+  // Explicit department mention
+  if (!communityFilter) {
+    const deptMatch = lower.match(/\b(css|cte|cbe|ccje|psych)\b/i);
+    if (deptMatch) communityFilter = deptMatch[1].toLowerCase();
+  }
+
+  // Category detection
+  if (lower.match(/\bannouncement|announce|official|anunsyo|patalastas\b/)) {
+    wantsAnnouncements = true;
+    if (!communityFilter) communityFilter = 'ssg-announcements';
+  } else if (lower.match(/\blost|found|missing|nawala|nawawala|tumbler|id card|bag|wallet|phone|payong|umbrella\b/)) {
+    if (!communityFilter) communityFilter = 'lostandfound';
+  } else if (lower.match(/\bexam|schedule|class|subject|professor|teacher|academic|review|module|pasahan|deadline\b/)) {
+    if (!communityFilter) communityFilter = 'academic';
+  } else if (lower.match(/\bevent|foundation|summit|seminar|activity|intramural|program|celebration\b/)) {
+    return await searchEvents(lower);
+  } else if (lower.match(/\bborrow|lend|sell|buy|marketplace|sharing|libre|pahiram\b/)) {
+    if (!communityFilter) communityFilter = 'marketplace';
+  }
+
+  // ── Build the search query ──
   try {
     let query = db
       .from('posts')
       .select('id, title, content, created_at, communities:community_id(name, slug)')
       .eq('is_flagged', false)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .order('created_at', { ascending: false });
 
     // Filter by community if detected
     if (communityFilter) {
-      // Try by slug first, then by name containing the filter
-      let comm = null;
-      const { data: bySlug } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
-      if (bySlug) {
-        comm = bySlug;
-      } else {
-        const { data: byName } = await db.from('communities').select('id, name').ilike('name', `%${communityFilter}%`).limit(1).single();
-        if (byName) comm = byName;
-      }
+      const { data: comm } = await db.from('communities').select('id, name')
+        .or(`slug.eq.${communityFilter},name.ilike.%${communityFilter}%`)
+        .limit(1)
+        .single();
       if (comm) {
         query = query.eq('community_id', comm.id);
       }
     }
 
-    // Extract search keywords (remove common/stop words)
-    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','on','it','to','of','that','this','was','has','been','lost','found','missing','borrow','lend','sell','buy','exam','event','events'];
-    // Important short words that should NOT be filtered out (even if <3 chars)
-    const importantShortWords = ['id','bag','key','usb','pen','pin','atm','sim','lab'];
-    const keywords = lower.split(/\s+/).filter(w => 
-      (importantShortWords.includes(w)) || (w.length > 2 && !stopWords.includes(w))
-    );
+    // If user wants latest/recent OR their message is very short/generic, just show recent posts
+    const isGenericQuery = wantsLatest || lower.split(/\s+/).length <= 3;
 
-    // Only add keyword filter if we have meaningful search terms
-    if (keywords.length > 0) {
-      // Search ALL keywords (each must appear in title OR content)
+    // Extract meaningful search keywords (remove stop words and short filler)
+    const stopWords = ['is','there','a','any','the','an','about','do','we','have','posted','post','posts','anyone','someone','na','ba','may','ang','sa','ko','mo','ka','ng','mga','are','what','where','when','how','can','find','search','look','show','me','please','pls','from','in','for','and','or','latest','recent','new','newest','last','css','cte','cbe','ccje','psych','announcement','announcements','community','posts','update','updates','department','dept','my','our','on','it','to','of','that','this','was','has','been','ano','anong','yung','nag','si','ni','lost','found','missing','borrow','lend','sell','buy','exam','event','events','here','not','will','can','did','does','pero','kasi','talaga','lang','po','opo','naman','rin','din','pa'];
+    const keywords = lower.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+
+    // Only apply keyword search if we have meaningful terms AND it's not a generic "show me latest" query
+    if (keywords.length > 0 && !isGenericQuery) {
       for (const kw of keywords.slice(0, 3)) {
         query = query.or(`title.ilike.%${kw}%,content.ilike.%${kw}%`);
       }
     }
 
+    query = query.limit(5);
     const { data: posts, error } = await query;
 
     if (error) throw error;
 
     if (!posts || posts.length === 0) {
-      // If searching a community with no keyword match, just show recent posts from that community
-      if (communityFilter && keywords.length === 0) {
-        const { data: recentPosts } = await db
+      // Fallback: if keyword search returned nothing, try without keywords
+      if (keywords.length > 0) {
+        let fallbackQuery = db
           .from('posts')
           .select('id, title, content, created_at, communities:community_id(name, slug)')
           .eq('is_flagged', false)
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(5);
 
-        // Try fetching from community without keyword filter
-        const { data: comm } = await db.from('communities').select('id, name').eq('slug', communityFilter).single();
-        if (comm) {
-          const { data: commPosts } = await db
-            .from('posts')
-            .select('id, title, content, created_at, communities:community_id(name, slug)')
-            .eq('community_id', comm.id)
-            .eq('is_flagged', false)
-            .order('created_at', { ascending: false })
-            .limit(3);
+        if (communityFilter) {
+          const { data: comm } = await db.from('communities').select('id, name')
+            .or(`slug.eq.${communityFilter},name.ilike.%${communityFilter}%`)
+            .limit(1)
+            .single();
+          if (comm) fallbackQuery = fallbackQuery.eq('community_id', comm.id);
+        }
 
-          if (commPosts && commPosts.length > 0) {
-            let reply = `📋 Here are the latest posts from <strong>${comm.name}</strong>:<br/><br/>`;
-            commPosts.forEach((post, i) => {
-              const preview = (post.title || post.content).substring(0, 80);
-              const timeAgo = formatTimeAgo(new Date(post.created_at));
-              reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${timeAgo}</span><br/><br/>`;
-            });
-            return reply;
-          }
+        const { data: fallbackPosts } = await fallbackQuery;
+        if (fallbackPosts && fallbackPosts.length > 0) {
+          let reply = `🔍 I couldn't find posts matching "<strong>${keywords.join(' ')}</strong>", but here are the latest posts${communityFilter ? ' from that community' : ''}:<br/><br/>`;
+          fallbackPosts.forEach((post, i) => {
+            const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
+            const preview = content.substring(0, 100);
+            const timeAgo = formatTimeAgo(new Date(post.created_at));
+            const comm = post.communities?.name || 'General';
+            reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post →</a><br/><br/>`;
+          });
+          return reply;
         }
       }
-
-      const communityName = communityFilter || 'all communities';
-      return `🔍 No posts found matching your query in <strong>${communityName}</strong>. Try different keywords or browse the communities directly.`;
+      return `🔍 No posts found. Try asking about announcements, lost items, or browse the communities directly.`;
     }
 
-    // Format results with context
-    const communityLabel = posts[0].communities?.name || 'Community';
-    const searchContext = keywords.length > 0 ? ` matching "<strong>${keywords.join(' ')}</strong>"` : '';
-    let reply = `🔍 Found <strong>${posts.length} post${posts.length > 1 ? 's' : ''}</strong>${searchContext} in ${communityLabel}:<br/><br/>`;
+    // Format results
+    const label = wantsAnnouncements ? 'announcements' : 'posts';
+    const communityLabel = posts[0].communities?.name || 'all communities';
+    const context = keywords.length > 0 && !isGenericQuery ? ` matching "<strong>${keywords.join(' ')}</strong>"` : '';
+    let reply = `📋 Here are the latest <strong>${label}</strong>${context} from ${communityLabel}:<br/><br/>`;
 
-    posts.slice(0, 3).forEach((post, i) => {
+    posts.forEach((post, i) => {
       const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
       const preview = content.substring(0, 100);
       const timeAgo = formatTimeAgo(new Date(post.created_at));
       const comm = post.communities?.name || 'General';
       reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post →</a><br/><br/>`;
     });
-
-    if (posts.length > 3) {
-      reply += `<em>...and ${posts.length - 3} more. Browse the ${communityLabel} community for all posts.</em>`;
-    }
 
     return reply;
 
@@ -543,23 +535,20 @@ document.addEventListener('keydown', (e) => {
 
 // ── ACCOUNT STATUS BANNER ──
 function showAccountStatusBanner(status) {
-  const isPending   = status === 'pending';
   const banner = document.createElement('div');
   banner.id = 'accountStatusBanner';
   banner.style.cssText = `
     position:sticky;top:60px;z-index:1500;
-    background:${isPending ? '#fef3c7' : '#fee2e2'};
-    border-bottom:2px solid ${isPending ? '#f59e0b' : '#ef4444'};
+    background:#fee2e2;
+    border-bottom:2px solid #ef4444;
     padding:.75rem 1.5rem;
     display:flex;align-items:center;gap:.75rem;
     font-family:'Poppins',sans-serif;font-size:.85rem;font-weight:500;
-    color:${isPending ? '#92400e' : '#991b1b'};
+    color:#991b1b;
   `;
   banner.innerHTML = `
-    <i class="fas ${isPending ? 'fa-clock' : 'fa-ban'}" style="font-size:1rem;flex-shrink:0;"></i>
-    <span>${isPending
-      ? '<strong>Account pending approval.</strong> Your account is waiting for your department admin to approve it. You can browse but cannot post or comment until approved.'
-      : '<strong>Account suspended.</strong> Your account has been suspended. Please contact your department admin.'}</span>
+    <i class="fas fa-ban" style="font-size:1rem;flex-shrink:0;"></i>
+    <span><strong>Account suspended.</strong> Your account has been suspended. Please contact your department admin.</span>
   `;
   document.body.insertBefore(banner, document.body.firstChild);
 
@@ -600,6 +589,7 @@ function showToast(message, type = 'success') {
 
 // Global user state
 let loggedInUser = null;
+let currentCommunityFilter = null;
 
 // Load user data on page load
 (async function initUser() {
@@ -626,8 +616,8 @@ let loggedInUser = null;
       deptSugg.dataset.q = `Latest ${deptShort} announcements?`;
     }
 
-    // ── Show pending banner and block posting if not approved ──
-    if (profile.account_status === 'pending' || profile.account_status === 'suspended') {
+    // ── Show suspended banner and block posting if suspended ──
+    if (profile.account_status === 'suspended') {
       showAccountStatusBanner(profile.account_status);
     }
     
@@ -678,6 +668,29 @@ let loggedInUser = null;
         });
       // Default selection to General
       communitySelect.value = 'general';
+    }
+
+    // ── Load posts immediately after user is ready ──
+    document.querySelectorAll('.post-card').forEach(p => p.style.display = 'none');
+    document.getElementById('feedTitle').textContent = 'Campus Feed';
+    document.getElementById('feedSub').textContent = 'All posts from your communities';
+    document.getElementById('feedHeaderIcon').innerHTML = '<i class="fas fa-home"></i>';
+    currentCommunityFilter = null;
+    await loadPostsFromDB();
+    await loadSidebarCommunities();
+
+    // Handle ?highlight=postId from profile page clicks
+    const urlParams   = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+    if (highlightId) {
+      setTimeout(() => {
+        const postCard = document.querySelector(`.post-card[data-post-id="${highlightId}"]`);
+        if (postCard) {
+          postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          postCard.classList.add('post-highlighted');
+          setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
+        }
+      }, 500);
     }
   }
 })();
@@ -1112,10 +1125,10 @@ function createPostElement(post) {
   }
   
   article.innerHTML = `
-    <div class="post-left">${authorAvatar}</div>
+    <div class="post-left">${isAnon ? authorAvatar : `<a href="profile.html?id=${post.author_id}">${authorAvatar}</a>`}</div>
     <div class="post-body">
       <div class="post-meta">
-        <span class="post-author">${authorName}</span>
+        <span class="post-author">${isAnon ? authorName : `<a href="profile.html?id=${post.author_id}" style="color:inherit;text-decoration:none;" class="post-author-link">${authorName}</a>`}</span>
         ${announcementBadge}
         ${flaggedBadge}
         <span class="post-dept-tag ${isAdmin && !isAnon ? 'tag-admin' : tagClass}">${communityName}</span>
@@ -1187,7 +1200,7 @@ function createPostElement(post) {
           <div class="comment-loading">Loading comments...</div>
         </div>
         <div class="comment-input-wrapper">
-          <div class="comment-input-avatar">${loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--'}</div>
+          <div class="comment-input-avatar">${loggedInUser?.avatar_url ? `<img src="${loggedInUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : (loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--')}</div>
           <input type="text" class="comment-input top-level-comment-input" placeholder="Write a comment…" data-post-id="${post.id}" />
           <button class="comment-send-btn" data-post-id="${post.id}">
             <i class="fas fa-paper-plane"></i>
@@ -1228,41 +1241,6 @@ function formatCommentMention(text) {
   }
   return text;
 }
-
-// Load posts after user is initialized
-setTimeout(() => {
-  if (loggedInUser) {
-    // Hide sample posts immediately
-    document.querySelectorAll('.post-card').forEach(p => p.style.display = 'none');
-    
-    // Set default header to "Campus Feed"
-    document.getElementById('feedTitle').textContent = 'Campus Feed';
-    document.getElementById('feedSub').textContent = 'All posts from your communities';
-    document.getElementById('feedHeaderIcon').innerHTML = '<i class="fas fa-home"></i>';
-    
-    // Load all posts (no filter)
-    currentCommunityFilter = null;
-    loadPostsFromDB().then(() => {
-      // Handle ?highlight=postId from profile page clicks
-      const urlParams   = new URLSearchParams(window.location.search);
-      const highlightId = urlParams.get('highlight');
-      if (highlightId) {
-        setTimeout(() => {
-          const postCard = document.querySelector(`.post-card[data-post-id="${highlightId}"]`);
-          if (postCard) {
-            postCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            postCard.classList.add('post-highlighted');
-            setTimeout(() => postCard.classList.remove('post-highlighted'), 2500);
-          }
-        }, 500);
-      }
-    });
-  }
-}, 100); // Faster to avoid flash
-
-
-// Community filtering
-let currentCommunityFilter = null;
 
 // Toggle comment section
 document.addEventListener('click', async (e) => {
@@ -1711,6 +1689,28 @@ document.getElementById('submitReportBtn')?.addEventListener('click', async func
 
     if (error) throw error;
 
+    // Notify all SSG admins about the report
+    try {
+      const { data: ssgAdmins } = await db
+        .from('profiles')
+        .select('id')
+        .eq('admin_role', 'SSG');
+
+      if (ssgAdmins && ssgAdmins.length > 0) {
+        const reporterName = `${loggedInUser.first_name} ${loggedInUser.last_name}`;
+        const notifications = ssgAdmins.map(admin => ({
+          user_id: admin.id,
+          type: 'mention',
+          message: `🚨 ${reporterName} reported a post for: ${reason}`,
+          link: `/campusfeed.html?post=${postToReport}`,
+          is_read: false,
+        }));
+        await db.from('notifications').insert(notifications);
+      }
+    } catch (notifErr) {
+      console.error('Failed to notify admins:', notifErr);
+    }
+
     showToast('Report submitted. An admin will review it.', 'success');
     document.getElementById('reportPostModal').hidden = true;
     document.body.style.overflow = '';
@@ -1871,10 +1871,18 @@ function buildCommentHTML(comment, replies = []) {
 
   let authorName    = 'Anonymous';
   let authorInitials = '<i class="fas fa-user-secret" style="font-size:.7rem;"></i>';
+  let avatarHtml = '';
 
   if (!isAnon && author) {
     authorName     = `${author.first_name} ${author.last_name}`;
     authorInitials = (author.first_name[0] + author.last_name[0]).toUpperCase();
+    if (author.avatar_url) {
+      avatarHtml = `<img src="${author.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${authorName}" />`;
+    } else {
+      avatarHtml = authorInitials;
+    }
+  } else {
+    avatarHtml = authorInitials;
   }
 
   const timeAgo   = formatTimeAgo(new Date(comment.created_at));
@@ -1898,10 +1906,10 @@ function buildCommentHTML(comment, replies = []) {
 
   return `
     <div class="comment-item" data-comment-id="${comment.id}">
-      <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}${isAdminComment ? ' comment-avatar--admin' : ''}">${authorInitials}</div>
+      <div class="comment-avatar ${isAnon ? 'comment-avatar-anon' : ''}${isAdminComment ? ' comment-avatar--admin' : ''}">${avatarHtml}</div>
       <div class="comment-content-wrapper">
         <div class="comment-header">
-          <span class="comment-author${adminNameClass}">${authorName}</span>
+          <span class="comment-author${adminNameClass}">${isAnon ? authorName : `<a href="profile.html?id=${comment.author_id}" style="color:inherit;text-decoration:none;">${authorName}</a>`}</span>
           ${commentAdminBadge}
           <span class="comment-time">${timeAgo}</span>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" data-post-id="${comment.post_id}" title="Delete comment"><i class="fas fa-trash"></i></button>` : ''}
@@ -1911,7 +1919,7 @@ function buildCommentHTML(comment, replies = []) {
           <i class="fas fa-reply"></i> Reply
         </button>
         <div class="reply-input-wrapper" id="reply-input-${comment.id}" style="display:none;">
-          <div class="comment-input-avatar">${loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--'}</div>
+          <div class="comment-input-avatar">${loggedInUser?.avatar_url ? `<img src="${loggedInUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : (loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--')}</div>
           <input type="text" class="comment-input reply-input" placeholder="Reply to ${authorName}…"
                  data-post-id="${comment.post_id}" data-parent-id="${comment.id}" />
           <button class="comment-send-btn reply-send-btn" data-post-id="${comment.post_id}" data-parent-id="${comment.id}">
@@ -1932,7 +1940,7 @@ async function loadComments(postId) {
     // Fetch all comments + replies for this post in one query
     const { data: allComments, error } = await db
       .from('comments')
-      .select(`*, profiles:author_id (first_name, last_name, admin_role)`)
+      .select(`*, profiles:author_id (id, first_name, last_name, admin_role, avatar_url)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
@@ -2269,9 +2277,15 @@ async function markAllNotificationsRead() {
   }
 }
 
-// Load notifications when dropdown opens
-document.getElementById('notifToggle')?.addEventListener('click', () => {
+// Load notifications when dropdown opens — mark all as read automatically
+document.getElementById('notifToggle')?.addEventListener('click', async () => {
   loadNotifications();
+
+  // Mark all unread notifications as read when dropdown is opened
+  if (loggedInUser) {
+    await db.from('notifications').update({ is_read: true }).eq('user_id', loggedInUser.id).eq('is_read', false);
+    updateNotifBadge(0);
+  }
 });
 
 // Mark all read button
@@ -2532,6 +2546,10 @@ async function openPostPreview(postId) {
 
     if (error || !post) throw new Error('Post not found');
 
+    // Get actual like and comment counts from the source tables
+    const { count: likeCount } = await db.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    const { count: commentCount } = await db.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+
     const isAnon   = post.is_anonymous;
     const author   = post.profiles;
     const authorName = (!isAnon && author) ? `${author.first_name} ${author.last_name}` : 'Anonymous';
@@ -2618,12 +2636,16 @@ async function openPostPreview(postId) {
             <div style="font-size:.75rem;color:var(--gray-400);">${community} · ${timeAgo}</div>
           </div>
         </div>
-        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title)}</h3>` : ''}
-        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml(post.content)}</p>
+        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title.replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, ''))}</h3>` : ''}
+        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml((post.content || '').replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
         ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? `
           <div class="post-images-grid" style="margin-bottom:1rem;">
             ${post.image_url.slice(0,4).map(url => `<div class="post-image-item"><img src="${url}" loading="lazy" /></div>`).join('')}
           </div>` : ''}
+        <div style="display:flex;gap:1.25rem;padding:.5rem 0;margin-bottom:.5rem;font-size:.82rem;color:var(--gray-500);">
+          <span><i class="fas fa-heart" style="color:#ef4444;"></i> ${likeCount || 0} likes</span>
+          <span><i class="fas fa-comment" style="color:#3b82f6;"></i> ${commentCount || 0} comments</span>
+        </div>
         <div style="border-top:1px solid var(--gray-200);padding-top:.75rem;margin-bottom:.5rem;">
           <strong style="font-size:.82rem;color:var(--gray-600);">Comments</strong>
         </div>
@@ -2902,11 +2924,20 @@ async function loadAnnouncementsWidget() {
   if (!widget || !loggedInUser) return;
 
   try {
-    // Get the ssg-announcements community + user's dept community
+    // Get the ssg-announcements community + user's own dept community only
+    const deptSlugMap = {
+      'college of teacher education (cte)':              'cte',
+      'college of business education (cbe)':             'cbe',
+      'college of criminal justice education (ccje)':    'ccje',
+      'college of computer studies (css)':               'css',
+      'psychology (psych)':                              'psych',
+    };
+    const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
+
     const { data: communities } = await db
       .from('communities')
       .select('id, slug, name')
-      .or(`slug.eq.ssg-announcements,type.eq.department`);
+      .or(`slug.eq.ssg-announcements,slug.eq.ssg,slug.eq.${userDeptSlug || 'none'}`);
 
     if (!communities || communities.length === 0) {
       widget.innerHTML = '<div class="ann-widget-loading">No announcements yet.</div>';
@@ -2915,7 +2946,7 @@ async function loadAnnouncementsWidget() {
 
     const commIds = communities.map(c => c.id);
 
-    // Fetch latest pinned or recent posts from those communities
+    // Only show pinned posts OR posts marked as announcements (📢 [ANNOUNCEMENT] prefix)
     const { data: posts, error } = await db
       .from('posts')
       .select(`
@@ -2925,6 +2956,7 @@ async function loadAnnouncementsWidget() {
       .in('community_id', commIds)
       .eq('moderation_status', 'approved')
       .eq('is_flagged', false)
+      .or('is_pinned.eq.true,content.ilike.%[ANNOUNCEMENT]%')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(5);
@@ -2939,7 +2971,8 @@ async function loadAnnouncementsWidget() {
     widget.innerHTML = posts.map(post => {
       const slug      = post.communities?.slug || '';
       const commName  = post.communities?.name || 'General';
-      const text      = post.title || post.content.substring(0, 70) + (post.content.length > 70 ? '…' : '');
+      const rawText   = (post.title || post.content || '').replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const text      = rawText.substring(0, 70) + (rawText.length > 70 ? '…' : '');
       const timeAgo   = formatTimeAgo(new Date(post.created_at));
 
       // Pick tag style based on community or pinned status
@@ -3014,7 +3047,7 @@ setTimeout(() => {
 // ══════════════════════════════════════════════════════════════════
 
 async function loadEventsWidget() {
-  const eventsList = document.querySelector('.events-list');
+  const eventsList = document.getElementById('upcomingEventsList') || document.querySelector('.events-list');
   if (!eventsList) return;
 
   try {
@@ -3059,6 +3092,93 @@ async function loadEventsWidget() {
 setTimeout(() => {
   if (loggedInUser) loadEventsWidget();
 }, 1300);
+
+// ══════════════════════════════════════════════════════════════════
+// DYNAMIC SIDEBAR COMMUNITIES — loads public communities from DB
+// ══════════════════════════════════════════════════════════════════
+
+async function loadSidebarCommunities() {
+  const container = document.getElementById('publicCommunitiesList');
+  if (!container) return;
+
+  try {
+    const { data: communities, error } = await db
+      .from('communities')
+      .select('*')
+      .eq('type', 'public')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    if (!communities || communities.length === 0) {
+      container.innerHTML = '<div style="padding:0.5rem 1rem;font-size:.75rem;color:var(--gray-400);">No communities yet</div>';
+      return;
+    }
+
+    // Remove SSG Announcements (redundant with SSG Student Government)
+    let filtered = communities.filter(c => c.slug !== 'ssg-announcements');
+
+    // Sort: SSG first (priority), then alphabetical
+    filtered.sort((a, b) => {
+      if (a.slug === 'ssg') return -1;
+      if (b.slug === 'ssg') return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    // Icon mapping for known slugs
+    const ICON_MAP = {
+      'ssg':              { icon: 'fa-star',          cls: 'ci-ssg' },
+      'ssg-announcements':{ icon: 'fa-bullhorn',     cls: 'ci-ssg' },
+      'general':          { icon: 'fa-comments',     cls: 'ci-general' },
+      'lostandfound':     { icon: 'fa-search',       cls: 'ci-lost' },
+      'marketplace':      { icon: 'fa-handshake',    cls: 'ci-market' },
+      'academic':         { icon: 'fa-book-open',    cls: 'ci-academic' },
+      'campus':           { icon: 'fa-university',   cls: 'ci-campus' },
+      'support':          { icon: 'fa-hands-helping',cls: 'ci-support' },
+    };
+
+    container.innerHTML = filtered.map(c => {
+      const iconInfo = ICON_MAP[c.slug] || { icon: 'fa-users', cls: 'ci-general' };
+      const desc = c.description || '';
+      return `
+        <a href="#" class="community-item" data-feed="${c.slug}">
+          <div class="comm-icon ${iconInfo.cls}"><i class="fas ${iconInfo.icon}"></i></div>
+          <div class="comm-info">
+            <div class="comm-name">${escapeHtml(c.name)}</div>
+            <div class="comm-sub">${escapeHtml(desc.substring(0, 30))}</div>
+          </div>
+        </a>`;
+    }).join('');
+
+    // Re-attach click handlers for new community items
+    container.querySelectorAll('.community-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.community-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        if (window.innerWidth <= 640) document.getElementById('leftSidebar').classList.remove('open');
+
+        const feedSlug = item.dataset.feed;
+        const feedTitle = document.getElementById('feedTitle');
+        const feedSub = document.getElementById('feedSub');
+        const feedIcon = document.getElementById('feedHeaderIcon');
+
+        const comm = filtered.find(c => c.slug === feedSlug);
+        feedTitle.textContent = comm ? comm.name : feedSlug;
+        feedSub.textContent = comm ? (comm.description || '') : '';
+        feedIcon.innerHTML = `<i class="fas ${(ICON_MAP[feedSlug] || {icon:'fa-users'}).icon}"></i>`;
+        feedIcon.className = 'feed-icon';
+
+        currentCommunityFilter = feedSlug;
+        loadPostsFromDB();
+      });
+    });
+
+  } catch (err) {
+    console.error('Error loading sidebar communities:', err);
+  }
+}
+
+// Load sidebar communities is called from initUser()
 
 
 // ══════════════════════════════════════════════════════════════════

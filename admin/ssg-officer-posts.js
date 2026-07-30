@@ -21,6 +21,7 @@ let allPosts      = [];
   }
 
   adminUser = profile;
+  initAdminNotifications(profile.id);
   const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   document.getElementById('adminAvatar').textContent = initials;
   document.getElementById('adminName').textContent   = `${profile.first_name} ${profile.last_name}`;

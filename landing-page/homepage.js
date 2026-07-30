@@ -109,6 +109,8 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
   // Open triggers
   document.getElementById('openLogin').addEventListener('click', e => { e.preventDefault(); openModal(loginModal); });
   document.getElementById('openRegister').addEventListener('click', e => { e.preventDefault(); openModal(registerModal); });
+  document.getElementById('heroGetStarted')?.addEventListener('click', e => { e.preventDefault(); openModal(registerModal); });
+  document.getElementById('ctaCreateAccount')?.addEventListener('click', e => { e.preventDefault(); openModal(registerModal); });
 
   // Switch links
   document.getElementById('switchToRegister').addEventListener('click', e => { e.preventDefault(); closeModal(loginModal); openModal(registerModal); });
@@ -181,58 +183,122 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     'Psychology (PSYCH)':                               'psych',
   };
 
-  // ── REGISTER ──
-  document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form     = e.target;
-    const submitBtn = form.querySelector('.btn-primary');
+  // ── Helper: generate internal email from student ID ──
+  // No longer needed — we use real Gmail now
+
+  // ── REGISTER: Step 1 — Verify student ID against master list ──
+  let verifiedStudent = null; // holds the master list record after verification
+
+  document.getElementById('regVerifyBtn').addEventListener('click', async () => {
+    const form = document.getElementById('registerForm');
+    const btn = document.getElementById('regVerifyBtn');
     clearFormError(form);
 
-    const firstName = document.getElementById('regFirstName').value.trim();
-    const lastName  = document.getElementById('regLastName').value.trim();
     const studentId = document.getElementById('regStudentId').value.trim();
-    const email     = document.getElementById('regEmail').value.trim();
-    const password  = document.getElementById('regPassword').value;
-    const dept      = document.getElementById('regDept').value;
-    const agreed    = form.querySelector('input[type="checkbox"]').checked;
-
-    // Basic validation
-    if (!firstName || !lastName || !studentId || !email || !password || !dept) {
-      return showFormError(form, 'Please fill in all fields.');
+    if (!studentId) {
+      return showFormError(form, 'Please enter your Student ID.');
     }
-    if (!agreed) {
-      return showFormError(form, 'You must agree to the Terms of Service.');
+
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+
+    try {
+      // Look up the student ID in the master list table
+      const { data, error } = await db
+        .from('students_master')
+        .select('student_id, first_name, last_name, department')
+        .eq('student_id', studentId)
+        .single();
+
+      if (error || !data) {
+        throw new Error('Student ID not found in the master list. Please check your ID or contact your department admin.');
+      }
+
+      // Check if this student already has an account
+      const { data: existingProfile } = await db
+        .from('profiles')
+        .select('id')
+        .eq('student_id', studentId)
+        .single();
+
+      if (existingProfile) {
+        throw new Error('An account already exists for this Student ID. Please log in instead.');
+      }
+
+      // Success — store the verified student data and show password fields
+      verifiedStudent = data;
+      document.getElementById('regAutoName').textContent = `${data.first_name} ${data.last_name}`;
+      document.getElementById('regAutoDept').textContent = data.department;
+      document.getElementById('regAutoFillInfo').style.display = 'block';
+      document.getElementById('regPasswordSection').style.display = 'block';
+      document.getElementById('regStudentId').readOnly = true;
+      btn.style.display = 'none'; // hide verify button, show password section
+
+    } catch (err) {
+      console.error('Verification error:', err);
+      showFormError(form, err.message || 'Verification failed. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Verify Student ID';
+    }
+  });
+
+  // ── REGISTER: Step 2 — Create account after verification ──
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!verifiedStudent) return; // shouldn't happen, but guard
+
+    const form = e.target;
+    const submitBtn = form.querySelector('#regPasswordSection .btn-primary');
+    clearFormError(form);
+
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regPasswordConfirm').value;
+    const agreed = form.querySelector('input[type="checkbox"]').checked;
+
+    if (!password || !confirmPassword) {
+      return showFormError(form, 'Please fill in both password fields.');
     }
     if (password.length < 6) {
       return showFormError(form, 'Password must be at least 6 characters.');
+    }
+    if (password !== confirmPassword) {
+      return showFormError(form, 'Passwords do not match.');
+    }
+    if (!agreed) {
+      return showFormError(form, 'You must agree to the Terms of Service.');
     }
 
     setLoading(submitBtn, true);
 
     try {
-      // 1. Create auth user — pass student info as metadata so the DB trigger can use it
+      // Generate internal email from student ID
+      const email = `${verifiedStudent.student_id.replace(/\s+/g, '')}@crmc.student.local`;
+
+      // Create auth user
       const { data: authData, error: authError } = await db.auth.signUp({
         email,
         password,
         options: {
           data: {
-            student_id: studentId,
-            first_name: firstName,
-            last_name:  lastName,
-            department: dept,
+            student_id: verifiedStudent.student_id,
+            first_name: verifiedStudent.first_name,
+            last_name:  verifiedStudent.last_name,
+            department: verifiedStudent.department,
           }
         }
       });
 
       if (authError) throw authError;
-      // Profile is created automatically by the DB trigger (handle_new_user)
 
-      // Wait briefly for the session to be established, then redirect
+      // Auto-approve since student ID was validated against master list
+      const userId = authData.user?.id;
+      if (userId) {
+        await db.from('profiles').update({ account_status: 'approved' }).eq('id', userId);
+      }
+
+      // Wait briefly for session to be established, then redirect
       await new Promise(resolve => setTimeout(resolve, 800));
-
-      // 3. Redirect to campusfeed with their department community active
-      const deptSlug = DEPT_COMMUNITY[dept] || 'general';
-      window.location.href = `../campusfeed.html?dept=${deptSlug}`;
+      window.location.href = `../campusfeed.html`;
 
     } catch (err) {
       console.error('Registration error:', err);
@@ -248,29 +314,21 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     const submitBtn = form.querySelector('.btn-primary');
     clearFormError(form);
 
-    const emailOrId  = document.getElementById('loginEmail').value.trim();
-    const password   = document.getElementById('loginPassword').value;
+    const input    = document.getElementById('loginStudentId').value.trim();
+    const password = document.getElementById('loginPassword').value;
 
-    if (!emailOrId || !password) {
-      return showFormError(form, 'Please enter your email/ID and password.');
+    if (!input || !password) {
+      return showFormError(form, 'Please enter your Student ID/email and password.');
     }
 
     setLoading(submitBtn, true);
 
     try {
-      // Supabase Auth requires an email — if they typed a student ID, look up the email first
-      let email = emailOrId;
-      if (!emailOrId.includes('@')) {
-        const { data: profileData, error: lookupError } = await db
-          .from('profiles')
-          .select('email')
-          .eq('student_id', emailOrId)
-          .single();
-
-        if (lookupError || !profileData) {
-          throw new Error('Student ID not found. Please use your email address.');
-        }
-        email = profileData.email;
+      // Determine if they typed an email or student ID
+      let email = input;
+      if (!input.includes('@')) {
+        // It's a student ID — convert to internal email
+        email = `${input.replace(/\s+/g, '')}@crmc.student.local`;
       }
 
       const { data: authData, error: authError } = await db.auth.signInWithPassword({
@@ -278,7 +336,15 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
         password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes('Invalid login') || authError.message.includes('invalid')) {
+          throw new Error('Invalid email/Student ID or password. Please try again.');
+        }
+        if (authError.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the verification link first.');
+        }
+        throw authError;
+      }
 
       // Fetch their profile to get department and admin status
       const { data: profile, error: profileError } = await db
@@ -291,107 +357,16 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
 
       // Check if this is an admin account
       if (profile.admin_role && profile.admin_role !== 'student') {
-        // This is an admin account - redirect to admin portal
         await db.auth.signOut();
         throw new Error('Please use the admin portal to login. Admins cannot access the student portal.');
       }
 
-      // Wait briefly for session to persist, then redirect
-      await new Promise(resolve => setTimeout(resolve, 400));
-
       // Redirect to student feed
-      const deptSlug = DEPT_COMMUNITY[profile.department] || 'general';
-      window.location.href = `../campusfeed.html?dept=${deptSlug}`;
+      window.location.href = `../campusfeed.html`;
 
     } catch (err) {
       console.error('Login error:', err);
       showFormError(form, err.message || 'Login failed. Please check your credentials.');
-      setLoading(submitBtn, false);
-    }
-  });
-
-  // ── FORGOT PASSWORD ──
-  const forgotModal = document.getElementById('forgotPasswordModal');
-
-  // Open forgot password modal
-  document.getElementById('openForgotPassword').addEventListener('click', (e) => {
-    e.preventDefault();
-    closeModal(loginModal);
-    openModal(forgotModal);
-  });
-
-  // Back to login
-  document.getElementById('backToLogin').addEventListener('click', (e) => {
-    e.preventDefault();
-    closeModal(forgotModal);
-    openModal(loginModal);
-  });
-
-  // Close forgot modal with X button
-  forgotModal.querySelector('.modal-close').addEventListener('click', () => {
-    closeModal(forgotModal);
-  });
-
-  // Close on overlay click
-  forgotModal.addEventListener('click', (e) => {
-    if (e.target === forgotModal) closeModal(forgotModal);
-  });
-
-  // Close on Escape
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal(forgotModal);
-  });
-
-  // Handle forgot password form submit
-  document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const submitBtn = form.querySelector('.btn-primary');
-    clearFormError(form);
-
-    const email = document.getElementById('forgotEmail').value.trim();
-
-    if (!email) {
-      return showFormError(form, 'Please enter your email address.');
-    }
-
-    if (!email.includes('@')) {
-      return showFormError(form, 'Please enter a valid email address (not student ID).');
-    }
-
-    setLoading(submitBtn, true);
-
-    try {
-      // Build the reset page URL based on current location
-      const currentPath = window.location.pathname;
-      const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-      const resetUrl = window.location.origin + basePath + '/reset-password.html';
-
-      const { error } = await db.auth.resetPasswordForEmail(email, {
-        redirectTo: resetUrl,
-      });
-
-      if (error) throw error;
-
-      // Show success message
-      form.innerHTML = `
-        <div style="text-align:center;padding:1rem 0;">
-          <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;font-size:1.3rem;color:#16a34a;">
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <h3 style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#1f2937;">Check your email</h3>
-          <p style="font-size:.82rem;color:#6b7280;line-height:1.5;">
-            We sent a password reset link to <strong>${email}</strong>. Click the link in your email to set a new password.
-          </p>
-          <p style="font-size:.75rem;color:#9ca3af;margin-top:.75rem;">
-            Didn't receive it? Check your spam folder or try again.
-          </p>
-        </div>
-      `;
-
-    } catch (err) {
-      console.error('Reset password error:', err);
-      showFormError(form, err.message || 'Failed to send reset link. Please try again.');
       setLoading(submitBtn, false);
     }
   });

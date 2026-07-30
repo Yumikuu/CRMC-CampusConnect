@@ -100,7 +100,6 @@ async function loadUsers() {
 // ── UPDATE STATUS COUNTS ──
 function updateCounts() {
   document.getElementById('countAll').textContent = allUsers.length;
-  document.getElementById('countPending').textContent = allUsers.filter(u => u.account_status === 'pending').length;
   document.getElementById('countApproved').textContent = allUsers.filter(u => u.account_status === 'approved').length;
   document.getElementById('countSuspended').textContent = allUsers.filter(u => u.account_status === 'suspended').length;
 }
@@ -154,22 +153,17 @@ function renderUsers() {
     let statusColor = '';
     
     switch(user.account_status) {
-      case 'pending':
-        statusBadge = '<i class="fas fa-clock"></i> Pending';
-        statusColor = '#f59e0b';
-        break;
       case 'approved':
-        statusBadge = '<i class="fas fa-check-circle"></i> Approved';
+        statusBadge = '<i class="fas fa-check-circle"></i> Active';
         statusColor = '#10b981';
         break;
       case 'suspended':
         statusBadge = '<i class="fas fa-ban"></i> Suspended';
         statusColor = '#ef4444';
         break;
-      case 'rejected':
-        statusBadge = '<i class="fas fa-times-circle"></i> Rejected';
-        statusColor = '#6b7280';
-        break;
+      default:
+        statusBadge = '<i class="fas fa-check-circle"></i> Active';
+        statusColor = '#10b981';
     }
 
     return `
@@ -201,22 +195,15 @@ function renderUsers() {
         </td>
         <td style="padding:1rem;">
           <div style="display:flex;gap:0.5rem;justify-content:center;">
-            ${user.account_status === 'pending' ? `
-              <button onclick="approveUser('${user.id}')" style="padding:0.375rem 0.75rem;background:#10b981;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.375rem;">
-                <i class="fas fa-check"></i> Approve
-              </button>
-              <button onclick="rejectUser('${user.id}')" style="padding:0.375rem 0.75rem;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
-                <i class="fas fa-times"></i> Reject
-              </button>
-            ` : user.account_status === 'approved' ? `
-              <button onclick="suspendUser('${user.id}')" style="padding:0.375rem 0.75rem;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
-                <i class="fas fa-ban"></i> Suspend
-              </button>
-            ` : user.account_status === 'suspended' ? `
+            ${user.account_status === 'suspended' ? `
               <button onclick="unsuspendUser('${user.id}')" style="padding:0.375rem 0.75rem;background:#10b981;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
                 <i class="fas fa-check"></i> Unsuspend
               </button>
-            ` : ''}
+            ` : `
+              <button onclick="suspendUser('${user.id}')" style="padding:0.375rem 0.75rem;background:#f59e0b;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+                <i class="fas fa-ban"></i> Suspend
+              </button>
+            `}
             <button onclick="viewUserDetails('${user.id}')" style="padding:0.375rem 0.75rem;background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
               <i class="fas fa-eye"></i> View
             </button>
@@ -228,51 +215,6 @@ function renderUsers() {
 }
 
 // ── USER ACTIONS ──
-async function approveUser(userId) {
-  if (!confirm('Approve this user account?')) return;
-
-  try {
-    const { error } = await db
-      .from('profiles')
-      .update({ account_status: 'approved' })
-      .eq('id', userId);
-
-    if (error) throw error;
-
-    // Log activity
-    await logActivity('approve_user', userId, 'user');
-
-    showSuccess('User approved successfully');
-    await loadUsers();
-
-  } catch (err) {
-    console.error('Error approving user:', err);
-    showError('Failed to approve user');
-  }
-}
-
-async function rejectUser(userId) {
-  if (!confirm('Reject this user account? They will not be able to access the platform.')) return;
-
-  try {
-    const { error } = await db
-      .from('profiles')
-      .update({ account_status: 'rejected' })
-      .eq('id', userId);
-
-    if (error) throw error;
-
-    await logActivity('reject_user', userId, 'user');
-
-    showSuccess('User rejected');
-    await loadUsers();
-
-  } catch (err) {
-    console.error('Error rejecting user:', err);
-    showError('Failed to reject user');
-  }
-}
-
 async function suspendUser(userId) {
   if (!confirm('Suspend this user? They will be temporarily blocked from the platform.')) return;
 

@@ -23,6 +23,7 @@ let openCommentPostId = null;
   }
 
   adminUser = profile;
+  initAdminNotifications(profile.id);
   const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
   const fullName  = `${profile.first_name} ${profile.last_name}`;
 

@@ -147,7 +147,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.notif-dropdown { width: 320px; }
+.notif-dropdown { width: 320px; max-height: 70vh; overflow: hidden; display: flex; flex-direction: column; }
 .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem .75rem; border-bottom: 1px solid var(--gray-100); font-size: .85rem; font-weight: 700; color: var(--gray-900); }
 .notif-mark-all { font-size: .75rem; color: var(--maroon); font-weight: 600; text-decoration: none; }
 .notif-list { display: flex; flex-direction: column; max-height: 320px; overflow-y: auto; }
@@ -417,6 +417,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 .post-body { flex: 1; min-width: 0; }
 .post-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .4rem; position: relative; }
 .post-author { font-size: .82rem; font-weight: 700; color: var(--gray-900); }
+.post-author a:hover, .comment-author a:hover { text-decoration: underline; }
 .post-dept-tag {
   font-size: .68rem; font-weight: 600; padding: .15rem .55rem;
   border-radius: var(--radius-full);
@@ -637,17 +638,17 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
   border-top: 1px solid var(--gray-200);
 }
 .post-action-btn {
-  display: flex; align-items: center; gap: .5rem;
+  display: flex; align-items: center; gap: .35rem;
   background: none; border: none; cursor: pointer;
-  font-size: .88rem; font-weight: 600; color: var(--gray-500);
-  padding: .6rem 1rem; border-radius: var(--radius-sm);
+  font-size: .78rem; font-weight: 600; color: var(--gray-500);
+  padding: .45rem .75rem; border-radius: var(--radius-sm);
   font-family: 'Poppins', sans-serif; transition: background .15s, color .15s;
 }
 .post-action-btn i {
-  font-size: 1rem;
+  font-size: .8rem;
 }
 .post-action-btn span {
-  font-size: .9rem;
+  font-size: .78rem;
 }
 .post-action-btn:hover { background: var(--gray-100); color: var(--maroon); }
 .post-action-btn.liked { color: #dc2626; }
@@ -1312,6 +1313,12 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
 @media (max-width: 900px) {
   .page-body { grid-template-columns: var(--sidebar-w) 1fr; }
   .right-sidebar { display: none; }
+  .notif-dropdown { 
+    width: 300px; 
+    right: 0; 
+    max-height: 70vh;
+  }
+  .notif-list { max-height: 50vh; }
 }
 
 @media (max-width: 640px) {
@@ -1372,7 +1379,15 @@ body { font-family: 'Poppins', sans-serif; background: var(--gray-100); color: v
   .delete-modal { max-width: 95vw; }
   
   /* Notification dropdown full width */
-  .notif-dropdown { width: calc(100vw - 2rem); right: -1rem; }
+  .notif-dropdown { 
+    width: calc(100vw - 2rem); 
+    right: -1rem; 
+    max-height: 70vh;
+    position: fixed;
+    top: 60px;
+    left: 1rem;
+  }
+  .notif-list { max-height: 55vh; }
   
   /* Post images grid */
   .post-images-grid { grid-template-columns: repeat(2, 1fr); }

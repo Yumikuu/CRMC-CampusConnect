@@ -80,7 +80,7 @@
           </p>
 
           <div class="hero-cta">
-            <a href="#" class="btn btn-gold btn-lg">
+            <a href="#" class="btn btn-gold btn-lg" id="heroGetStarted">
               <i class="fas fa-user-plus" aria-hidden="true"></i>
               Get Started
             </a>
@@ -322,7 +322,7 @@
           <p class="cta-desc">Sign up and connect with thousands of CRMC students. Your campus life starts here.</p>
         </div>
         <div class="cta-actions">
-          <a href="#" class="btn btn-gold btn-lg">Create Account</a>
+          <a href="#" class="btn btn-gold btn-lg" id="ctaCreateAccount">Create Account</a>
           <a href="#" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);">Learn More</a>
         </div>
       </div>
@@ -396,11 +396,11 @@
         <img src="../Images/logo.png" alt="CRMC CampusConnect" />
       </div>
       <h2 class="modal-title" id="loginTitle">Welcome back</h2>
-      <p class="modal-sub">Sign in to your CampusConnect account</p>
+      <p class="modal-sub">Sign in with your Student ID</p>
       <form class="modal-form" id="loginForm" novalidate>
         <div class="form-group">
-          <label for="loginEmail">Email or Student ID</label>
-          <input type="text" id="loginEmail" placeholder="e.g. 2024-00001" autocomplete="username" required />
+          <label for="loginStudentId">Student ID</label>
+          <input type="text" id="loginStudentId" placeholder="e.g. 2024-00001" autocomplete="username" required />
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
@@ -409,35 +409,15 @@
             <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row" style="flex-direction:column;align-items:flex-start;gap:.5rem;">
           <label class="checkbox-label">
             <input type="checkbox" /> Remember me
           </label>
-          <a href="#" class="form-link" id="openForgotPassword">Forgot password?</a>
+          <span style="font-size:.75rem;color:#9ca3af;">Forgot password? Contact your department admin.</span>
         </div>
         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
       </form>
       <p class="modal-switch">Don't have an account? <a href="#" id="switchToRegister">Register here</a></p>
-    </div>
-  </div>
-
-  <!-- ── FORGOT PASSWORD MODAL ── -->
-  <div class="modal-overlay" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle" hidden>
-    <div class="modal">
-      <button class="modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
-      <div class="modal-logo">
-        <img src="../Images/logo.png" alt="CRMC CampusConnect" />
-      </div>
-      <h2 class="modal-title" id="forgotTitle">Reset your password</h2>
-      <p class="modal-sub">Enter your email address and we'll send you a link to reset your password.</p>
-      <form class="modal-form" id="forgotPasswordForm" novalidate>
-        <div class="form-group">
-          <label for="forgotEmail">Email Address</label>
-          <input type="email" id="forgotEmail" placeholder="you@crmc.edu.ph" autocomplete="email" required />
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Send Reset Link</button>
-      </form>
-      <p class="modal-switch"><a href="#" id="backToLogin"><i class="fas fa-arrow-left"></i> Back to Login</a></p>
     </div>
   </div>
 
@@ -449,48 +429,40 @@
         <img src="../Images/logo.png" alt="CRMC CampusConnect" />
       </div>
       <h2 class="modal-title" id="registerTitle">Create an account</h2>
-      <p class="modal-sub">Join the CRMC student community</p>
+      <p class="modal-sub">Enter your Student ID to get started</p>
       <form class="modal-form" id="registerForm" novalidate>
-        <div class="form-row-2">
-          <div class="form-group">
-            <label for="regFirstName">First Name</label>
-            <input type="text" id="regFirstName" placeholder="Juan" required />
-          </div>
-          <div class="form-group">
-            <label for="regLastName">Last Name</label>
-            <input type="text" id="regLastName" placeholder="Dela Cruz" required />
-          </div>
-        </div>
         <div class="form-group">
           <label for="regStudentId">Student ID</label>
           <input type="text" id="regStudentId" placeholder="e.g. 2024-00001" required />
+          <small id="regStudentIdHint" style="color:#6b7280;font-size:.75rem;margin-top:.25rem;display:block;" hidden></small>
         </div>
-        <div class="form-group">
-          <label for="regEmail">Email Address</label>
-          <input type="email" id="regEmail" placeholder="you@crmc.edu.ph" autocomplete="email" required />
-        </div>
-        <div class="form-group">
-          <label for="regPassword">Password</label>
-          <div class="input-password">
-            <input type="password" id="regPassword" placeholder="Create a password" autocomplete="new-password" required />
-            <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
+        <div id="regAutoFillInfo" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;">
+          <div style="font-size:.78rem;color:#166534;font-weight:600;margin-bottom:.25rem;"><i class="fas fa-check-circle"></i> Student ID verified</div>
+          <div style="font-size:.82rem;color:#15803d;">
+            <span id="regAutoName"></span> — <span id="regAutoDept"></span>
           </div>
         </div>
-        <div class="form-group">
-          <label for="regDept">Department</label>
-          <select id="regDept" required>
-            <option value="" disabled selected>Select your department</option>
-            <option>College of Business Education (CBE)</option>
-            <option>College of Criminal Justice Education (CCJE)</option>
-            <option>College of Computer Studies (CSS)</option>
-            <option>College of Teacher Education (CTE)</option>
-            <option>Psychology (PSYCH)</option>
-          </select>
+        <div id="regPasswordSection" style="display:none;">
+          <div class="form-group">
+            <label for="regPassword">Create Password</label>
+            <div class="input-password">
+              <input type="password" id="regPassword" placeholder="At least 6 characters" autocomplete="new-password" required />
+              <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="regPasswordConfirm">Confirm Password</label>
+            <div class="input-password">
+              <input type="password" id="regPasswordConfirm" placeholder="Re-enter your password" autocomplete="new-password" required />
+              <button type="button" class="toggle-pw" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <label class="checkbox-label" style="margin-top:1rem;margin-bottom:.75rem;">
+            <input type="checkbox" required /> I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>
+          </label>
+          <button type="submit" class="btn btn-primary btn-block">Create Account</button>
         </div>
-        <label class="checkbox-label" style="margin-bottom:.75rem;">
-          <input type="checkbox" required /> I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>
-        </label>
-        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        <button type="button" class="btn btn-primary btn-block" id="regVerifyBtn">Verify Student ID</button>
       </form>
       <p class="modal-switch">Already have an account? <a href="#" id="switchToLogin">Sign in here</a></p>
     </div>

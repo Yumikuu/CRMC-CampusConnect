@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// DEPT COMMUNITY FEED — Live feed with admin powers
+// DEPT COMMUNITY FEED ï¿½ Live feed with admin powers
 // ---------------------------------------------------------------
 
 let adminUser = null;
@@ -132,6 +132,26 @@ async function loadFeed() {
       .eq('user_id', adminUser.id)
       .in('post_id', allPosts.map(p => p.id));
     (likes || []).forEach(l => likedSet.add(l.post_id));
+
+    // Get real like counts per post
+    const { data: likeCounts } = await db.from('post_likes')
+      .select('post_id')
+      .in('post_id', allPosts.map(p => p.id));
+    const likeCountMap = {};
+    (likeCounts || []).forEach(l => { likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1; });
+
+    // Get real comment counts per post
+    const { data: commentCounts } = await db.from('comments')
+      .select('post_id')
+      .in('post_id', allPosts.map(p => p.id));
+    const commentCountMap = {};
+    (commentCounts || []).forEach(c => { commentCountMap[c.post_id] = (commentCountMap[c.post_id] || 0) + 1; });
+
+    // Attach real counts to posts
+    allPosts.forEach(p => {
+      p.like_count = likeCountMap[p.id] || 0;
+      p.comment_count = commentCountMap[p.id] || 0;
+    });
   }
 
   document.getElementById('feedContainer').innerHTML = allPosts.map(post => renderPost(post, likedSet)).join('');
@@ -140,7 +160,7 @@ async function loadFeed() {
 // -- RENDER A SINGLE POST --
 function renderPost(post, likedSet) {
   const isAnon   = post.is_anonymous;
-  const isAnn    = post.content?.startsWith('?? [ANNOUNCEMENT]');
+  const isAnn    = post.content?.startsWith('ðŸ“¢ [ANNOUNCEMENT]');
   const author   = isAnon ? 'Anonymous' : (post.profiles ? `${post.profiles.first_name} ${post.profiles.last_name}` : 'Unknown');
   const initials = isAnon ? 'A' : (post.profiles ? (post.profiles.first_name[0] + post.profiles.last_name[0]).toUpperCase() : '?');
   const isAdmin  = post.profiles?.admin_role && post.profiles.admin_role !== 'student';
@@ -155,7 +175,7 @@ function renderPost(post, likedSet) {
     isAnn && 'is-announcement',
   ].filter(Boolean).join(' ');
 
-  // Image grid — small thumbnails, full image visible
+  // Image grid ï¿½ small thumbnails, full image visible
   let imageHtml = '';
   if (images.length) {
     const shown = images.slice(0, 5);
@@ -187,7 +207,7 @@ function renderPost(post, likedSet) {
         </div>
       </div>
 
-      <div class="post-content">${escapeHtml((post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, ''))}</div>
+      <div class="post-content">${escapeHtml((post.content || '').replace(/^ðŸ“¢?\s*\[ANNOUNCEMENT\]\s*/i, ''))}</div>
       ${imageHtml}
 
       <div class="post-actions">
@@ -404,7 +424,7 @@ async function publishPost() {
     const { error } = await db.from('posts').insert({
       community_id: deptCommunityId,
       author_id:    adminUser.id,
-      content:      isAnn ? `?? [ANNOUNCEMENT]\n\n${content}` : content,
+      content:      isAnn ? `ðŸ“¢ [ANNOUNCEMENT]\n\n${content}` : content,
       is_anonymous: false,
       is_pinned:    isPinned,
       image_url:    imageUrls.length ? imageUrls : null,

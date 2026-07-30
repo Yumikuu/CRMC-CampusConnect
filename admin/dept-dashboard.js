@@ -57,8 +57,10 @@ const DEPT_COLORS = {
   document.getElementById('adminRoleText').textContent = `${dept} Administrator`;
   document.getElementById('deptTitle').textContent = `${dept} Dashboard`;
   document.getElementById('deptRole').textContent = `${dept} Department Administrator`;
-  document.getElementById('navDeptName').textContent = dept;
-  document.getElementById('navDeptName2').textContent = dept;
+  const navDept1 = document.getElementById('navDeptName');
+  const navDept2 = document.getElementById('navDeptName2');
+  if (navDept1) navDept1.textContent = dept;
+  if (navDept2) navDept2.textContent = dept;
   document.getElementById('deptUsersLabel').textContent = `${dept} Students`;
   document.getElementById('deptPostsLabel').textContent = `${dept} Posts`;
 

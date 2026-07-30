@@ -28,6 +28,7 @@ let selectedImages = [];
   }
 
   adminUser = profile;
+  initAdminNotifications(profile.id);
 
   // Get SSG announcements community ID
   const { data: community } = await db

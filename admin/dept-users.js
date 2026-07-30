@@ -15,10 +15,8 @@ const DEPT_FULL = {
 };
 
 const STATUS_COLORS = {
-  pending:   '#f59e0b',
   approved:  '#10b981',
   suspended: '#ef4444',
-  rejected:  '#6b7280',
 };
 
 (async () => {
@@ -64,7 +62,6 @@ async function loadUsers() {
 
 function updateTabCounts() {
   document.getElementById('countAll').textContent       = `(${allUsers.length})`;
-  document.getElementById('countPending').textContent   = `(${allUsers.filter(u => u.account_status === 'pending').length})`;
   document.getElementById('countApproved').textContent  = `(${allUsers.filter(u => u.account_status === 'approved').length})`;
   document.getElementById('countSuspended').textContent = `(${allUsers.filter(u => u.account_status === 'suspended').length})`;
 }
@@ -112,17 +109,7 @@ function renderUsers() {
         <i class="fas fa-eye"></i> View
       </button>`;
 
-    if (status === 'pending') {
-      actionBtns += `
-        <button onclick="updateStatus('${user.id}','approved')"
-          style="padding:0.375rem 0.75rem;background:#dcfce7;color:#166534;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
-          <i class="fas fa-check"></i> Approve
-        </button>
-        <button onclick="updateStatus('${user.id}','rejected')"
-          style="padding:0.375rem 0.75rem;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">
-          <i class="fas fa-times"></i> Reject
-        </button>`;
-    } else if (status === 'approved') {
+    if (status === 'approved') {
       actionBtns += `
         <button onclick="updateStatus('${user.id}','suspended')"
           style="padding:0.375rem 0.75rem;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:Poppins,sans-serif;">

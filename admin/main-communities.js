@@ -33,8 +33,12 @@ async function loadCommunities() {
   const { data, error } = await db.from('communities').select('*').order('type').order('name');
   if (error) { console.error(error); return; }
 
+  // Hide system communities (SSG) from admin management — they're embedded in every account
+  const HIDDEN_SLUGS = ['ssg', 'ssg-announcements'];
+  const manageable = (data || []).filter(c => !HIDDEN_SLUGS.includes(c.slug));
+
   // Get post counts for each community
-  const withCounts = await Promise.all((data || []).map(async c => {
+  const withCounts = await Promise.all(manageable.map(async c => {
     const { count } = await db.from('posts').select('*', { count: 'exact', head: true }).eq('community_id', c.id);
     return { ...c, postCount: count || 0 };
   }));

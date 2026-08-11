@@ -19,7 +19,7 @@ const DEPT_FULL = {
 };
 
 const DEPT_COLORS = {
-  'CTE': '#3b82f6', 'CSS': '#10b981', 'CBE': '#f59e0b',
+  'CTE': '#3b82f6', 'CSS': '#10b981', 'CCS': '#10b981', 'CBE': '#f59e0b',
   'PSYCH': '#8b5cf6', 'CCJE': '#ef4444',
 };
 
@@ -29,7 +29,7 @@ const DEPT_COLORS = {
   if (!session) { window.location.href = 'login.html'; return; }
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || !['CTE','CSS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
+  if (!profile || !['CTE','CSS','CCS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
     window.location.href = profile?.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;
   }

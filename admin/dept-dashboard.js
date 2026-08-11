@@ -9,13 +9,14 @@ let selectedImages = [];
 const DEPT_FULL_NAMES = {
   'CTE':  'College of Teacher Education (CTE)',
   'CSS':  'College of Computer Studies (CSS)',
+  'CCS':  'College of Computer Studies (CSS)',
   'CBE':  'College of Business Education (CBE)',
   'PSYCH':'Psychology (PSYCH)',
   'CCJE': 'College of Criminal Justice Education (CCJE)'
 };
 
 const DEPT_COLORS = {
-  'CTE': '#3b82f6', 'CSS': '#10b981', 'CBE': '#f59e0b',
+  'CTE': '#3b82f6', 'CSS': '#10b981', 'CCS': '#10b981', 'CBE': '#f59e0b',
   'PSYCH': '#8b5cf6', 'CCJE': '#ef4444'
 };
 
@@ -27,7 +28,7 @@ const DEPT_COLORS = {
   const { data: profile, error } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (error || !profile) { window.location.href = 'login.html'; return; }
 
-  const validDeptRoles = ['CTE', 'CSS', 'CBE', 'PSYCH', 'CCJE'];
+  const validDeptRoles = ['CTE', 'CSS', 'CCS', 'CBE', 'PSYCH', 'CCJE'];
   if (!validDeptRoles.includes(profile.admin_role)) {
     window.location.href = profile.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;

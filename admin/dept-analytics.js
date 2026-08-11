@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------
-// DEPT ANALYTICS — Stats, charts, and top contributors
+// DEPT ANALYTICS ï¿½ Stats, charts, and top contributors
 // ---------------------------------------------------------------
 
 let adminUser = null;
@@ -18,7 +18,7 @@ const DEPT_FULL = {
   if (!session) { window.location.href = 'login.html'; return; }
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || !['CTE','CSS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
+  if (!profile || !['CTE','CSS','CCS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
     window.location.href = profile?.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;
   }
@@ -285,7 +285,7 @@ async function loadTopContributors() {
   tbody.innerHTML = top5.map(([authorId, count], idx) => {
     const p = profileMap[authorId];
     const name = p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Unknown User';
-    const studentId = p?.student_id || '—';
+    const studentId = p?.student_id || 'ï¿½';
     const initials = p ? ((p.first_name?.[0] || '') + (p.last_name?.[0] || '')).toUpperCase() : '?';
     const barPct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
 

@@ -9,6 +9,7 @@ let currentFilter = 'all';
 const DEPT_FULL = {
   'CTE':  'college of teacher education (cte)',
   'CSS':  'college of computer studies (css)',
+  'CCS':  'college of computer studies (css)',
   'CBE':  'college of business education (cbe)',
   'PSYCH':'psychology (psych)',
   'CCJE': 'college of criminal justice education (ccje)'
@@ -24,7 +25,7 @@ const STATUS_COLORS = {
   if (!session) { window.location.href = 'login.html'; return; }
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || !['CTE','CSS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
+  if (!profile || !['CTE','CSS','CCS','CBE','PSYCH','CCJE'].includes(profile.admin_role)) {
     window.location.href = profile?.admin_role === 'SSG' ? 'main-dashboard.html' : '../campusfeed.html';
     return;
   }
@@ -47,7 +48,7 @@ async function loadUsers() {
     .from('profiles')
     .select('*')
     .ilike('department', DEPT_FULL[adminUser.admin_role])
-    .not('admin_role', 'in', '("SSG","SSG_OFFICER","CTE","CSS","CBE","PSYCH","CCJE")')
+    .not('admin_role', 'in', '("SSG","SSG_OFFICER","CTE","CSS","CCS","CBE","PSYCH","CCJE")')
     .order('created_at', { ascending: false });
 
   if (error) {

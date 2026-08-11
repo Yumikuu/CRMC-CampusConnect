@@ -8,6 +8,7 @@ let pendingDeleteId = null;
 
 const DEPT_FULL = {
   'CTE':'College of Teacher Education (CTE)', 'CSS':'College of Computer Studies (CSS)',
+  'CCS':'College of Computer Studies (CSS)',
   'CBE':'College of Business Education (CBE)', 'PSYCH':'Psychology (PSYCH)',
   'CCJE':'College of Criminal Justice Education (CCJE)'
 };

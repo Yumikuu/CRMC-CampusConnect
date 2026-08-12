@@ -273,7 +273,80 @@ const KB = [
     reply: '🤖 I can help you with:<br/>• Search posts: "any lost tumbler?"<br/>• Announcements: "latest announcements"<br/>• Events: "upcoming events"<br/>• Lost & Found: "lost ID"<br/>• Academic: "exam schedule"<br/>• Department posts: "CSS posts" or "CTE updates"<br/>Just type your question!' },
 ];
 
-// ── SMART CHATBOT: Searches real posts from the database ──
+// ── GEMINI AI INTEGRATION ──
+async function callGeminiAI(userMessage) {
+  const apiKey = window.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') return null;
+
+  const userName  = loggedInUser ? `${loggedInUser.first_name} ${loggedInUser.last_name}` : 'a student';
+  const userDept  = loggedInUser?.department || 'unknown department';
+
+  const systemPrompt = `You are the CRMC CampusConnect Assistant, a friendly and helpful AI chatbot for Camarines Robles Memorial College (CRMC) in the Philippines. You help students with campus-related questions.
+
+About CRMC CampusConnect:
+- It is a student social media platform for CRMC students
+- Departments: CTE (College of Teacher Education), CBE (College of Business Education), CCJE (College of Criminal Justice Education), CSS (College of Computer Studies), PSYCH (Psychology)
+- Features: Campus Feed, Communities, Announcements, Lost & Found, Academic Help, Marketplace, Events
+- The SSG (Supreme Student Government) posts official announcements
+
+The student you are talking to is: ${userName} from ${userDept}.
+
+Guidelines:
+- Be friendly, supportive, and concise — students appreciate quick answers
+- Use a mix of English and light Filipino (Taglish) if the student uses it
+- Keep responses SHORT (2-5 sentences max) unless a detailed explanation is needed
+- For campus-specific real-time data (posts, announcements, events), tell the student to check the feed or announcements page
+- Do NOT make up specific dates, names, or events — be honest if you don't know
+- You can help with: study tips, campus life advice, general knowledge, explaining features, mental health support, Filipino student culture
+- Always be encouraging and positive`;
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 300,
+          topK: 40,
+          topP: 0.95,
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Gemini API error:', response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return null;
+
+    // Convert basic markdown to HTML for the chat bubble
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
+
+  } catch (err) {
+    console.error('Gemini call failed:', err);
+    return null;
+  }
+}
+
+// ── SMART CHATBOT: DB search + Gemini AI fallback ──
 async function getBotReply(text) {
   const lower = text.toLowerCase().trim();
 
@@ -282,7 +355,7 @@ async function getBotReply(text) {
     if (entry.keys.some(k => lower.includes(k))) {
       if (entry.reply === null) {
         const name = loggedInUser ? loggedInUser.first_name : 'there';
-        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. I can search posts, announcements, lost items, and more. Just ask me anything!`;
+        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. Ask me anything about campus — I'm powered by Gemini AI! 🤖`;
       }
       return entry.reply;
     }
@@ -390,6 +463,9 @@ async function getBotReply(text) {
           return reply;
         }
       }
+      // ── Gemini AI fallback when DB has nothing ──
+      const aiReply = await callGeminiAI(text);
+      if (aiReply) return `🤖 <em style="font-size:.72rem;color:#9ca3af;">Gemini AI</em><br/>${aiReply}`;
       return `🔍 No posts found. Try asking about announcements, lost items, or browse the communities directly.`;
     }
 
@@ -411,6 +487,9 @@ async function getBotReply(text) {
 
   } catch (err) {
     console.error('Chatbot search error:', err);
+    // Try Gemini as a fallback when DB fails
+    const aiReply = await callGeminiAI(text);
+    if (aiReply) return `🤖 <em style="font-size:.72rem;color:#9ca3af;">Gemini AI</em><br/>${aiReply}`;
     return '⚠️ Sorry, I had trouble searching. Please try again.';
   }
 }

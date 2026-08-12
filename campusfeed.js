@@ -361,41 +361,36 @@ async function getBotReply(text) {
     }
   }
 
-  // ── Step 1: Check if this is a conversational/general question → go straight to Gemini ──
-  // These are questions that Gemini should handle, NOT database searches
-  const conversationalPatterns = [
-    /\b(should i|can i|will i|may i|shall i)\b/,                          // "should I study?"
-    /\b(how (do|can|to)|what (is|are|does|should)|why (is|are|do|does))\b/, // "how do I...", "what is..."
-    /\b(advice|suggest|recommend|tip|tips|help me|tulong|payo)\b/,          // "give me advice"
-    /\b(feel|feeling|stress|anxious|nervous|tired|burnt out|burnout|depressed|sad|happy|excited|worried)\b/, // emotions
-    /\b(study|review|learn|memorize|notes|memorize|magaaral|mag-aral|aral)\b(?!\s*(post|tips|schedule|about|sa|ng))/,  // "should I study" but not "study tips post"
-    /\b(good|bad|best|better|worse|worst|great|nice|okay|not okay|okay ba)\b/, // opinions
-    /\b(what do you think|ano sa tingin|paano|bakit|explain|ibig sabihin)\b/,  // asking for explanation
-    /\b(joke|funny|kwento|story|trivia|fun fact|did you know)\b/,             // casual chat
-    /\b(bored|boring|walang magawa|free time)\b/,                            // boredom
-    /\b(motivat|inspire|encourage|kaya mo|kaya natin)\b/,                    // motivation
-    /\b(grade|gpa|passing|fail|bumagsak|pumasa|papasa)\b/,                  // grade concerns
-    /\b(friend|classmate|roommate|crush|relationship|love|barkada)\b/,       // social life
-    /\b(food|kain|eat|lunch|merienda|canteen|cafeteria)\b/,                  // food/canteen
-    /\b(weather|ulan|rain|sunny|weather today)\b/,                           // weather chat
-    /\b(what time|anong oras|kelan|when is it)\b(?!.*(exam|class|event|announcement))/,
+  // ── Step 1: Check if this is a DB search request ──
+  // ONLY route to DB when user is clearly asking for posts/announcements/lost items
+  const dbTriggers = [
+    /\b(announcement|announce|anunsyo|patalastas)\b/,
+    /\b(lost|found|missing|nawala|nawawala)\b/,
+    /\b(latest post|recent post|show.*post|find.*post|any.*post|search.*post)\b/,
+    /\b(show me|search|find|any.*about|may.*post)\b.*\b(post|community|feed)\b/,
+    /\b(marketplace|borrow|lend|sell|buy|pahiram)\b/,
+    /\b(exam schedule|class schedule|exam date|schedule ng exam)\b/,
+    /\b(event|upcoming event|intramural|seminar|summit)\b/,
+    /\b(latest|recent|newest|bagong)\b.*\b(post|update|news|announcement)\b/,
+    /\b(post|update|news)\b.*\b(latest|recent|bagong)\b/,
+    /\bshow (me |the )?(latest|recent|new|all)\b/,
+    /\bany (post|news|update|announcement)\b/,
   ];
 
-  const isConversational = conversationalPatterns.some(p => p.test(lower));
+  const isDBRequest = dbTriggers.some(p => p.test(lower));
 
-  // Also treat it as conversational if it has NO strong DB-search signal
-  const hasDBSignal = lower.match(/\b(announcement|lost|found|missing|event|post|marketplace|borrow|lend|sell|buy|show me|search|find posts|any post)\b/);
-
-  if (isConversational && !hasDBSignal) {
+  // If NOT a DB request → go straight to Gemini
+  if (!isDBRequest) {
     const aiReply = await callGeminiAI(text);
     if (aiReply) return aiReply;
-    // If Gemini fails, fall through to DB search
+    // Gemini failed (no key or network error) — show a helpful message
+    return `🤖 I'm having trouble connecting right now. For posts and announcements, try the feed or announcements page!`;
   }
 
-  // ── Step 2: Detect DB search intent and community ──
+  // ── Step 2: DB search — detect community/category ──
   let communityFilter = null;
   let wantsAnnouncements = false;
-  let wantsLatest = lower.match(/\b(latest|recent|newest|new|last|ano.*bago|bagong)\b/) !== null;
+  let wantsLatest = lower.match(/\b(latest|recent|newest|new|last|bagong)\b/) !== null;
 
   // "my/our department" → user's department
   if (lower.match(/\b(my|our|aming|atin)\s*(dept|department|community|komunidad)\b/)) {
@@ -418,18 +413,11 @@ async function getBotReply(text) {
   } else if (lower.match(/\blost|found|missing|nawala|nawawala|tumbler|id card|bag|wallet|phone|payong|umbrella\b/)) {
     if (!communityFilter) communityFilter = 'lostandfound';
   } else if (lower.match(/\bexam schedule|class schedule|exam date|when.*exam|schedule.*exam\b/)) {
-    // Only route to academic DB for SPECIFIC schedule lookups, not general study questions
     if (!communityFilter) communityFilter = 'academic';
   } else if (lower.match(/\bevent|foundation|summit|seminar|activity|intramural|program|celebration\b/)) {
     return await searchEvents(lower);
   } else if (lower.match(/\bborrow|lend|sell|buy|marketplace|sharing|libre|pahiram\b/)) {
     if (!communityFilter) communityFilter = 'marketplace';
-  }
-
-  // ── Step 3: If no clear DB signal at all, ask Gemini instead of dumping random posts ──
-  if (!communityFilter && !wantsAnnouncements && !wantsLatest && !hasDBSignal) {
-    const aiReply = await callGeminiAI(text);
-    if (aiReply) return aiReply;
   }
 
   // ── Build the search query ──

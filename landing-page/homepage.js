@@ -84,7 +84,6 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
 (function () {
   const loginModal      = document.getElementById('loginModal');
   const registerModal   = document.getElementById('registerModal');
-  const googleLinkModal = document.getElementById('googleLinkModal');
 
   function openModal(modal) {
     modal.hidden = false;
@@ -99,7 +98,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
   }
 
   function closeAllModals() {
-    [loginModal, registerModal, googleLinkModal].forEach(m => closeModal(m));
+    [loginModal, registerModal].forEach(m => closeModal(m));
   }
 
   // Open triggers
@@ -118,7 +117,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
   });
 
   // Click outside to close
-  [loginModal, registerModal, googleLinkModal].forEach(modal => {
+  [loginModal, registerModal].forEach(modal => {
     modal.addEventListener('click', e => { if (e.target === modal) closeModal(modal); });
   });
 
@@ -160,7 +159,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     btn.textContent = loading ? loadingText : btn.dataset.label;
   }
 
-  document.querySelectorAll('.modal-form .btn-primary, .btn-google').forEach(btn => {
+  document.querySelectorAll('.modal-form .btn-primary').forEach(btn => {
     btn.dataset.label = btn.textContent.trim();
   });
 
@@ -173,159 +172,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     'Psychology (PSYCH)':                               'psych',
   };
 
-  // ════════════════════════════════════════════════════════
-  // GOOGLE OAUTH
-  // ════════════════════════════════════════════════════════
-
-  async function signInWithGoogle() {
-    try {
-      const { error } = await db.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + window.location.pathname,
-          queryParams: { prompt: 'select_account' },
-        },
-      });
-      if (error) throw error;
-    } catch (err) {
-      console.error('Google sign-in error:', err);
-      alert('Could not start Google sign-in. Please try again.');
-    }
-  }
-
-  document.getElementById('loginWithGoogle').addEventListener('click', signInWithGoogle);
-  document.getElementById('registerWithGoogle').addEventListener('click', signInWithGoogle);
-
-  // ── Handle OAuth redirect callback ──
-  // Supabase puts the session in the URL hash after OAuth — we pick it up here
-  async function handleOAuthCallback() {
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) return; // not coming from OAuth
-
-    // Check if this Google user already has a linked profile
-    const { data: profile } = await db
-      .from('profiles')
-      .select('id, account_status, admin_role')
-      .eq('id', session.user.id)
-      .single();
-
-    if (profile) {
-      // Existing user — block admins from student portal
-      if (profile.admin_role && profile.admin_role !== 'student') {
-        await db.auth.signOut();
-        openModal(loginModal);
-        showFormError(document.getElementById('loginForm'), 'Please use the admin portal to login.');
-        return;
-      }
-      // All good — redirect to feed
-      window.location.href = '../campusfeed.html';
-      return;
-    }
-
-    // New Google user — needs to link their student ID
-    openModal(googleLinkModal);
-    const emailEl = document.getElementById('googleLinkEmail');
-    if (emailEl) {
-      emailEl.textContent = session.user.email || session.user.user_metadata?.email || '';
-      document.getElementById('googleLinkUserInfo').style.display = 'block';
-    }
-  }
-
-  // Run callback handler on page load
-  handleOAuthCallback();
-
-  // ── Google Link Modal: verify student ID then create profile ──
-  let googleVerifiedStudent = null;
-
-  document.getElementById('googleLinkStudentId').addEventListener('blur', async () => {
-    const studentId = document.getElementById('googleLinkStudentId').value.trim();
-    if (!studentId) return;
-
-    const { data, error } = await db
-      .from('students_master')
-      .select('student_id, first_name, last_name, department')
-      .eq('student_id', studentId)
-      .single();
-
-    if (!error && data) {
-      googleVerifiedStudent = data;
-      document.getElementById('googleLinkAutoName').textContent = `${data.first_name} ${data.last_name}`;
-      document.getElementById('googleLinkAutoDept').textContent = data.department;
-      document.getElementById('googleLinkAutoFill').style.display = 'block';
-    } else {
-      googleVerifiedStudent = null;
-      document.getElementById('googleLinkAutoFill').style.display = 'none';
-    }
-  });
-
-  document.getElementById('googleLinkForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const submitBtn = document.getElementById('googleLinkSubmit');
-    clearFormError(form);
-
-    const studentId = document.getElementById('googleLinkStudentId').value.trim();
-    const agreed = document.getElementById('googleLinkAgree').checked;
-
-    if (!studentId) return showFormError(form, 'Please enter your Student ID.');
-    if (!agreed) return showFormError(form, 'You must agree to the Terms of Service.');
-
-    setLoading(submitBtn, true, 'Linking…');
-
-    try {
-      const { data: { session } } = await db.auth.getSession();
-      if (!session) throw new Error('Session expired. Please try signing in again.');
-
-      // Verify student ID against master list
-      const { data: masterData, error: masterError } = await db
-        .from('students_master')
-        .select('student_id, first_name, last_name, department')
-        .eq('student_id', studentId)
-        .single();
-
-      if (masterError || !masterData) {
-        throw new Error('Student ID not found in the master list. Please check your ID or contact your department admin.');
-      }
-
-      // Check if this student ID is already taken by another account
-      const { data: existingProfile } = await db
-        .from('profiles')
-        .select('id')
-        .eq('student_id', studentId)
-        .single();
-
-      if (existingProfile) {
-        throw new Error('This Student ID is already linked to another account. Please contact your admin.');
-      }
-
-      // Create/update the profile for this Google user with student data
-      const { error: upsertError } = await db
-        .from('profiles')
-        .upsert({
-          id:             session.user.id,
-          student_id:     masterData.student_id,
-          first_name:     masterData.first_name,
-          last_name:      masterData.last_name,
-          department:     masterData.department,
-          account_status: 'approved',
-          admin_role:     'student',
-        }, { onConflict: 'id' });
-
-      if (upsertError) throw upsertError;
-
-      window.location.href = '../campusfeed.html';
-
-    } catch (err) {
-      console.error('Google link error:', err);
-      showFormError(form, err.message || 'Linking failed. Please try again.');
-      setLoading(submitBtn, false);
-    }
-  });
-
-  // ════════════════════════════════════════════════════════
-  // STUDENT ID REGISTRATION (existing flow)
-  // ════════════════════════════════════════════════════════
-
+  // ── REGISTER: Step 1 — Verify student ID against master list ──
   let verifiedStudent = null;
 
   document.getElementById('regVerifyBtn').addEventListener('click', async () => {
@@ -376,6 +223,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     }
   });
 
+  // ── REGISTER: Step 2 — Create account with Gmail + password ──
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!verifiedStudent) return;
@@ -384,10 +232,13 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     const submitBtn = form.querySelector('#regPasswordSection .btn-primary');
     clearFormError(form);
 
+    const gmail   = document.getElementById('regGmail').value.trim().toLowerCase();
     const password = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('regPasswordConfirm').value;
     const agreed = form.querySelector('input[type="checkbox"]').checked;
 
+    if (!gmail) return showFormError(form, 'Please enter your Gmail address.');
+    if (!gmail.endsWith('@gmail.com')) return showFormError(form, 'Please enter a valid Gmail address (must end in @gmail.com).');
     if (!password || !confirmPassword) return showFormError(form, 'Please fill in both password fields.');
     if (password.length < 6) return showFormError(form, 'Password must be at least 6 characters.');
     if (password !== confirmPassword) return showFormError(form, 'Passwords do not match.');
@@ -396,12 +247,23 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     setLoading(submitBtn, true);
 
     try {
-      const email = `${verifiedStudent.student_id.replace(/\s+/g, '')}@crmc.student.local`;
+      // Check if this Gmail is already registered
+      const { data: existingGmail } = await db
+        .from('profiles')
+        .select('id')
+        .eq('email', gmail)
+        .single();
 
+      if (existingGmail) {
+        throw new Error('This Gmail is already linked to another account. Please use a different Gmail or log in.');
+      }
+
+      // Create auth user with their real Gmail — Supabase will send a verification email
       const { data: authData, error: authError } = await db.auth.signUp({
-        email,
+        email: gmail,
         password,
         options: {
+          emailRedirectTo: window.location.origin + '/landing-page/index.html',
           data: {
             student_id: verifiedStudent.student_id,
             first_name: verifiedStudent.first_name,
@@ -413,13 +275,36 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
 
       if (authError) throw authError;
 
+      // Auto-approve the profile since student ID was validated
       const userId = authData.user?.id;
       if (userId) {
-        await db.from('profiles').update({ account_status: 'approved' }).eq('id', userId);
+        await db.from('profiles').upsert({
+          id:             userId,
+          student_id:     verifiedStudent.student_id,
+          first_name:     verifiedStudent.first_name,
+          last_name:      verifiedStudent.last_name,
+          department:     verifiedStudent.department,
+          email:          gmail,
+          account_status: 'approved',
+          admin_role:     'student',
+        }, { onConflict: 'id' });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 800));
-      window.location.href = '../campusfeed.html';
+      // Show success — ask them to check Gmail
+      setLoading(submitBtn, false);
+      submitBtn.textContent = '✓ Check your Gmail!';
+      submitBtn.style.background = '#16a34a';
+      submitBtn.disabled = true;
+
+      const form = document.getElementById('registerForm');
+      let successMsg = form.querySelector('.reg-success-msg');
+      if (!successMsg) {
+        successMsg = document.createElement('p');
+        successMsg.className = 'reg-success-msg';
+        successMsg.style.cssText = 'color:#166534;font-size:.82rem;text-align:center;margin-top:.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;';
+        form.appendChild(successMsg);
+      }
+      successMsg.innerHTML = `<i class="fas fa-envelope"></i> A verification link was sent to <strong>${gmail}</strong>. Click it to activate your account, then log in.`;
 
     } catch (err) {
       console.error('Registration error:', err);
@@ -428,7 +313,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     }
   });
 
-  // ── LOGIN ──
+  // ── LOGIN — Student ID + password (Gmail used as internal email) ──
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form      = e.target;
@@ -438,37 +323,56 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     const input    = document.getElementById('loginStudentId').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    if (!input || !password) return showFormError(form, 'Please enter your Student ID/email and password.');
+    if (!input || !password) return showFormError(form, 'Please enter your Student ID and password.');
 
     setLoading(submitBtn, true);
 
     try {
       let email = input;
+
       if (!input.includes('@')) {
-        email = `${input.replace(/\s+/g, '')}@crmc.student.local`;
+        // Student ID entered — look up their Gmail from profiles
+        const { data: profileData, error: profileLookupErr } = await db
+          .from('profiles')
+          .select('email, admin_role')
+          .eq('student_id', input)
+          .single();
+
+        if (profileLookupErr || !profileData) {
+          throw new Error('Student ID not found. Please check your ID or register first.');
+        }
+
+        if (profileData.admin_role && profileData.admin_role !== 'student') {
+          throw new Error('Please use the admin portal to login.');
+        }
+
+        if (!profileData.email) {
+          throw new Error('No email linked to this account. Please contact your admin.');
+        }
+
+        email = profileData.email;
       }
 
       const { data: authData, error: authError } = await db.auth.signInWithPassword({ email, password });
 
       if (authError) {
         if (authError.message.includes('Invalid login') || authError.message.includes('invalid')) {
-          throw new Error('Invalid Student ID or password. Please try again.');
+          throw new Error('Incorrect password. Please try again.');
         }
         if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the verification link first.');
+          throw new Error('Please verify your Gmail first. Check your inbox for the verification link.');
         }
         throw authError;
       }
 
-      const { data: profile, error: profileError } = await db
+      // Double-check admin role after sign-in
+      const { data: profile } = await db
         .from('profiles')
-        .select('department, admin_role')
+        .select('admin_role')
         .eq('id', authData.user.id)
         .single();
 
-      if (profileError) throw profileError;
-
-      if (profile.admin_role && profile.admin_role !== 'student') {
+      if (profile?.admin_role && profile.admin_role !== 'student') {
         await db.auth.signOut();
         throw new Error('Please use the admin portal to login. Admins cannot access the student portal.');
       }

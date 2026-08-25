@@ -4,7 +4,7 @@ import os
 
 # ── File paths ──
 INPUT_FILE = r"C:\Users\compa\Downloads\Enrollment With Promotional Report_SY2026-2027_1st Semester_Enrollment_1_25_black (1) (1).xlsx"
-OUTPUT_FILE = r"C:\Users\compa\OneDrive\Desktop\students_master_v2.csv"
+OUTPUT_FILE = r"C:\Users\compa\OneDrive\Desktop\students_master_v3.csv"
 
 # ── Department name mapping → exact values used in the DB ──
 DEPT_MAP = {
@@ -27,14 +27,12 @@ def map_department(raw):
     return str(raw).strip()  # keep original if no match found
 
 def fix_student_id(raw):
-    """Convert 20250002601 → 2025-02601 (first 4 digits + dash + last 5 digits)"""
-    s = str(raw).strip().replace("-", "")  # remove any existing dashes
-    # Remove decimal if Excel stored as float
+    """Keep the full student ID as-is, just clean whitespace and decimals"""
+    s = str(raw).strip()
+    # Remove decimal if Excel stored as float (e.g. 20250003173.0 → 20250003173)
     if "." in s:
         s = s.split(".")[0]
-    if len(s) >= 9:
-        return s[:4] + "-" + s[-5:]
-    return s  # return as-is if unexpected format
+    return s
 
 def split_name(full_name):
     """Split 'LASTNAME, FIRSTNAME MIDDLE' into (first_name, last_name)"""

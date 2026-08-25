@@ -1,3 +1,23 @@
+// ── AUTO-REDIRECT after email confirmation ──
+// When a user clicks the verification link in their Gmail, Supabase redirects
+// them back here with a session in the URL hash. Detect it and send to feed.
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    // Has a valid session — check they're a student (not admin)
+    const { data: profile } = await db
+      .from('profiles')
+      .select('admin_role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile?.admin_role || profile.admin_role === 'student') {
+      window.location.href = '../campusfeed.html';
+      return;
+    }
+  }
+})();
+
 // ── SCROLL-TRIGGERED FADE-UP ANIMATIONS ──
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
@@ -263,7 +283,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
         email: gmail,
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/landing-page/index.html',
+          emailRedirectTo: window.location.href.split('?')[0].split('#')[0],
           data: {
             student_id: verifiedStudent.student_id,
             first_name: verifiedStudent.first_name,

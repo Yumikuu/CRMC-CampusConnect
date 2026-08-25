@@ -2216,7 +2216,6 @@ document.querySelectorAll('.community-item').forEach(item => {
         'lostandfound': { name: 'Lost & Found', sub: 'Report lost items', icon: 'fa-search' },
         'academic': { name: 'Academic Help', sub: 'Study help', icon: 'fa-book-open' },
         'marketplace': { name: 'Marketplace', sub: 'Borrow & lend', icon: 'fa-handshake' },
-        'campus': { name: 'Campus Discussions', sub: 'Campus life', icon: 'fa-university' },
         'support': { name: 'Student Support', sub: 'Help & guidance', icon: 'fa-hands-helping' },
         'ssg':    { name: 'SSG — Student Government', sub: 'Ask & connect with SSG', icon: 'fa-star' }
       };

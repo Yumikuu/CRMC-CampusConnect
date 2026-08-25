@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════
 -- CREATE ALL ADMIN ACCOUNTS - COMPLETE SETUP
 -- ═══════════════════════════════════════════════════════════════
 -- IMPORTANT: This script creates admin profiles, but you need to 
@@ -103,7 +103,7 @@ SELECT
   'css.admin@crmc.edu',
   'CSS Administrator',
   'CSS-2024-001',
-  'College of Computer Studies (CSS)',
+  'College of Computer Studies (CCS)',
   'CSS',
   'College of Computer Studies Administrator'
 FROM auth.users 
@@ -112,7 +112,7 @@ ON CONFLICT (id)
 DO UPDATE SET
   full_name = 'CSS Administrator',
   student_id = 'CSS-2024-001',
-  department = 'College of Computer Studies (CSS)',
+  department = 'College of Computer Studies (CCS)',
   admin_role = 'CSS',
   bio = 'College of Computer Studies Administrator';
 
@@ -283,3 +283,4 @@ WHERE au.email LIKE '%admin@crmc.edu' AND p.id IS NULL;
 -- Make sure to use strong, unique passwords in production!
 --
 -- ══════════════════════════════════════════════════════════════
+

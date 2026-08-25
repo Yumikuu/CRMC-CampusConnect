@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════
 -- CRMC CAMPUSCONNECT — COMPLETE DATABASE SCHEMA
 -- ═══════════════════════════════════════════════════════════════
 -- Run this entire script in your Supabase SQL Editor
@@ -356,7 +356,7 @@ INSERT INTO communities (slug, name, description, type, department) VALUES
   ('cte', 'CTE Community', 'College of Teacher Education', 'department', 'College of Teacher Education (CTE)'),
   ('cbe', 'CBE Community', 'College of Business Education', 'department', 'College of Business Education (CBE)'),
   ('ccje', 'CCJE Community', 'College of Criminal Justice Education', 'department', 'College of Criminal Justice Education (CCJE)'),
-  ('css', 'CSS Community', 'College of Computer Studies', 'department', 'College of Computer Studies (CSS)'),
+  ('css', 'CSS Community', 'College of Computer Studies', 'department', 'College of Computer Studies (CCS)'),
   ('psych', 'PSYCH Community', 'Psychology Department', 'department', 'Psychology (PSYCH)'),
   ('general', 'General Discussion', 'Open discussions for all CRMC students', 'public', NULL),
   ('lostandfound', 'Lost & Found', 'Report or recover lost items on campus', 'public', NULL),
@@ -384,3 +384,4 @@ INSERT INTO communities (slug, name, description, type, department) VALUES
 -- 2. Test registration on your app
 -- 3. Check if profile is auto-created in profiles table
 -- ═══════════════════════════════════════════════════════════════
+

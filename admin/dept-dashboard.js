@@ -8,8 +8,8 @@ let selectedImages = [];
 
 const DEPT_FULL_NAMES = {
   'CTE':  'College of Teacher Education (CTE)',
-  'CSS':  'College of Computer Studies (CSS)',
-  'CCS':  'College of Computer Studies (CSS)',
+  'CSS':  'College of Computer Studies (CCS)',
+  'CCS':  'College of Computer Studies (CCS)',
   'CBE':  'College of Business Education (CBE)',
   'PSYCH':'Psychology (PSYCH)',
   'CCJE': 'College of Criminal Justice Education (CCJE)'
@@ -309,4 +309,5 @@ function escapeHtml(text) {
 }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+
 

@@ -1,4 +1,4 @@
-// ── AUTO-REDIRECT after email confirmation ──
+﻿// ── AUTO-REDIRECT after email confirmation ──
 // When a user clicks the verification link in their Gmail, Supabase redirects
 // them back here with a session in the URL hash. Detect it and send to feed.
 (async () => {
@@ -187,7 +187,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
   const DEPT_COMMUNITY = {
     'College of Business Education (CBE)':              'cbe',
     'College of Criminal Justice Education (CCJE)':     'ccje',
-    'College of Computer Studies (CSS)':                'css',
+    'College of Computer Studies (CCS)':                'css',
     'College of Teacher Education (CTE)':               'cte',
     'Psychology (PSYCH)':                               'psych',
   };
@@ -407,3 +407,4 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
   });
 
 })();
+

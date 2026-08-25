@@ -1,4 +1,4 @@
-// ---------------------------------------------------------------
+﻿// ---------------------------------------------------------------
 // DEPT POSTS � View, create, and moderate department posts
 // ---------------------------------------------------------------
 
@@ -10,8 +10,8 @@ let pendingDeleteId = null;
 let selectedImages = [];
 
 const DEPT_FULL = {
-  'CTE':'College of Teacher Education (CTE)', 'CSS':'College of Computer Studies (CSS)',
-  'CCS':'College of Computer Studies (CSS)',
+  'CTE':'College of Teacher Education (CTE)', 'CSS':'College of Computer Studies (CCS)',
+  'CCS':'College of Computer Studies (CCS)',
   'CBE':'College of Business Education (CBE)', 'PSYCH':'Psychology (PSYCH)',
   'CCJE':'College of Criminal Justice Education (CCJE)'
 };
@@ -261,5 +261,6 @@ function formatTimeAgo(date) {
 function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div');d.textContent=t;return d.innerHTML; }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+
 
 

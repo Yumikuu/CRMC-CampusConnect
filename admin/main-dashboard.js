@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // Main Admin DASHBOARD — Full System Access
 // ═══════════════════════════════════════════════════════════════
 
@@ -194,7 +194,7 @@ async function loadDepartmentStats() {
   try {
     const departments = [
       'College of Teacher Education (CTE)',
-      'College of Computer Studies (CSS)',
+      'College of Computer Studies (CCS)',
       'College of Business Education (CBE)',
       'Psychology (PSYCH)',
       'College of Criminal Justice Education (CCJE)'
@@ -258,3 +258,4 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+

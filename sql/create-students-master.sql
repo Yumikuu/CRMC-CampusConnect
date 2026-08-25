@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════
 -- STUDENTS MASTER LIST TABLE
 -- ═══════════════════════════════════════════════════════════════
 -- This table holds the official student roster from the registrar.
@@ -37,9 +37,9 @@ CREATE POLICY "Anyone can look up student IDs for registration"
 INSERT INTO students_master (student_id, first_name, last_name, department, year_level)
 VALUES
   -- CSS Department
-  ('2024-00001', 'Juan', 'Dela Cruz', 'College of Computer Studies (CSS)', '1st Year'),
-  ('2024-00002', 'Maria', 'Santos', 'College of Computer Studies (CSS)', '2nd Year'),
-  ('2024-00003', 'Pedro', 'Reyes', 'College of Computer Studies (CSS)', '3rd Year'),
+  ('2024-00001', 'Juan', 'Dela Cruz', 'College of Computer Studies (CCS)', '1st Year'),
+  ('2024-00002', 'Maria', 'Santos', 'College of Computer Studies (CCS)', '2nd Year'),
+  ('2024-00003', 'Pedro', 'Reyes', 'College of Computer Studies (CCS)', '3rd Year'),
   
   -- CBE Department
   ('2024-00010', 'Ana', 'Garcia', 'College of Business Education (CBE)', '1st Year'),
@@ -57,3 +57,4 @@ VALUES
   ('2024-00040', 'Kim', 'Aquino', 'Psychology (PSYCH)', '1st Year'),
   ('2024-00041', 'Jay', 'Fernandez', 'Psychology (PSYCH)', '2nd Year')
 ON CONFLICT (student_id) DO NOTHING;
+

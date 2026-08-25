@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // DEPT USERS — Manage department students
 // ═══════════════════════════════════════════════════════════════
 
@@ -8,8 +8,8 @@ let currentFilter = 'all';
 
 const DEPT_FULL = {
   'CTE':  'college of teacher education (cte)',
-  'CSS':  'college of computer studies (css)',
-  'CCS':  'college of computer studies (css)',
+  'CSS':  'college of Computer Studies (CCS)',
+  'CCS':  'college of Computer Studies (CCS)',
   'CBE':  'college of business education (cbe)',
   'PSYCH':'psychology (psych)',
   'CCJE': 'college of criminal justice education (ccje)'
@@ -245,4 +245,5 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+
 

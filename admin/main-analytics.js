@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // SSG ANALYTICS — Charts and data visualization
 // ═══════════════════════════════════════════════════════════════
 
@@ -11,7 +11,7 @@ var activityChartInstance = null;
 
 const DEPT_LIST = [
   { key: 'CTE', full: 'College of Teacher Education (CTE)', color: '#3b82f6' },
-  { key: 'CSS', full: 'College of Computer Studies (CSS)', color: '#10b981' },
+  { key: 'CSS', full: 'College of Computer Studies (CCS)', color: '#10b981' },
   { key: 'CBE', full: 'College of Business Education (CBE)', color: '#f59e0b' },
   { key: 'PSYCH', full: 'Psychology (PSYCH)', color: '#8b5cf6' },
   { key: 'CCJE', full: 'College of Criminal Justice Education (CCJE)', color: '#ef4444' },
@@ -600,3 +600,4 @@ document.getElementById('communityChartFilter')?.addEventListener('change', (e) 
 document.getElementById('activityChartFilter')?.addEventListener('change', (e) => {
   loadPostsOverTimeChart(e.target.value);
 });
+

@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════
 // ANNOUNCEMENTS PAGE — Module 5: Dedicated Announcements View
 // ═══════════════════════════════════════════════════════════════
 
@@ -47,7 +47,7 @@ async function loadAnnouncements() {
       'college of teacher education (cte)': 'cte',
       'college of business education (cbe)': 'cbe',
       'college of criminal justice education (ccje)': 'ccje',
-      'college of computer studies (css)': 'css',
+      'college of Computer Studies (CCS)': 'css',
       'psychology (psych)': 'psych',
     };
     const userDeptSlug = deptSlugMap[(currentUser.department || '').toLowerCase().trim()];
@@ -212,7 +212,7 @@ function getUserDeptSlug() {
     'college of teacher education (cte)': 'cte',
     'college of business education (cbe)': 'cbe',
     'college of criminal justice education (ccje)': 'ccje',
-    'college of computer studies (css)': 'css',
+    'college of Computer Studies (CCS)': 'css',
     'psychology (psych)': 'psych',
   };
   return deptSlugMap[(currentUser?.department || '').toLowerCase().trim()] || '';
@@ -315,3 +315,4 @@ async function loadStats() {
     console.error('Error loading stats:', err);
   }
 }
+

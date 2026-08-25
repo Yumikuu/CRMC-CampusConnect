@@ -1,4 +1,4 @@
-// ── DEPARTMENT CONFIG ──
+﻿// ── DEPARTMENT CONFIG ──
 const DEPT_CONFIG = {
   cte: {
     name:    'CTE Community',
@@ -75,7 +75,7 @@ const DEPT_CONFIG = {
     'college of teacher education (cte)':              'cte',
     'college of business education (cbe)':             'cbe',
     'college of criminal justice education (ccje)':    'ccje',
-    'college of computer studies (css)':               'css',
+    'college of Computer Studies (CCS)':               'css',
     'psychology (psych)':                              'psych',
   };
   const deptSlug   = deptSlugMap[(profile.department || '').toLowerCase().trim()] || null;
@@ -750,7 +750,7 @@ let currentCommunityFilter = null;
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of computer studies (css)':               'css',
+        'college of Computer Studies (CCS)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptSlug = deptSlugMap[(profile.department || '').toLowerCase().trim()];
@@ -1020,7 +1020,7 @@ async function loadPostsFromDB() {
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of computer studies (css)':               'css',
+        'college of Computer Studies (CCS)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
@@ -2183,13 +2183,13 @@ document.querySelectorAll('.community-item').forEach(item => {
       currentCommunityFilter = null;
     } else if (feedSlug === 'dept') {
       // Department community — map the user's full department string to a DEPT_CONFIG slug
-      // profiles.department stores e.g. "College of Computer Studies (CSS)"
+      // profiles.department stores e.g. "College of Computer Studies (CCS)"
       // DEPT_CONFIG keys are the community slugs: cte, css, cbe, ccje, psych
       const deptSlugMap = {
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of computer studies (css)':               'css',
+        'college of Computer Studies (CCS)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptFull  = (loggedInUser?.department || '').toLowerCase().trim();
@@ -3033,7 +3033,7 @@ async function loadAnnouncementsWidget() {
       'college of teacher education (cte)':              'cte',
       'college of business education (cbe)':             'cbe',
       'college of criminal justice education (ccje)':    'ccje',
-      'college of computer studies (css)':               'css',
+      'college of Computer Studies (CCS)':               'css',
       'psychology (psych)':                              'psych',
     };
     const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
@@ -3435,3 +3435,4 @@ searchInput?.addEventListener('keydown', (e) => {
     searchInput.value = '';
   }
 });
+

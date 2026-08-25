@@ -1,4 +1,4 @@
--- ═══════════════════════════════════════════════════════════════
+﻿-- ═══════════════════════════════════════════════════════════════
 -- CRMC CAMPUSHUB — COMPLETE DATABASE SCHEMA WITH ADMIN SYSTEM
 -- ═══════════════════════════════════════════════════════════════
 -- Run this entire script in your Supabase SQL Editor
@@ -379,7 +379,7 @@ INSERT INTO communities (slug, name, description, type, department) VALUES
   ('cte', 'CTE Community', 'College of Teacher Education', 'department', 'College of Teacher Education (CTE)'),
   ('cbe', 'CBE Community', 'College of Business Education', 'department', 'College of Business Education (CBE)'),
   ('ccje', 'CCJE Community', 'College of Criminal Justice Education', 'department', 'College of Criminal Justice Education (CCJE)'),
-  ('css', 'CSS Community', 'College of Computer Studies', 'department', 'College of Computer Studies (CSS)'),
+  ('css', 'CSS Community', 'College of Computer Studies', 'department', 'College of Computer Studies (CCS)'),
   ('psych', 'PSYCH Community', 'Psychology Department', 'department', 'Psychology (PSYCH)'),
   ('general', 'General Discussion', 'Open discussions for all CRMC students', 'public', NULL),
   ('lostandfound', 'Lost & Found', 'Report or recover lost items on campus', 'public', NULL),
@@ -405,3 +405,4 @@ ON CONFLICT (slug) DO NOTHING;
 -- 2. Test the admin login at /admin/login.html
 -- 3. Test student login at /landing page/index.html
 -- ═══════════════════════════════════════════════════════════════
+

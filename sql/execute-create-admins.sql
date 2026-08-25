@@ -1,4 +1,4 @@
--- Create/Update Admin Profiles
+﻿-- Create/Update Admin Profiles
 -- Run this after creating auth users in Supabase Dashboard
 
 -- Get the user IDs (for reference)
@@ -57,7 +57,7 @@ SELECT
   'CSS',
   'Administrator',
   'CSS-2024-001',
-  'College of Computer Studies (CSS)',
+  'College of Computer Studies (CCS)',
   'CSS',
   'College of Computer Studies Administrator'
 FROM auth.users 
@@ -67,7 +67,7 @@ DO UPDATE SET
   first_name = 'CSS',
   last_name = 'Administrator',
   student_id = 'CSS-2024-001',
-  department = 'College of Computer Studies (CSS)',
+  department = 'College of Computer Studies (CCS)',
   admin_role = 'CSS',
   bio = 'College of Computer Studies Administrator';
 
@@ -156,3 +156,4 @@ ORDER BY
     WHEN 'PSYCH' THEN 5
     WHEN 'CCJE' THEN 6
   END;
+

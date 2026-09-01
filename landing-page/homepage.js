@@ -1,24 +1,4 @@
-﻿// ── AUTO-REDIRECT after email confirmation ──
-// When a user clicks the verification link in their Gmail, Supabase redirects
-// them back here with a session in the URL hash. Detect it and send to feed.
-(async () => {
-  const { data: { session } } = await db.auth.getSession();
-  if (session) {
-    // Has a valid session — check they're a student (not admin)
-    const { data: profile } = await db
-      .from('profiles')
-      .select('admin_role')
-      .eq('id', session.user.id)
-      .single();
-
-    if (!profile?.admin_role || profile.admin_role === 'student') {
-      window.location.href = '../campusfeed.html';
-      return;
-    }
-  }
-})();
-
-// ── SCROLL-TRIGGERED FADE-UP ANIMATIONS ──
+﻿// ── SCROLL-TRIGGERED FADE-UP ANIMATIONS ──
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
     if (entry.isIntersecting) {
@@ -243,7 +223,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     }
   });
 
-  // ── REGISTER: Step 2 — Create account with Gmail + password ──
+  // ── REGISTER: Step 2 — Create account with password only (no Gmail for UAT) ──
   document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!verifiedStudent) return;
@@ -252,38 +232,25 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
     const submitBtn = form.querySelector('#regPasswordSection .btn-primary');
     clearFormError(form);
 
-    const gmail   = document.getElementById('regGmail').value.trim().toLowerCase();
-    const password = document.getElementById('regPassword').value;
+    const password        = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('regPasswordConfirm').value;
-    const agreed = form.querySelector('input[type="checkbox"]').checked;
+    const agreed          = form.querySelector('input[type="checkbox"]').checked;
 
-    if (!gmail) return showFormError(form, 'Please enter your Gmail address.');
-    if (!gmail.endsWith('@gmail.com')) return showFormError(form, 'Please enter a valid Gmail address (must end in @gmail.com).');
     if (!password || !confirmPassword) return showFormError(form, 'Please fill in both password fields.');
-    if (password.length < 6) return showFormError(form, 'Password must be at least 6 characters.');
-    if (password !== confirmPassword) return showFormError(form, 'Passwords do not match.');
-    if (!agreed) return showFormError(form, 'You must agree to the Terms of Service.');
+    if (password.length < 6)           return showFormError(form, 'Password must be at least 6 characters.');
+    if (password !== confirmPassword)  return showFormError(form, 'Passwords do not match.');
+    if (!agreed)                       return showFormError(form, 'You must agree to the Terms of Service.');
 
     setLoading(submitBtn, true);
 
     try {
-      // Check if this Gmail is already registered
-      const { data: existingGmail } = await db
-        .from('profiles')
-        .select('id')
-        .eq('email', gmail)
-        .single();
+      // Use internal email — no Gmail verification needed for UAT
+      const email = `${verifiedStudent.student_id.replace(/\s+/g, '')}@crmc.student.local`;
 
-      if (existingGmail) {
-        throw new Error('This Gmail is already linked to another account. Please use a different Gmail or log in.');
-      }
-
-      // Create auth user with their real Gmail — Supabase will send a verification email
       const { data: authData, error: authError } = await db.auth.signUp({
-        email: gmail,
+        email,
         password,
         options: {
-          emailRedirectTo: window.location.href.split('?')[0].split('#')[0],
           data: {
             student_id: verifiedStudent.student_id,
             first_name: verifiedStudent.first_name,
@@ -295,7 +262,7 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
 
       if (authError) throw authError;
 
-      // Auto-approve the profile since student ID was validated
+      // Auto-approve since student ID was validated
       const userId = authData.user?.id;
       if (userId) {
         await db.from('profiles').upsert({
@@ -304,27 +271,14 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
           first_name:     verifiedStudent.first_name,
           last_name:      verifiedStudent.last_name,
           department:     verifiedStudent.department,
-          email:          gmail,
           account_status: 'approved',
           admin_role:     'student',
         }, { onConflict: 'id' });
       }
 
-      // Show success — ask them to check Gmail
-      setLoading(submitBtn, false);
-      submitBtn.textContent = '✓ Check your Gmail!';
-      submitBtn.style.background = '#16a34a';
-      submitBtn.disabled = true;
-
-      const form = document.getElementById('registerForm');
-      let successMsg = form.querySelector('.reg-success-msg');
-      if (!successMsg) {
-        successMsg = document.createElement('p');
-        successMsg.className = 'reg-success-msg';
-        successMsg.style.cssText = 'color:#166534;font-size:.82rem;text-align:center;margin-top:.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;';
-        form.appendChild(successMsg);
-      }
-      successMsg.innerHTML = `<i class="fas fa-envelope"></i> A verification link was sent to <strong>${gmail}</strong>. Click it to activate your account, then log in.`;
+      // Redirect straight to feed — no email confirmation needed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      window.location.href = '../campusfeed.html';
 
     } catch (err) {
       console.error('Registration error:', err);
@@ -351,26 +305,8 @@ mobileDrawer.querySelector('.mobile-register').addEventListener('click', e => {
       let email = input;
 
       if (!input.includes('@')) {
-        // Student ID entered — look up their Gmail from profiles
-        const { data: profileData, error: profileLookupErr } = await db
-          .from('profiles')
-          .select('email, admin_role')
-          .eq('student_id', input)
-          .single();
-
-        if (profileLookupErr || !profileData) {
-          throw new Error('Student ID not found. Please check your ID or register first.');
-        }
-
-        if (profileData.admin_role && profileData.admin_role !== 'student') {
-          throw new Error('Please use the admin portal to login.');
-        }
-
-        if (!profileData.email) {
-          throw new Error('No email linked to this account. Please contact your admin.');
-        }
-
-        email = profileData.email;
+        // Student ID — convert to internal email
+        email = `${input.replace(/\s+/g, '')}@crmc.student.local`;
       }
 
       const { data: authData, error: authError } = await db.auth.signInWithPassword({ email, password });

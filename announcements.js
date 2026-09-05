@@ -47,12 +47,12 @@ async function loadAnnouncements() {
       'college of teacher education (cte)': 'cte',
       'college of business education (cbe)': 'cbe',
       'college of criminal justice education (ccje)': 'ccje',
-      'college of Computer Studies (CCS)': 'css',
+      'college of computer studies (ccs)': 'css',
       'psychology (psych)': 'psych',
     };
     const userDeptSlug = deptSlugMap[(currentUser.department || '').toLowerCase().trim()];
 
-    // Fetch communities we care about: ssg-announcements + department communities
+    // Fetch communities we care about: ssg-announcements + user's OWN department only
     const { data: communities } = await db
       .from('communities')
       .select('id, slug, name, type, department')
@@ -63,9 +63,15 @@ async function loadAnnouncements() {
       return;
     }
 
-    const commIds = communities.map(c => c.id);
+    // Filter to only SSG + user's own department community
+    const allowedComms = communities.filter(c => {
+      if (c.slug === 'ssg-announcements') return true;
+      if (c.type === 'department' && c.slug === userDeptSlug) return true;
+      return false;
+    });
+    const commIds = allowedComms.map(c => c.id);
     const commMap = {};
-    communities.forEach(c => { commMap[c.id] = c; });
+    allowedComms.forEach(c => { commMap[c.id] = c; });
 
     // Fetch posts that are either:
     // 1. In ssg-announcements (any post)
@@ -212,7 +218,7 @@ function getUserDeptSlug() {
     'college of teacher education (cte)': 'cte',
     'college of business education (cbe)': 'cbe',
     'college of criminal justice education (ccje)': 'ccje',
-    'college of Computer Studies (CCS)': 'css',
+    'college of computer studies (ccs)': 'css',
     'psychology (psych)': 'psych',
   };
   return deptSlugMap[(currentUser?.department || '').toLowerCase().trim()] || '';

@@ -1,4 +1,4 @@
-// -- DEPARTMENT CONFIG --
+﻿// -- DEPARTMENT CONFIG --
 const DEPT_CONFIG = {
   cte: {
     name:    'CTE Community',
@@ -480,7 +480,7 @@ async function getBotReply(text) {
         if (fallbackPosts && fallbackPosts.length > 0) {
           let reply = `?? I couldn't find posts matching "<strong>${keywords.join(' ')}</strong>", but here are the latest posts${communityFilter ? ' from that community' : ''}:<br/><br/>`;
           fallbackPosts.forEach((post, i) => {
-            const content = (post.title || post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '');
+            const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
             const preview = content.substring(0, 100);
             const timeAgo = formatTimeAgo(new Date(post.created_at));
             const comm = post.communities?.name || 'General';
@@ -502,7 +502,7 @@ async function getBotReply(text) {
     let reply = `?? Here are the latest <strong>${label}</strong>${context} from ${communityLabel}:<br/><br/>`;
 
     posts.forEach((post, i) => {
-      const content = (post.title || post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
       const preview = content.substring(0, 100);
       const timeAgo = formatTimeAgo(new Date(post.created_at));
       const comm = post.communities?.name || 'General';
@@ -1159,7 +1159,7 @@ function createPostElement(post) {
   const isAnnouncement = post.content?.startsWith('?? [ANNOUNCEMENT]') 
     || post.is_pinned 
     || post.communities?.slug === 'ssg-announcements';
-  const displayContent = post.content?.replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '') || post.content;
+  const displayContent = post.content?.replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '') || post.content;
   
   let authorName = 'Anonymous';
   let authorAvatar = '<div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>';
@@ -2341,7 +2341,7 @@ async function loadNotifications() {
       const postId = n.link ? n.link.split('post=')[1] : null;
 
       // Clean up message � strip ?? [ANNOUNCEMENT] prefix for cleaner display
-      let displayMsg = (n.message || '').replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '');
+      let displayMsg = (n.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
       // Also strip trailing quote marks and leading quotes from "posted:" format
       displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
 
@@ -2349,7 +2349,7 @@ async function loadNotifications() {
       // Handles: "Name liked...", "Name commented...", "Name replied...", "?? Name: ...", "Name mentioned..."
       const nameClass = n.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
       displayMsg = displayMsg
-        .replace(/^(??\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+        .replace(/^(?:📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
         .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
 
       // Type label for visual clarity
@@ -2481,7 +2481,7 @@ function setupRealtimeNotifications() {
 
         // Show toast for the new notification (clean message)
         const toastMsg = (newNotif.message || 'You have a new notification')
-          .replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '')
+          .replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '')
           .replace(/\s*posted:\s*"(.+)"$/i, ': $1');
         showToast(toastMsg, 'info');
 
@@ -2493,13 +2493,13 @@ function setupRealtimeNotifications() {
           const postId   = newNotif.link ? newNotif.link.split('post=')[1] : null;
 
           // Clean up message for display
-          let displayMsg = (newNotif.message || '').replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '');
+          let displayMsg = (newNotif.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
           displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
 
           // Highlight the person's name
           const nameClass = newNotif.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
           displayMsg = displayMsg
-            .replace(/^(??\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+            .replace(/^(?:📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
             .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
 
           const typeLabels = { like: 'Like', comment: 'Comment', reply: 'Reply', announcement: 'Announcement', mention: 'Mention' };
@@ -2788,8 +2788,8 @@ async function openPostPreview(postId) {
             <div style="font-size:.75rem;color:var(--gray-400);">${community} � ${timeAgo}</div>
           </div>
         </div>
-        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title.replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, ''))}</h3>` : ''}
-        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml((post.content || '').replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
+        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title.replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</h3>` : ''}
+        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml((post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
         ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? `
           <div class="post-images-grid" style="margin-bottom:1rem;">
             ${post.image_url.slice(0,4).map(url => `<div class="post-image-item"><img src="${url}" loading="lazy" /></div>`).join('')}
@@ -3123,7 +3123,7 @@ async function loadAnnouncementsWidget() {
     widget.innerHTML = posts.map(post => {
       const slug      = post.communities?.slug || '';
       const commName  = post.communities?.name || 'General';
-      const rawText   = (post.title || post.content || '').replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const rawText   = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
       const text      = rawText.substring(0, 70) + (rawText.length > 70 ? '�' : '');
       const timeAgo   = formatTimeAgo(new Date(post.created_at));
 
@@ -3483,6 +3483,9 @@ searchInput?.addEventListener('keydown', (e) => {
     searchInput.value = '';
   }
 });
+
+
+
 
 
 

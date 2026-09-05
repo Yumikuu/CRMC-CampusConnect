@@ -19,9 +19,35 @@
 
 /* ── PROFILE PAGE LAYOUT ── */
 .profile-page {
-  max-width: 700px;
+  max-width: 1100px;
   margin: 1.5rem auto;
-  padding: 0 1rem 4rem;
+  padding: 0 1.5rem 4rem;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Stack the header card above posts on the left column */
+.profile-header-card {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.profile-posts-section {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+@media (max-width: 860px) {
+  .profile-page {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+  }
+  .profile-header-card,
+  .profile-posts-section {
+    grid-column: 1;
+  }
 }
 
 /* ── PROFILE HEADER CARD ── */
@@ -30,7 +56,8 @@
   border-radius: var(--radius);
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
   overflow: hidden;
-  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 80px;
 }
 
 .profile-header-loading {
@@ -41,7 +68,7 @@
 }
 
 .profile-cover {
-  height: 120px;
+  height: 160px;
   background: linear-gradient(135deg, var(--maroon) 0%, #8b1525 50%, #b7950b 100%);
   position: relative;
 }

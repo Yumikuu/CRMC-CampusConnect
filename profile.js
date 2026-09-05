@@ -150,30 +150,62 @@ async function loadProfilePosts(profile, isOwn) {
     }
 
     feed.innerHTML = posts.map(post => {
-      const isAnon    = post.is_anonymous;
-      const commName  = post.communities?.name || 'General';
-      const timeAgo   = formatTimeAgo(new Date(post.created_at));
-      const preview   = post.content.length > 180
-        ? post.content.substring(0, 180) + '…'
-        : post.content;
+      const isAnon   = post.is_anonymous;
+      const commName = post.communities?.name || 'General';
+      const timeAgo  = formatTimeAgo(new Date(post.created_at));
+      const content  = (post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const preview  = content.length > 200 ? content.substring(0, 200) + '…' : content;
+      const initials = (profile.first_name[0] + profile.last_name[0]).toUpperCase();
+
+      const avatarHTML = isAnon
+        ? `<div class="post-avatar" style="background:var(--gray-500)"><i class="fas fa-user-secret"></i></div>`
+        : profile.avatar_url
+          ? `<img src="${profile.avatar_url}" class="post-avatar" style="object-fit:cover;" alt="${escapeHtml(profile.first_name)}" />`
+          : `<div class="post-avatar">${initials}</div>`;
+
+      const authorName = isAnon ? 'Anonymous' : `${profile.first_name} ${profile.last_name}`;
+
+      // Image grid
+      let imageHTML = '';
+      if (post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0) {
+        const imgs = post.image_url.slice(0, 4);
+        imageHTML = `<div class="post-images-grid" style="margin-top:.75rem;">
+          ${imgs.map((url, i) => `
+            <div class="post-image-item">
+              <img src="${url}" alt="Post image" loading="lazy" style="border-radius:8px;" />
+              ${i === 3 && post.image_url.length > 4 ? `<div class="img-more-overlay">+${post.image_url.length - 4}</div>` : ''}
+            </div>`).join('')}
+        </div>`;
+      } else if (post.image_url && typeof post.image_url === 'string') {
+        imageHTML = `<div class="post-image" style="margin-top:.75rem;">
+          <img src="${post.image_url}" alt="Post image" loading="lazy" style="border-radius:8px;max-height:300px;width:100%;object-fit:cover;" />
+        </div>`;
+      }
 
       return `
-        <div class="profile-post-card" data-post-id="${post.id}" style="cursor:pointer;">
-          <div class="profile-post-meta">
-            <span class="profile-post-comm"><i class="fas fa-layer-group" style="margin-right:3px;font-size:.65rem;"></i>${escapeHtml(commName)}</span>
-            ${isAnon ? '<span class="profile-post-anon"><i class="fas fa-user-secret"></i> Anonymous</span>' : ''}
-            <span class="profile-post-time"><i class="fas fa-clock" style="margin-right:3px;"></i>${timeAgo}</span>
+        <div class="post-card profile-post-card" data-post-id="${post.id}" style="cursor:pointer;margin-bottom:1rem;">
+          <div class="post-header">
+            <div class="post-author">
+              ${avatarHTML}
+              <div>
+                <div class="post-author-name">${escapeHtml(authorName)}</div>
+                <div class="post-author-meta">
+                  <span class="post-comm-tag">${escapeHtml(commName)}</span>
+                  <span style="color:var(--gray-400);font-size:.72rem;">· ${timeAgo}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          ${post.title ? `<div class="profile-post-title">${escapeHtml(post.title)}</div>` : ''}
-          <div class="profile-post-content">${escapeHtml(preview)}</div>
-          ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? `
-            <div style="margin-top:.5rem;">
-              <img src="${post.image_url[0]}" style="max-height:120px;border-radius:8px;object-fit:cover;" alt="Post image" />
-              ${post.image_url.length > 1 ? `<span style="font-size:.72rem;color:var(--gray-400);margin-left:.4rem;">+${post.image_url.length - 1} more</span>` : ''}
-            </div>` : ''}
-          <div class="profile-post-actions">
-            <span class="profile-post-action"><i class="fas fa-heart"></i> ${post.like_count || 0}</span>
-            <span class="profile-post-action"><i class="fas fa-comment"></i> ${post.comment_count || 0}</span>
+          ${post.title ? `<h3 class="post-title" style="font-size:1rem;margin:.5rem 0 .25rem;">${escapeHtml(post.title)}</h3>` : ''}
+          ${preview ? `<p class="post-content">${escapeHtml(preview)}</p>` : ''}
+          ${imageHTML}
+          <div class="post-actions" style="margin-top:.75rem;border-top:1px solid var(--gray-100);padding-top:.5rem;">
+            <button class="post-action-btn" style="pointer-events:none;">
+              <i class="fas fa-heart"></i> <span>${post.like_count || 0}</span>
+            </button>
+            <button class="post-action-btn" style="pointer-events:none;">
+              <i class="fas fa-comment"></i> <span>${post.comment_count || 0}</span>
+            </button>
           </div>
         </div>`;
     }).join('');

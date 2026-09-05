@@ -895,8 +895,8 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
   const communitySelect = document.querySelector('.post-community-select');
   const selectedSlug = communitySelect?.value;
   
-  if (!content) {
-    showToast('Please write something!', 'error');
+  if (!content && selectedImageFiles.length === 0) {
+    showToast('Please write something or add an image!', 'error');
     return;
   }
   

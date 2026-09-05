@@ -1277,16 +1277,17 @@ function createPostElement(post) {
         const imgs = post.image_url;
         const shown = imgs.slice(0, 5);
         const extra = imgs.length > 5 ? imgs.length - 4 : 0;
+        const imgsEncoded = encodeURIComponent(JSON.stringify(imgs));
         return `<div class="post-images-grid">
           ${shown.map((url, i) => `
-            <div class="post-image-item" onclick="openLightbox(${JSON.stringify(imgs)}, ${i})">
+            <div class="post-image-item lightbox-trigger" data-images="${imgsEncoded}" data-index="${i}">
               <img src="${url}" alt="Post image" loading="lazy" />
               ${extra && i === 3 ? `<div class="img-more-overlay">+${extra}</div>` : ''}
             </div>
           `).join('')}
         </div>`;
       })() : post.image_url && typeof post.image_url === 'string' ? `
-        <div class="post-image" onclick="openLightbox(['${post.image_url}'], 0)">
+        <div class="post-image lightbox-trigger" data-images="${encodeURIComponent(JSON.stringify([post.image_url]))}" data-index="0">
           <img src="${post.image_url}" alt="Post image" loading="lazy" />
         </div>
       ` : ''}
@@ -1358,21 +1359,24 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 
-document.getElementById('lightboxClose')?.addEventListener('click', closeLightbox);
-document.getElementById('lightboxOverlay')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('lightboxOverlay') ||
-      e.target === document.getElementById('lightboxImg').parentElement) {
-    closeLightbox();
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('lightboxClose')?.addEventListener('click', closeLightbox);
+  document.getElementById('lightboxOverlay')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('lightboxOverlay') ||
+        e.target === document.getElementById('lightboxImg')?.parentElement) {
+      closeLightbox();
+    }
+  });
+  document.getElementById('lightboxPrev')?.addEventListener('click', () => {
+    _lbIndex = (_lbIndex - 1 + _lbImages.length) % _lbImages.length;
+    _updateLightbox();
+  });
+  document.getElementById('lightboxNext')?.addEventListener('click', () => {
+    _lbIndex = (_lbIndex + 1) % _lbImages.length;
+    _updateLightbox();
+  });
 });
-document.getElementById('lightboxPrev')?.addEventListener('click', () => {
-  _lbIndex = (_lbIndex - 1 + _lbImages.length) % _lbImages.length;
-  _updateLightbox();
-});
-document.getElementById('lightboxNext')?.addEventListener('click', () => {
-  _lbIndex = (_lbIndex + 1) % _lbImages.length;
-  _updateLightbox();
-});
+
 document.addEventListener('keydown', (e) => {
   const lb = document.getElementById('lightboxOverlay');
   if (lb?.hidden) return;
@@ -1397,8 +1401,17 @@ function formatCommentMention(text) {
 
 // Toggle comment section
 document.addEventListener('click', async (e) => {
-  // Skip events from inside the post preview modal � it has its own handlers
+  // Skip events from inside the post preview modal — it has its own handlers
   if (e.target.closest('#postPreviewModal')) return;
+
+  // ── Lightbox trigger ──
+  const lbTrigger = e.target.closest('.lightbox-trigger');
+  if (lbTrigger) {
+    const images = JSON.parse(decodeURIComponent(lbTrigger.dataset.images));
+    const index  = parseInt(lbTrigger.dataset.index, 10) || 0;
+    openLightbox(images, index);
+    return;
+  }
 
   // Handle post menu toggle
   if (e.target.closest('.post-menu-btn')) {

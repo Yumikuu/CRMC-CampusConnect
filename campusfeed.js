@@ -28,11 +28,11 @@ const DEPT_CONFIG = {
     iconClass: 'ci-ccje',
   },
   css: {
-    name:    'CSS Community',
-    label:   'CSS Student',
+    name:    'CCS Community',
+    label:   'CCS Student',
     img:     'Images/CSS.png',
-    imgAlt:  'CSS',
-    title:   'CSS Community',
+    imgAlt:  'CCS',
+    title:   'CCS Community',
     sub:     'College of Computer Studies',
     iconClass: 'ci-css',
   },
@@ -75,7 +75,7 @@ const DEPT_CONFIG = {
     'college of teacher education (cte)':              'cte',
     'college of business education (cbe)':             'cbe',
     'college of criminal justice education (ccje)':    'ccje',
-    'college of Computer Studies (CCS)':               'css',
+    'college of computer studies (ccs)':               'css',
     'psychology (psych)':                              'psych',
   };
   const deptSlug   = deptSlugMap[(profile.department || '').toLowerCase().trim()] || null;
@@ -750,7 +750,7 @@ let currentCommunityFilter = null;
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of Computer Studies (CCS)':               'css',
+        'college of computer studies (ccs)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptSlug = deptSlugMap[(profile.department || '').toLowerCase().trim()];
@@ -1020,7 +1020,7 @@ async function loadPostsFromDB() {
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of Computer Studies (CCS)':               'css',
+        'college of computer studies (ccs)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
@@ -2189,7 +2189,7 @@ document.querySelectorAll('.community-item').forEach(item => {
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
         'college of criminal justice education (ccje)':    'ccje',
-        'college of Computer Studies (CCS)':               'css',
+        'college of computer studies (ccs)':               'css',
         'psychology (psych)':                              'psych',
       };
       const userDeptFull  = (loggedInUser?.department || '').toLowerCase().trim();
@@ -3033,7 +3033,7 @@ async function loadAnnouncementsWidget() {
       'college of teacher education (cte)':              'cte',
       'college of business education (cbe)':             'cbe',
       'college of criminal justice education (ccje)':    'ccje',
-      'college of Computer Studies (CCS)':               'css',
+      'college of computer studies (ccs)':               'css',
       'psychology (psych)':                              'psych',
     };
     const userDeptSlug = deptSlugMap[(loggedInUser.department || '').toLowerCase().trim()];
@@ -3435,4 +3435,5 @@ searchInput?.addEventListener('keydown', (e) => {
     searchInput.value = '';
   }
 });
+
 

@@ -111,12 +111,31 @@
     </div>
   </div>
 
-  <!-- Recent Activity -->
-  <div class="content-grid">
+  <!-- Calendar + Recent Activity -->
+  <div class="content-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+
+    <!-- Events Calendar -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-calendar-alt" style="color:var(--maroon);margin-right:6px;"></i>Events Calendar</h2>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="calPrev" style="border:none;background:var(--gray-100);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px;"><i class="fas fa-chevron-left"></i></button>
+          <span id="calMonthLabel" style="font-size:13px;font-weight:700;color:var(--gray-800);min-width:110px;text-align:center;"></span>
+          <button id="calNext" style="border:none;background:var(--gray-100);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px;"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;"></div>
+        <div id="calEventDetail" style="display:none;margin-top:1rem;padding:.75rem;background:#fef9f0;border-left:3px solid var(--maroon);border-radius:6px;font-size:.82rem;"></div>
+        <div id="calUpcoming" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- Recent Posts -->
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">Recent Department Posts</h2>
-        <a href="dept-posts.html" class="card-link">View all ?</a>
+        <a href="dept-posts.html" class="card-link">View all →</a>
       </div>
       <div class="card-body">
         <div id="recentPosts" class="activity-list">
@@ -124,11 +143,14 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- Recent Users -->
+  <div class="content-grid">
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">Recent Department Users</h2>
-        <a href="dept-users.html" class="card-link">View all ?</a>
+        <a href="dept-users.html" class="card-link">View all →</a>
       </div>
       <div class="card-body">
         <div id="recentUsers" class="activity-list">
@@ -136,17 +158,18 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Notice -->
-  <div style="margin-top:1.5rem;padding:1rem;background:rgba(59,130,246,.1);border-left:4px solid #2563eb;border-radius:var(--radius-sm);">
-    <div style="display:flex;align-items:center;gap:.5rem;color:#1e40af;font-size:.85rem;font-weight:600;margin-bottom:.25rem;">
-      <i class="fas fa-info-circle"></i>
-      <span>Limited Access</span>
-    </div>
-    <div style="color:#1e40af;font-size:.8rem;line-height:1.5;">
-      As a department admin, you can only view and moderate posts from your department community. 
-      Contact SSG Admin for system-wide access.
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-info-circle" style="color:#2563eb;margin-right:6px;"></i>Access Info</h2>
+      </div>
+      <div class="card-body">
+        <div style="padding:.5rem 0;background:rgba(59,130,246,.08);border-left:4px solid #2563eb;border-radius:var(--radius-sm);padding:.75rem 1rem;">
+          <div style="color:#1e40af;font-size:.82rem;line-height:1.6;">
+            As a department admin, you can view and moderate posts from your department community only. Contact SSG Admin for system-wide access.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

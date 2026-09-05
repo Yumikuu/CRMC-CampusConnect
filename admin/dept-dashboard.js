@@ -71,6 +71,7 @@ const DEPT_COLORS = {
   await loadDepartmentStats();
   await loadRecentPosts();
   await loadRecentUsers();
+  await loadCalendarEvents();
   setupListeners();
 })();
 
@@ -309,5 +310,138 @@ function escapeHtml(text) {
 }
 
 document.getElementById('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); window.location.href = 'login.html'; });
+
+// ── EVENTS CALENDAR ──
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+let calEvents = [];
+
+async function loadCalendarEvents() {
+  try {
+    const { data } = await db
+      .from('campus_events')
+      .select('*')
+      .eq('is_active', true)
+      .order('event_date', { ascending: true });
+    calEvents = data || [];
+  } catch(e) {
+    calEvents = [];
+  }
+  renderCalendar();
+  renderUpcoming();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('calMonthLabel');
+  const today = new Date();
+
+  const monthNames = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+  label.textContent = `${monthNames[calMonth]} ${calYear}`;
+
+  // Build event map for this month: day → [events]
+  const eventMap = {};
+  calEvents.forEach(ev => {
+    const d = new Date(ev.event_date);
+    if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+      const day = d.getDate();
+      if (!eventMap[day]) eventMap[day] = [];
+      eventMap[day].push(ev);
+    }
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let html = '';
+
+  // Day headers
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    html += `<div style="font-size:10px;font-weight:700;color:var(--gray-400);padding:4px 0;">${d}</div>`;
+  });
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div></div>';
+  }
+
+  // Day cells
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day;
+    const hasEvent = !!eventMap[day];
+    const eventsOnDay = eventMap[day] || [];
+
+    const bgStyle  = isToday ? 'background:var(--maroon);color:white;' : hasEvent ? 'background:#fef3c7;color:#92400e;' : '';
+    const dotStyle = hasEvent && !isToday ? 'display:block;' : 'display:none;';
+
+    html += `
+      <div onclick="showCalDayEvents(${day}, ${JSON.stringify(eventsOnDay).replace(/"/g, '&quot;')})"
+        style="padding:5px 2px;border-radius:6px;cursor:${hasEvent ? 'pointer' : 'default'};
+               font-size:12px;font-weight:${isToday || hasEvent ? '700' : '400'};
+               ${bgStyle}position:relative;transition:background .15s;">
+        ${day}
+        <span style="${dotStyle}width:5px;height:5px;background:var(--maroon);border-radius:50%;
+              position:absolute;bottom:2px;left:50%;transform:translateX(-50%);"></span>
+      </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function showCalDayEvents(day, events) {
+  const detail = document.getElementById('calEventDetail');
+  if (!events || events.length === 0) { detail.style.display = 'none'; return; }
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  detail.style.display = 'block';
+  detail.innerHTML = events.map(ev => `
+    <div style="margin-bottom:${events.length > 1 ? '.5rem' : '0'};">
+      <div style="font-weight:700;color:var(--gray-900);">📅 ${escapeHtml(ev.title)}</div>
+      <div style="color:var(--gray-600);margin-top:2px;">
+        ${monthNames[calMonth]} ${day}, ${calYear}
+        ${ev.location ? ` · <i class="fas fa-map-marker-alt"></i> ${escapeHtml(ev.location)}` : ''}
+      </div>
+      ${ev.description ? `<div style="color:var(--gray-500);font-size:.78rem;margin-top:3px;">${escapeHtml(ev.description)}</div>` : ''}
+    </div>
+  `).join('<hr style="border:none;border-top:1px solid #fde68a;margin:.4rem 0;">');
+}
+
+function renderUpcoming() {
+  const el = document.getElementById('calUpcoming');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const upcoming = calEvents
+    .filter(ev => new Date(ev.event_date) >= today)
+    .slice(0, 3);
+
+  if (!upcoming.length) {
+    el.innerHTML = '<div style="font-size:.78rem;color:var(--gray-400);text-align:center;padding:.5rem 0;">No upcoming events</div>';
+    return;
+  }
+
+  el.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">Upcoming</div>` +
+    upcoming.map(ev => {
+      const d = new Date(ev.event_date);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `<div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--gray-100);">
+        <div style="background:var(--maroon);color:white;border-radius:6px;padding:3px 7px;font-size:.7rem;font-weight:700;flex-shrink:0;">${dateStr}</div>
+        <div style="font-size:.8rem;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ev.title)}</div>
+      </div>`;
+    }).join('');
+}
+
+document.getElementById('calPrev')?.addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+
+document.getElementById('calNext')?.addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
 
 

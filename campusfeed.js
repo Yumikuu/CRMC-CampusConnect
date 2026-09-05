@@ -1,4 +1,4 @@
-﻿// ── DEPARTMENT CONFIG ──
+// -- DEPARTMENT CONFIG --
 const DEPT_CONFIG = {
   cte: {
     name:    'CTE Community',
@@ -47,7 +47,7 @@ const DEPT_CONFIG = {
   },
 };
 
-// ── AUTH GUARD + POPULATE UI ──
+// -- AUTH GUARD + POPULATE UI --
 (async () => {
   // Give Supabase a moment to process the session from the URL hash
   const { data: { session } } = await db.auth.getSession();
@@ -87,22 +87,22 @@ const DEPT_CONFIG = {
   const shortName  = `${profile.first_name} ${profile.last_name[0]}.`;
   const deptLabel  = deptConf ? deptConf.label : 'Student';
 
-  // ── Topbar ──
+  // -- Topbar --
   const topbarAvatar = document.getElementById('topbarAvatar');
   topbarAvatar.innerHTML = profile.avatar_url
     ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
     : initials;
   document.getElementById('topbarName').textContent = shortName;
 
-  // ── Profile dropdown ──
+  // -- Profile dropdown --
   const ddAvatar = document.getElementById('ddAvatar');
   ddAvatar.innerHTML = profile.avatar_url
     ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
     : initials;
   document.getElementById('ddFullName').textContent = fullName;
-  document.getElementById('ddDeptId').textContent   = `${deptLabel} · ${profile.student_id}`;
+  document.getElementById('ddDeptId').textContent   = `${deptLabel} � ${profile.student_id}`;
 
-  // ── Sidebar user card ──
+  // -- Sidebar user card --
   const sidebarAvatar = document.getElementById('sidebarAvatar');
   sidebarAvatar.innerHTML = profile.avatar_url
     ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
@@ -110,7 +110,7 @@ const DEPT_CONFIG = {
   document.getElementById('sidebarName').textContent = fullName;
   document.getElementById('sidebarDept').textContent = deptLabel;
 
-  // ── Department community item ──
+  // -- Department community item --
   if (deptConf) {
     document.getElementById('deptCommName').textContent = deptConf.name;
     const iconWrap = document.getElementById('deptCommIcon');
@@ -122,7 +122,7 @@ const DEPT_CONFIG = {
     img.style.display = '';
     document.getElementById('deptCommFallback').style.display = 'none';
 
-    // ── Feed header ──
+    // -- Feed header --
     document.getElementById('feedTitle').textContent = deptConf.title;
     document.getElementById('feedSub').textContent   = deptConf.sub;
     const feedIcon = document.getElementById('feedHeaderIcon');
@@ -130,28 +130,28 @@ const DEPT_CONFIG = {
     feedIcon.innerHTML = `<img src="${deptConf.img}" alt="${deptConf.imgAlt}" style="width:100%;height:100%;object-fit:contain;" />`;
   }
 
-  // ── Create post greeting ──
+  // -- Create post greeting --
   const cpAvatar = document.getElementById('createPostAvatar');
   cpAvatar.innerHTML = profile.avatar_url
     ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="${fullName}" />`
     : initials;
   document.getElementById('createPostGreeting').textContent = `What's on your mind, ${profile.first_name}?`;
 
-  // ── Logout ──
+  // -- Logout --
   document.getElementById('logoutBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     await db.auth.signOut();
     window.location.href = 'landing-page/index.html';
   });
 
-  // ── My Profile link ──
+  // -- My Profile link --
   const myProfileLink = document.querySelector('.profile-dd-links a[href*="profile.html"]');
   if (myProfileLink) {
     myProfileLink.href = `profile.html?id=${profile.id}`;
   }
 })();
 
-// ── DROPDOWN TOGGLES ──
+// -- DROPDOWN TOGGLES --
 function setupDropdown(triggerId, dropdownId) {
   const trigger  = document.getElementById(triggerId);
   const dropdown = document.getElementById(dropdownId);
@@ -173,7 +173,7 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.notif-dropdown, .profile-dropdown').forEach(d => d.hidden = true);
 });
 
-// ── SIDEBAR TOGGLE (mobile) ──
+// -- SIDEBAR TOGGLE (mobile) --
 const sidebarToggle = document.getElementById('sidebarToggle');
 const leftSidebar   = document.getElementById('leftSidebar');
 
@@ -190,7 +190,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ── COMMUNITY ITEM ACTIVE STATE ──
+// -- COMMUNITY ITEM ACTIVE STATE --
 document.querySelectorAll('.community-item').forEach(item => {
   item.addEventListener('click', (e) => {
     e.preventDefault();
@@ -201,7 +201,7 @@ document.querySelectorAll('.community-item').forEach(item => {
   });
 });
 
-// ── FEED TABS ──
+// -- FEED TABS --
 let currentFeedTab = 'all'; // all | trending | latest | pinned
 
 document.querySelectorAll('.feed-tab').forEach(tab => {
@@ -217,7 +217,7 @@ document.querySelectorAll('.feed-tab').forEach(tab => {
   });
 });
 
-// ── LIKE BUTTON TOGGLE ──
+// -- LIKE BUTTON TOGGLE --
 document.querySelectorAll('.post-action-btn[aria-label="Like"]').forEach(btn => {
   btn.addEventListener('click', () => {
     const isLiked = btn.classList.toggle('liked');
@@ -228,7 +228,7 @@ document.querySelectorAll('.post-action-btn[aria-label="Like"]').forEach(btn => 
   });
 });
 
-// ── CREATE POST MODAL ──
+// -- CREATE POST MODAL --
 const createPostModal = document.getElementById('createPostModal');
 document.getElementById('openCreatePost').addEventListener('click', () => {
   createPostModal.hidden = false;
@@ -253,7 +253,7 @@ document.querySelectorAll('.create-action-btn').forEach(btn => {
   });
 });
 
-// ── CHATBOT ──
+// -- CHATBOT --
 const chatbotFab    = document.getElementById('chatbotFab');
 const chatbotPanel  = document.getElementById('chatbotPanel');
 const chatbotClose  = document.getElementById('chatbotClose');
@@ -266,14 +266,14 @@ const fabIconClose  = chatbotFab.querySelector('.chatbot-fab-close');
 
 const KB = [
   { keys: ['hello','hi','hey','good morning','good afternoon','kumusta'],
-    reply: null }, // Will be dynamic — uses logged-in user's name
+    reply: null }, // Will be dynamic � uses logged-in user's name
   { keys: ['thank','thanks','salamat'],
-    reply: '😊 You\'re welcome! Feel free to ask anything.' },
+    reply: '?? You\'re welcome! Feel free to ask anything.' },
   { keys: ['help','what can you do','commands'],
-    reply: '🤖 I can help you with:<br/>• Search posts: "any lost tumbler?"<br/>• Announcements: "latest announcements"<br/>• Events: "upcoming events"<br/>• Lost & Found: "lost ID"<br/>• Academic: "exam schedule"<br/>• Department posts: "CSS posts" or "CTE updates"<br/>Just type your question!' },
+    reply: '?? I can help you with:<br/>� Search posts: "any lost tumbler?"<br/>� Announcements: "latest announcements"<br/>� Events: "upcoming events"<br/>� Lost & Found: "lost ID"<br/>� Academic: "exam schedule"<br/>� Department posts: "CSS posts" or "CTE updates"<br/>Just type your question!' },
 ];
 
-// ── GEMINI AI INTEGRATION ──
+// -- GEMINI AI INTEGRATION --
 async function callGeminiAI(userMessage) {
   const apiKey = window.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') return null;
@@ -292,11 +292,11 @@ About CRMC CampusConnect:
 The student you are talking to is: ${userName} from ${userDept}.
 
 Guidelines:
-- Be friendly, supportive, and concise — students appreciate quick answers
+- Be friendly, supportive, and concise � students appreciate quick answers
 - Use a mix of English and light Filipino (Taglish) if the student uses it
 - Keep responses SHORT (2-5 sentences max) unless a detailed explanation is needed
 - For campus-specific real-time data (posts, announcements, events), tell the student to check the feed or announcements page
-- Do NOT make up specific dates, names, or events — be honest if you don't know
+- Do NOT make up specific dates, names, or events � be honest if you don't know
 - You can help with: study tips, campus life advice, general knowledge, explaining features, mental health support, Filipino student culture
 - Always be encouraging and positive`;
 
@@ -346,7 +346,7 @@ Guidelines:
   }
 }
 
-// ── SMART CHATBOT: DB search + Gemini AI fallback ──
+// -- SMART CHATBOT: DB search + Gemini AI fallback --
 async function getBotReply(text) {
   const lower = text.toLowerCase().trim();
 
@@ -355,13 +355,13 @@ async function getBotReply(text) {
     if (entry.keys.some(k => lower.includes(k))) {
       if (entry.reply === null) {
         const name = loggedInUser ? loggedInUser.first_name : 'there';
-        return `👋 Hello, ${name}! I'm the CampusConnect Assistant. Ask me anything about campus — I'm powered by Gemini AI! 🤖`;
+        return `?? Hello, ${name}! I'm the CampusConnect Assistant. Ask me anything about campus � I'm powered by Gemini AI! ??`;
       }
       return entry.reply;
     }
   }
 
-  // ── Step 1: Check if this is a DB search request ──
+  // -- Step 1: Check if this is a DB search request --
   // ONLY route to DB when user is clearly asking for posts/announcements/lost items
   const dbTriggers = [
     /\b(announcement|announce|anunsyo|patalastas)\b/,
@@ -379,20 +379,20 @@ async function getBotReply(text) {
 
   const isDBRequest = dbTriggers.some(p => p.test(lower));
 
-  // If NOT a DB request → go straight to Gemini
+  // If NOT a DB request ? go straight to Gemini
   if (!isDBRequest) {
     const aiReply = await callGeminiAI(text);
     if (aiReply) return aiReply;
-    // Gemini failed (no key or network error) — show a helpful message
-    return `🤖 I'm having trouble connecting right now. For posts and announcements, try the feed or announcements page!`;
+    // Gemini failed (no key or network error) � show a helpful message
+    return `?? I'm having trouble connecting right now. For posts and announcements, try the feed or announcements page!`;
   }
 
-  // ── Step 2: DB search — detect community/category ──
+  // -- Step 2: DB search � detect community/category --
   let communityFilter = null;
   let wantsAnnouncements = false;
   let wantsLatest = lower.match(/\b(latest|recent|newest|new|last|bagong)\b/) !== null;
 
-  // "my/our department" → user's department
+  // "my/our department" ? user's department
   if (lower.match(/\b(my|our|aming|atin)\s*(dept|department|community|komunidad)\b/)) {
     if (loggedInUser) {
       const dm = loggedInUser.department?.match(/\(([^)]+)\)/);
@@ -420,7 +420,7 @@ async function getBotReply(text) {
     if (!communityFilter) communityFilter = 'marketplace';
   }
 
-  // ── Build the search query ──
+  // -- Build the search query --
   try {
     let query = db
       .from('posts')
@@ -478,35 +478,35 @@ async function getBotReply(text) {
 
         const { data: fallbackPosts } = await fallbackQuery;
         if (fallbackPosts && fallbackPosts.length > 0) {
-          let reply = `🔍 I couldn't find posts matching "<strong>${keywords.join(' ')}</strong>", but here are the latest posts${communityFilter ? ' from that community' : ''}:<br/><br/>`;
+          let reply = `?? I couldn't find posts matching "<strong>${keywords.join(' ')}</strong>", but here are the latest posts${communityFilter ? ' from that community' : ''}:<br/><br/>`;
           fallbackPosts.forEach((post, i) => {
-            const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
+            const content = (post.title || post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '');
             const preview = content.substring(0, 100);
             const timeAgo = formatTimeAgo(new Date(post.created_at));
             const comm = post.communities?.name || 'General';
-            reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post →</a><br/><br/>`;
+            reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} � ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post ?</a><br/><br/>`;
           });
           return reply;
         }
       }
-      // ── Gemini AI fallback when DB has nothing ──
+      // -- Gemini AI fallback when DB has nothing --
       const aiReply = await callGeminiAI(text);
       if (aiReply) return aiReply;
-      return `🔍 No posts found. Try asking about announcements, lost items, or browse the communities directly.`;
+      return `?? No posts found. Try asking about announcements, lost items, or browse the communities directly.`;
     }
 
     // Format results
     const label = wantsAnnouncements ? 'announcements' : 'posts';
     const communityLabel = posts[0].communities?.name || 'all communities';
     const context = keywords.length > 0 && !isGenericQuery ? ` matching "<strong>${keywords.join(' ')}</strong>"` : '';
-    let reply = `📋 Here are the latest <strong>${label}</strong>${context} from ${communityLabel}:<br/><br/>`;
+    let reply = `?? Here are the latest <strong>${label}</strong>${context} from ${communityLabel}:<br/><br/>`;
 
     posts.forEach((post, i) => {
-      const content = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const content = (post.title || post.content || '').replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '');
       const preview = content.substring(0, 100);
       const timeAgo = formatTimeAgo(new Date(post.created_at));
       const comm = post.communities?.name || 'General';
-      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} · ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post →</a><br/><br/>`;
+      reply += `${i + 1}. "<strong>${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</strong>"<br/><span style="font-size:.75rem;color:#6b7280;">${comm} � ${timeAgo}</span> <a href="#" class="cb-view-post" data-post-id="${post.id}" style="font-size:.72rem;color:var(--maroon);font-weight:600;text-decoration:none;">View Post ?</a><br/><br/>`;
     });
 
     return reply;
@@ -516,7 +516,7 @@ async function getBotReply(text) {
     // Try Gemini as a fallback when DB fails
     const aiReply = await callGeminiAI(text);
     if (aiReply) return aiReply;
-    return '⚠️ Sorry, I had trouble searching. Please try again.';
+    return '?? Sorry, I had trouble searching. Please try again.';
   }
 }
 
@@ -532,19 +532,19 @@ async function searchEvents(text) {
       .limit(5);
 
     if (!events || events.length === 0) {
-      return '📅 No upcoming events scheduled at the moment. Check back later or visit the Announcements page.';
+      return '?? No upcoming events scheduled at the moment. Check back later or visit the Announcements page.';
     }
 
-    let reply = '🎉 <strong>Upcoming Events:</strong><br/><br/>';
+    let reply = '?? <strong>Upcoming Events:</strong><br/><br/>';
     events.forEach(ev => {
       const d = new Date(ev.event_date);
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      reply += `📌 <strong>${escapeHtml(ev.title)}</strong><br/><span style="font-size:.75rem;color:#6b7280;">${dateStr} · ${escapeHtml(ev.location || 'CRMC Campus')}</span><br/><br/>`;
+      reply += `?? <strong>${escapeHtml(ev.title)}</strong><br/><span style="font-size:.75rem;color:#6b7280;">${dateStr} � ${escapeHtml(ev.location || 'CRMC Campus')}</span><br/><br/>`;
     });
 
     return reply;
   } catch (err) {
-    return '⚠️ Could not load events. Please try again.';
+    return '?? Could not load events. Please try again.';
   }
 }
 
@@ -581,7 +581,7 @@ function sendMessage(text) {
     appendMsg(reply, 'bot');
   }).catch(() => {
     typing.remove();
-    appendMsg('⚠️ Something went wrong. Please try again.', 'bot');
+    appendMsg('?? Something went wrong. Please try again.', 'bot');
   });
 }
 
@@ -608,7 +608,7 @@ document.addEventListener('click', (e) => {
   if (e.target.matches('.cb-sugg')) sendMessage(e.target.dataset.q);
   if (e.target.matches('.chatbot-sugg-btn')) { openChatbot(); sendMessage(e.target.textContent.replace(/^[^\w]+/, '').trim()); }
 
-  // Chatbot "View Post" link click → open post in modal popup
+  // Chatbot "View Post" link click ? open post in modal popup
   if (e.target.closest('.cb-view-post')) {
     e.preventDefault();
     const postId = e.target.closest('.cb-view-post').dataset.postId;
@@ -634,11 +634,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
 // BACKEND INTEGRATION - Added for database functionality
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
 
-// ── ACCOUNT STATUS BANNER ──
+// -- ACCOUNT STATUS BANNER --
 function showAccountStatusBanner(status) {
   const banner = document.createElement('div');
   banner.id = 'accountStatusBanner';
@@ -708,20 +708,20 @@ let currentCommunityFilter = null;
   if (profile) {
     loggedInUser = profile;
 
-    // ── Update chatbot greeting with real name ──
+    // -- Update chatbot greeting with real name --
     const greetingEl = document.getElementById('chatbotGreeting');
     if (greetingEl) {
-      greetingEl.innerHTML = `👋 Hi ${profile.first_name}! I'm your <strong>CRMC Assistant</strong>. Ask me about exams, class suspensions, lost items, or campus announcements!`;
+      greetingEl.innerHTML = `?? Hi ${profile.first_name}! I'm your <strong>CRMC Assistant</strong>. Ask me about exams, class suspensions, lost items, or campus announcements!`;
     }
     // Update dept suggestion button to match user's department
     const deptSugg = document.getElementById('cbDeptSugg');
     if (deptSugg) {
       const deptShort = profile.department?.match(/\(([^)]+)\)/)?.[1] || 'Dept';
-      deptSugg.textContent = `📢 ${deptShort} updates`;
+      deptSugg.textContent = `?? ${deptShort} updates`;
       deptSugg.dataset.q = `Latest ${deptShort} announcements?`;
     }
 
-    // ── Show suspended banner and block posting if suspended ──
+    // -- Show suspended banner and block posting if suspended --
     if (profile.account_status === 'suspended') {
       showAccountStatusBanner(profile.account_status);
     }
@@ -775,7 +775,7 @@ let currentCommunityFilter = null;
       communitySelect.value = 'general';
     }
 
-    // ── Load posts immediately after user is ready ──
+    // -- Load posts immediately after user is ready --
     document.querySelectorAll('.post-card').forEach(p => p.style.display = 'none');
     document.getElementById('feedTitle').textContent = 'Campus Feed';
     document.getElementById('feedSub').textContent = 'All posts from your communities';
@@ -976,16 +976,16 @@ document.querySelector('.cf-modal .btn-primary')?.addEventListener('click', asyn
     // Reload feed to show new post
     setTimeout(() => loadPostsFromDB(), 500);
 
-    // ── Run AI sentiment analysis in background (non-blocking) ──
+    // -- Run AI sentiment analysis in background (non-blocking) --
     runSentimentAnalysis(data.id, content, title || '').then(result => {
       if (result.shouldFlag) {
-        console.warn('⚠️ Post flagged by AI:', result.reason);
+        console.warn('?? Post flagged by AI:', result.reason);
         // Show warning to the user
-        showToast('⚠️ Your post has been flagged for review. Please ensure it follows community guidelines.', 'error');
+        showToast('?? Your post has been flagged for review. Please ensure it follows community guidelines.', 'error');
       }
     });
 
-    // ── Parse @mentions in post content ──
+    // -- Parse @mentions in post content --
     processMentions(content + ' ' + (title || ''), data.id);
     
   } catch (err) {
@@ -1003,11 +1003,11 @@ async function loadPostsFromDB() {
   if (!loggedInUser) return;
   
   try {
-    // ── Step 1: Resolve community IDs to filter by ──
+    // -- Step 1: Resolve community IDs to filter by --
     let communityIds = [];
 
     if (currentCommunityFilter) {
-      // Single community — always look up by slug (works for both dept slugs like 'css' and public slugs like 'general')
+      // Single community � always look up by slug (works for both dept slugs like 'css' and public slugs like 'general')
       const { data: comm } = await db
         .from('communities')
         .select('id')
@@ -1015,7 +1015,7 @@ async function loadPostsFromDB() {
         .single();
       if (comm) communityIds = [comm.id];
     } else {
-      // All posts — fetch public communities + user's dept community by slug
+      // All posts � fetch public communities + user's dept community by slug
       const deptSlugMap = {
         'college of teacher education (cte)':              'cte',
         'college of business education (cbe)':             'cbe',
@@ -1040,13 +1040,13 @@ async function loadPostsFromDB() {
       return;
     }
 
-    // ── Step 2: Build query with community filter ──
+    // -- Step 2: Build query with community filter --
     let query = db
       .from('posts')
       .select(`*, profiles:author_id (first_name, last_name, avatar_url, admin_role), communities:community_id (name, slug)`)
       .in('community_id', communityIds)
 
-    // ── Step 3: Apply tab filter ──
+    // -- Step 3: Apply tab filter --
     if (currentFeedTab === 'pinned') {
       query = query
         .eq('is_pinned', true)
@@ -1062,7 +1062,7 @@ async function loadPostsFromDB() {
     } else if (currentFeedTab === 'latest') {
       query = query.order('created_at', { ascending: false });
     } else {
-      // All — pinned first, then newest
+      // All � pinned first, then newest
       query = query
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
@@ -1094,7 +1094,7 @@ async function loadPostsFromDB() {
 
     const postIds = posts.map(p => p.id);
 
-    // ── Batch fetch all likes and comments in just 2 queries ──
+    // -- Batch fetch all likes and comments in just 2 queries --
     const [likesRes, commentsRes, userLikesRes] = await Promise.all([
       // All like counts for these posts
       db.from('post_likes')
@@ -1155,11 +1155,11 @@ function createPostElement(post) {
   const isAnon = post.is_anonymous;
   const author = post.profiles;
   
-  // ── Detect if this is an announcement ──
-  const isAnnouncement = post.content?.startsWith('📢 [ANNOUNCEMENT]') 
+  // -- Detect if this is an announcement --
+  const isAnnouncement = post.content?.startsWith('?? [ANNOUNCEMENT]') 
     || post.is_pinned 
     || post.communities?.slug === 'ssg-announcements';
-  const displayContent = post.content?.replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '') || post.content;
+  const displayContent = post.content?.replace(/^??\s*\[ANNOUNCEMENT\]\s*/i, '') || post.content;
   
   let authorName = 'Anonymous';
   let authorAvatar = '<div class="post-avatar post-avatar--anon"><i class="fas fa-user-secret"></i></div>';
@@ -1190,17 +1190,17 @@ function createPostElement(post) {
   // Check if current user is the author (can delete/edit)
   const isAuthor = loggedInUser && post.author_id === loggedInUser.id;
 
-  // ── Detect admin author ──
+  // -- Detect admin author --
   const authorRole = author?.admin_role || null;
   const isAdmin = authorRole && authorRole !== 'student';
-  // No separate admin badge — the account name already identifies them (e.g., "CSS Admin")
+  // No separate admin badge � the account name already identifies them (e.g., "CSS Admin")
 
-  // ── Announcement badge HTML ──
+  // -- Announcement badge HTML --
   const announcementBadge = isAnnouncement
     ? `<span class="post-announcement-badge"><i class="fas fa-bullhorn"></i> Announcement</span>`
     : '';
 
-  // ── AI Flagged badge (shows which detection method caught it) ──
+  // -- AI Flagged badge (shows which detection method caught it) --
   let flaggedBadge = '';
   if (post.is_flagged) {
     const reason = (post.flag_reason || '').toLowerCase();
@@ -1219,12 +1219,12 @@ function createPostElement(post) {
     }
   }
 
-  // ── Add highlight class for announcements ──
+  // -- Add highlight class for announcements --
   if (isAnnouncement) {
     article.classList.add('post-card--announcement');
   }
 
-  // ── Add highlight class for AI flagged posts ──
+  // -- Add highlight class for AI flagged posts --
   if (post.is_flagged) {
     article.classList.add('post-card--flagged');
   }
@@ -1279,14 +1279,14 @@ function createPostElement(post) {
         const extra = imgs.length > 5 ? imgs.length - 4 : 0;
         return `<div class="post-images-grid">
           ${shown.map((url, i) => `
-            <div class="post-image-item" onclick="window.open('${url}', '_blank')">
+            <div class="post-image-item" onclick="openLightbox(${JSON.stringify(imgs)}, ${i})">
               <img src="${url}" alt="Post image" loading="lazy" />
               ${extra && i === 3 ? `<div class="img-more-overlay">+${extra}</div>` : ''}
             </div>
           `).join('')}
         </div>`;
       })() : post.image_url && typeof post.image_url === 'string' ? `
-        <div class="post-image" onclick="window.open('${post.image_url}', '_blank')">
+        <div class="post-image" onclick="openLightbox(['${post.image_url}'], 0)">
           <img src="${post.image_url}" alt="Post image" loading="lazy" />
         </div>
       ` : ''}
@@ -1306,7 +1306,7 @@ function createPostElement(post) {
         </div>
         <div class="comment-input-wrapper">
           <div class="comment-input-avatar">${loggedInUser?.avatar_url ? `<img src="${loggedInUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : (loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--')}</div>
-          <input type="text" class="comment-input top-level-comment-input" placeholder="Write a comment…" data-post-id="${post.id}" />
+          <input type="text" class="comment-input top-level-comment-input" placeholder="Write a comment�" data-post-id="${post.id}" />
           <button class="comment-send-btn" data-post-id="${post.id}">
             <i class="fas fa-paper-plane"></i>
           </button>
@@ -1333,7 +1333,55 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Format comment text — bold the mentioned name at the start of replies
+// ── IMAGE LIGHTBOX ──
+let _lbImages = [];
+let _lbIndex  = 0;
+
+function openLightbox(images, index) {
+  _lbImages = images;
+  _lbIndex  = index;
+  _updateLightbox();
+  document.getElementById('lightboxOverlay').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function _updateLightbox() {
+  document.getElementById('lightboxImg').src = _lbImages[_lbIndex];
+  document.getElementById('lightboxCounter').textContent =
+    _lbImages.length > 1 ? `${_lbIndex + 1} / ${_lbImages.length}` : '';
+  document.getElementById('lightboxPrev').hidden = _lbImages.length <= 1;
+  document.getElementById('lightboxNext').hidden = _lbImages.length <= 1;
+}
+
+function closeLightbox() {
+  document.getElementById('lightboxOverlay').hidden = true;
+  document.body.style.overflow = '';
+}
+
+document.getElementById('lightboxClose')?.addEventListener('click', closeLightbox);
+document.getElementById('lightboxOverlay')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('lightboxOverlay') ||
+      e.target === document.getElementById('lightboxImg').parentElement) {
+    closeLightbox();
+  }
+});
+document.getElementById('lightboxPrev')?.addEventListener('click', () => {
+  _lbIndex = (_lbIndex - 1 + _lbImages.length) % _lbImages.length;
+  _updateLightbox();
+});
+document.getElementById('lightboxNext')?.addEventListener('click', () => {
+  _lbIndex = (_lbIndex + 1) % _lbImages.length;
+  _updateLightbox();
+});
+document.addEventListener('keydown', (e) => {
+  const lb = document.getElementById('lightboxOverlay');
+  if (lb?.hidden) return;
+  if (e.key === 'ArrowLeft')  { _lbIndex = (_lbIndex - 1 + _lbImages.length) % _lbImages.length; _updateLightbox(); }
+  if (e.key === 'ArrowRight') { _lbIndex = (_lbIndex + 1) % _lbImages.length; _updateLightbox(); }
+  if (e.key === 'Escape')     { closeLightbox(); }
+});
+
+// Format comment text � bold the mentioned name at the start of replies
 function formatCommentMention(text) {
   if (!text) return '';
   // Match a name pattern at start: "FirstName LastName rest of message"
@@ -1349,7 +1397,7 @@ function formatCommentMention(text) {
 
 // Toggle comment section
 document.addEventListener('click', async (e) => {
-  // Skip events from inside the post preview modal — it has its own handlers
+  // Skip events from inside the post preview modal � it has its own handlers
   if (e.target.closest('#postPreviewModal')) return;
 
   // Handle post menu toggle
@@ -1490,7 +1538,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // Handle comment delete button — show styled modal
+  // Handle comment delete button � show styled modal
   if (e.target.closest('.comment-delete-btn')) {
     const btn       = e.target.closest('.comment-delete-btn');
     const commentId = btn.dataset.commentId;
@@ -1512,7 +1560,7 @@ document.addEventListener('click', async (e) => {
 // Handle Enter key for comment and reply inputs
 document.addEventListener('keypress', async (e) => {
   if (e.key !== 'Enter') return;
-  // Skip if inside preview modal — it has its own Enter handler
+  // Skip if inside preview modal � it has its own Enter handler
   if (e.target.closest('#postPreviewModal')) return;
 
   if (e.target.classList.contains('reply-input')) {
@@ -1664,7 +1712,7 @@ document.getElementById('deleteConfirmModal')?.addEventListener('click', functio
   }
 });
 
-// ── DELETE COMMENT MODAL HANDLERS ──
+// -- DELETE COMMENT MODAL HANDLERS --
 document.getElementById('confirmDeleteCommentBtn')?.addEventListener('click', async function() {
   const pending = window._pendingCommentDelete;
   if (!pending) return;
@@ -1716,9 +1764,9 @@ document.getElementById('deleteCommentModal')?.addEventListener('click', functio
   }
 });
 
-// ══════════════════════════════════════════════════════════════════
-// REPORT POST — Module 2 Enhancement
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
+// REPORT POST � Module 2 Enhancement
+// ------------------------------------------------------------------
 
 let postToReport = null;
 
@@ -1806,7 +1854,7 @@ document.getElementById('submitReportBtn')?.addEventListener('click', async func
         const notifications = ssgAdmins.map(admin => ({
           user_id: admin.id,
           type: 'mention',
-          message: `🚨 ${reporterName} reported a post for: ${reason}`,
+          message: `?? ${reporterName} reported a post for: ${reason}`,
           link: `/campusfeed.html?post=${postToReport}`,
           is_read: false,
         }));
@@ -1969,7 +2017,7 @@ function copyToClipboard(text) {
   });
 }
 
-// ── COMMENT RENDERING HELPER ──
+// -- COMMENT RENDERING HELPER --
 function buildCommentHTML(comment, replies = []) {
   const isAnon = comment.is_anonymous;
   const author = comment.profiles;
@@ -2025,7 +2073,7 @@ function buildCommentHTML(comment, replies = []) {
         </button>
         <div class="reply-input-wrapper" id="reply-input-${comment.id}" style="display:none;">
           <div class="comment-input-avatar">${loggedInUser?.avatar_url ? `<img src="${loggedInUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />` : (loggedInUser ? (loggedInUser.first_name[0] + loggedInUser.last_name[0]).toUpperCase() : '--')}</div>
-          <input type="text" class="comment-input reply-input" placeholder="Reply to ${authorName}…"
+          <input type="text" class="comment-input reply-input" placeholder="Reply to ${authorName}�"
                  data-post-id="${comment.post_id}" data-parent-id="${comment.id}" />
           <button class="comment-send-btn reply-send-btn" data-post-id="${comment.post_id}" data-parent-id="${comment.id}">
             <i class="fas fa-paper-plane"></i>
@@ -2147,7 +2195,7 @@ async function submitComment(postId, inputElement, parentId = null) {
 
     showToast(parentId ? 'Reply posted!' : 'Comment posted!', 'success');
 
-    // ── Parse @mentions and send notifications ──
+    // -- Parse @mentions and send notifications --
     processMentions(content, postId);
 
   } catch (err) {
@@ -2182,7 +2230,7 @@ document.querySelectorAll('.community-item').forEach(item => {
       feedIcon.className = 'feed-icon';
       currentCommunityFilter = null;
     } else if (feedSlug === 'dept') {
-      // Department community — map the user's full department string to a DEPT_CONFIG slug
+      // Department community � map the user's full department string to a DEPT_CONFIG slug
       // profiles.department stores e.g. "College of Computer Studies (CCS)"
       // DEPT_CONFIG keys are the community slugs: cte, css, cbe, ccje, psych
       const deptSlugMap = {
@@ -2217,7 +2265,7 @@ document.querySelectorAll('.community-item').forEach(item => {
         'academic': { name: 'Academic Help', sub: 'Study help', icon: 'fa-book-open' },
         'marketplace': { name: 'Marketplace', sub: 'Borrow & lend', icon: 'fa-handshake' },
         'support': { name: 'Student Support', sub: 'Help & guidance', icon: 'fa-hands-helping' },
-        'ssg':    { name: 'SSG — Student Government', sub: 'Ask & connect with SSG', icon: 'fa-star' }
+        'ssg':    { name: 'SSG � Student Government', sub: 'Ask & connect with SSG', icon: 'fa-star' }
       };
       
       const comm = communityNames[feedSlug] || communityNames['general'];
@@ -2244,9 +2292,9 @@ document.querySelectorAll('.community-item').forEach(item => {
 });
 
 
-// ══════════════════════════════════════════════════════════════════
-// NOTIFICATIONS SYSTEM — Module 4
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
+// NOTIFICATIONS SYSTEM � Module 4
+// ------------------------------------------------------------------
 
 // Icon map per notification type
 const NOTIF_ICONS = {
@@ -2292,16 +2340,16 @@ async function loadNotifications() {
       // Extract post ID from the link field (format: /campusfeed.html?post=UUID)
       const postId = n.link ? n.link.split('post=')[1] : null;
 
-      // Clean up message — strip 📢 [ANNOUNCEMENT] prefix for cleaner display
-      let displayMsg = (n.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
+      // Clean up message � strip ?? [ANNOUNCEMENT] prefix for cleaner display
+      let displayMsg = (n.message || '').replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '');
       // Also strip trailing quote marks and leading quotes from "posted:" format
       displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
 
       // Highlight the person's name (bold it in the notification text)
-      // Handles: "Name liked...", "Name commented...", "Name replied...", "📢 Name: ...", "Name mentioned..."
+      // Handles: "Name liked...", "Name commented...", "Name replied...", "?? Name: ...", "Name mentioned..."
       const nameClass = n.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
       displayMsg = displayMsg
-        .replace(/^(📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+        .replace(/^(??\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
         .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
 
       // Type label for visual clarity
@@ -2381,7 +2429,7 @@ async function markAllNotificationsRead() {
   }
 }
 
-// Load notifications when dropdown opens — mark all as read automatically
+// Load notifications when dropdown opens � mark all as read automatically
 document.getElementById('notifToggle')?.addEventListener('click', async () => {
   loadNotifications();
 
@@ -2398,7 +2446,7 @@ document.getElementById('markAllReadBtn')?.addEventListener('click', async (e) =
   await markAllNotificationsRead();
 });
 
-// ── REALTIME NOTIFICATIONS — Supabase Realtime subscription ──
+// -- REALTIME NOTIFICATIONS � Supabase Realtime subscription --
 let notifChannel = null;
 
 function setupRealtimeNotifications() {
@@ -2417,7 +2465,7 @@ function setupRealtimeNotifications() {
       },
       (payload) => {
         const newNotif = payload.new;
-        console.log('🔔 New notification received:', newNotif.type);
+        console.log('?? New notification received:', newNotif.type);
 
         // Update badge count (+1) with pulse animation
         const badge = document.querySelector('#notifToggle .icon-badge');
@@ -2433,7 +2481,7 @@ function setupRealtimeNotifications() {
 
         // Show toast for the new notification (clean message)
         const toastMsg = (newNotif.message || 'You have a new notification')
-          .replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '')
+          .replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '')
           .replace(/\s*posted:\s*"(.+)"$/i, ': $1');
         showToast(toastMsg, 'info');
 
@@ -2445,13 +2493,13 @@ function setupRealtimeNotifications() {
           const postId   = newNotif.link ? newNotif.link.split('post=')[1] : null;
 
           // Clean up message for display
-          let displayMsg = (newNotif.message || '').replace(/📢\s*\[ANNOUNCEMENT\]\s*/gi, '');
+          let displayMsg = (newNotif.message || '').replace(/??\s*\[ANNOUNCEMENT\]\s*/gi, '');
           displayMsg = displayMsg.replace(/\s*posted:\s*"(.+)"$/i, ': $1');
 
           // Highlight the person's name
           const nameClass = newNotif.type === 'announcement' ? 'notif-name notif-name--admin' : 'notif-name';
           displayMsg = displayMsg
-            .replace(/^(📢\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
+            .replace(/^(??\s*)([^:]+?):\s*/, `$1<strong class="${nameClass}">$2</strong>: `)
             .replace(/^(.+?)\s+(liked your post|commented on your post|replied to your comment|mentioned you)/, `<strong class="${nameClass}">$1</strong> $2`);
 
           const typeLabels = { like: 'Like', comment: 'Comment', reply: 'Reply', announcement: 'Announcement', mention: 'Mention' };
@@ -2479,7 +2527,7 @@ function setupRealtimeNotifications() {
     )
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        console.log('✅ Realtime notifications connected');
+        console.log('? Realtime notifications connected');
       }
     });
 }
@@ -2509,7 +2557,7 @@ setTimeout(async () => {
     console.error('Error loading notification count:', err);
   }
 
-  // ── Load real post counts for Active Communities widget ──
+  // -- Load real post counts for Active Communities widget --
   try {
     const slugs = ['lostandfound', 'academic', 'general'];
     const { data: communities } = await db
@@ -2547,10 +2595,10 @@ setTimeout(async () => {
   }
 }, 1500);
 
-// ══════════════════════════════════════════════════════════════════
-// @MENTION DETECTION — Module 4 Enhancement
+// ------------------------------------------------------------------
+// @MENTION DETECTION � Module 4 Enhancement
 // Parses @FirstName LastName patterns and creates notifications
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
 
 async function processMentions(text, postId) {
   if (!text || !loggedInUser) return;
@@ -2600,7 +2648,7 @@ async function processMentions(text, postId) {
   }
 }
 
-// ── CLICK ON NOTIFICATION → open post in modal popup ──
+// -- CLICK ON NOTIFICATION ? open post in modal popup --
 document.getElementById('notifList')?.addEventListener('click', async (e) => {
   const item = e.target.closest('.notif-item[data-post-id]');
   if (!item) return;
@@ -2632,7 +2680,7 @@ document.getElementById('notifList')?.addEventListener('click', async (e) => {
   }
 });
 
-// ── POST PREVIEW MODAL ──
+// -- POST PREVIEW MODAL --
 async function openPostPreview(postId) {
   const modal   = document.getElementById('postPreviewModal');
   const content = document.getElementById('postPreviewContent');
@@ -2713,7 +2761,7 @@ async function openPostPreview(postId) {
             </button>
             <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
               <div class="comment-input-avatar">${userInitials}</div>
-              <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
+              <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}�"
                      data-post-id="${post.id}" data-parent-id="${c.id}" />
               <button class="comment-send-btn preview-reply-send" data-post-id="${post.id}" data-parent-id="${c.id}">
                 <i class="fas fa-paper-plane"></i>
@@ -2737,11 +2785,11 @@ async function openPostPreview(postId) {
           <div class="post-avatar" style="${avatarStyle}width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0;">${initials}</div>
           <div>
             <div style="font-weight:600;font-size:.9rem;">${authorName}</div>
-            <div style="font-size:.75rem;color:var(--gray-400);">${community} · ${timeAgo}</div>
+            <div style="font-size:.75rem;color:var(--gray-400);">${community} � ${timeAgo}</div>
           </div>
         </div>
-        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title.replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, ''))}</h3>` : ''}
-        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml((post.content || '').replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
+        ${post.title ? `<h3 style="font-size:1rem;font-weight:700;margin:.75rem 0 .5rem;">${escapeHtml(post.title.replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, ''))}</h3>` : ''}
+        <p style="font-size:.88rem;color:var(--gray-700);line-height:1.6;margin-bottom:1rem;">${escapeHtml((post.content || '').replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, ''))}</p>
         ${post.image_url && Array.isArray(post.image_url) && post.image_url.length > 0 ? `
           <div class="post-images-grid" style="margin-bottom:1rem;">
             ${post.image_url.slice(0,4).map(url => `<div class="post-image-item"><img src="${url}" loading="lazy" /></div>`).join('')}
@@ -2758,7 +2806,7 @@ async function openPostPreview(postId) {
         </div>
         <div class="comment-input-wrapper" id="preview-new-comment-wrapper">
           <div class="comment-input-avatar">${userInitials}</div>
-          <input type="text" class="comment-input preview-new-comment-input" placeholder="Write a comment…" data-post-id="${post.id}" />
+          <input type="text" class="comment-input preview-new-comment-input" placeholder="Write a comment�" data-post-id="${post.id}" />
           <button class="comment-send-btn preview-new-comment-send" data-post-id="${post.id}">
             <i class="fas fa-paper-plane"></i>
           </button>
@@ -2782,7 +2830,7 @@ document.getElementById('postPreviewModal')?.addEventListener('click', (e) => {
   }
 });
 
-// ── PREVIEW MODAL: comment & reply interactions ──
+// -- PREVIEW MODAL: comment & reply interactions --
 document.getElementById('postPreviewModal')?.addEventListener('click', async (e) => {
 
   // Toggle reply input box
@@ -2861,7 +2909,7 @@ document.getElementById('postPreviewModal')?.addEventListener('keypress', async 
   }
 });
 
-// ── submitCommentPreview: used inside the notification post preview modal ──
+// -- submitCommentPreview: used inside the notification post preview modal --
 // Same as submitComment but doesn't touch the main feed comment section
 async function submitCommentPreview(postId, inputElement, parentId = null) {
   const content = inputElement.value.trim();
@@ -2919,7 +2967,7 @@ async function refreshPreviewComments(postId) {
   // Simple 2-level display: top-level comments + all their replies (any depth)
   const topLevel = allComments.filter(c => !c.parent_id);
   
-  // ALL comments with a parent_id are replies — group by their direct parent
+  // ALL comments with a parent_id are replies � group by their direct parent
   // But show them ALL under whatever top-level ancestor they belong to
   const replyMap = {};
   const repliesOnly = allComments.filter(c => c.parent_id);
@@ -2971,7 +3019,7 @@ async function refreshPreviewComments(postId) {
                 </button>
                 <div class="reply-input-wrapper" id="preview-reply-input-${r.id}" style="display:none;">
                   <div class="comment-input-avatar">${userInitials}</div>
-                  <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${rName}…"
+                  <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${rName}�"
                          data-post-id="${postId}" data-parent-id="${r.id}" />
                   <button class="comment-send-btn preview-reply-send" data-post-id="${postId}" data-parent-id="${r.id}">
                     <i class="fas fa-paper-plane"></i>
@@ -2997,7 +3045,7 @@ async function refreshPreviewComments(postId) {
           </button>
           <div class="reply-input-wrapper" id="preview-reply-input-${c.id}" style="display:none;">
             <div class="comment-input-avatar">${userInitials}</div>
-            <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}…"
+            <input type="text" class="comment-input preview-reply-input" placeholder="Reply to ${cName}�"
                    data-post-id="${postId}" data-parent-id="${c.id}" />
             <button class="comment-send-btn preview-reply-send" data-post-id="${postId}" data-parent-id="${c.id}">
               <i class="fas fa-paper-plane"></i>
@@ -3018,10 +3066,10 @@ async function refreshPreviewComments(postId) {
 }
 
 
-// ══════════════════════════════════════════════════════════════════
-// ANNOUNCEMENTS WIDGET — Module 5
+// ------------------------------------------------------------------
+// ANNOUNCEMENTS WIDGET � Module 5
 // Fetches real posts from ssg-announcements + dept announcement posts
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
 
 async function loadAnnouncementsWidget() {
   const widget = document.getElementById('announcementsWidget');
@@ -3050,7 +3098,7 @@ async function loadAnnouncementsWidget() {
 
     const commIds = communities.map(c => c.id);
 
-    // Only show pinned posts OR posts marked as announcements (📢 [ANNOUNCEMENT] prefix)
+    // Only show pinned posts OR posts marked as announcements (?? [ANNOUNCEMENT] prefix)
     const { data: posts, error } = await db
       .from('posts')
       .select(`
@@ -3075,8 +3123,8 @@ async function loadAnnouncementsWidget() {
     widget.innerHTML = posts.map(post => {
       const slug      = post.communities?.slug || '';
       const commName  = post.communities?.name || 'General';
-      const rawText   = (post.title || post.content || '').replace(/^📢?\s*\[ANNOUNCEMENT\]\s*/i, '');
-      const text      = rawText.substring(0, 70) + (rawText.length > 70 ? '…' : '');
+      const rawText   = (post.title || post.content || '').replace(/^???\s*\[ANNOUNCEMENT\]\s*/i, '');
+      const text      = rawText.substring(0, 70) + (rawText.length > 70 ? '�' : '');
       const timeAgo   = formatTimeAgo(new Date(post.created_at));
 
       // Pick tag style based on community or pinned status
@@ -3108,7 +3156,7 @@ async function loadAnnouncementsWidget() {
         </div>`;
     }).join('');
 
-    // Click → scroll to post in feed
+    // Click ? scroll to post in feed
     widget.querySelectorAll('.ann-widget-clickable').forEach(item => {
       item.addEventListener('click', async () => {
         const postId  = item.dataset.postId;
@@ -3134,7 +3182,7 @@ async function loadAnnouncementsWidget() {
   }
 }
 
-// "View all" → navigate to dedicated announcements page
+// "View all" ? navigate to dedicated announcements page
 // (Link is now an <a href="announcements.html"> so no JS needed, but keep as fallback)
 document.getElementById('viewAllAnnouncements')?.addEventListener('click', (e) => {
   // Allow default navigation to announcements.html
@@ -3146,9 +3194,9 @@ setTimeout(() => {
 }, 1200);
 
 
-// ══════════════════════════════════════════════════════════════════
-// UPCOMING EVENTS WIDGET — pulls from campus_events table
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
+// UPCOMING EVENTS WIDGET � pulls from campus_events table
+// ------------------------------------------------------------------
 
 async function loadEventsWidget() {
   const eventsList = document.getElementById('upcomingEventsList') || document.querySelector('.events-list');
@@ -3197,9 +3245,9 @@ setTimeout(() => {
   if (loggedInUser) loadEventsWidget();
 }, 1300);
 
-// ══════════════════════════════════════════════════════════════════
-// DYNAMIC SIDEBAR COMMUNITIES — loads public communities from DB
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
+// DYNAMIC SIDEBAR COMMUNITIES � loads public communities from DB
+// ------------------------------------------------------------------
 
 async function loadSidebarCommunities() {
   const container = document.getElementById('publicCommunitiesList');
@@ -3285,9 +3333,9 @@ async function loadSidebarCommunities() {
 // Load sidebar communities is called from initUser()
 
 
-// ══════════════════════════════════════════════════════════════════
-// SEARCH BAR — searches posts and students
-// ══════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------
+// SEARCH BAR � searches posts and students
+// ------------------------------------------------------------------
 
 const searchInput    = document.getElementById('searchInput');
 const searchDropdown = document.getElementById('searchDropdown');
@@ -3341,7 +3389,7 @@ async function runSearch(query) {
       html += `<div class="search-section-label"><i class="fas fa-newspaper"></i> Posts</div>`;
       html += posts.map(post => {
         const text    = post.title || post.content;
-        const preview = text.length > 80 ? text.substring(0, 80) + '…' : text;
+        const preview = text.length > 80 ? text.substring(0, 80) + '�' : text;
         const comm    = post.communities?.name || 'General';
         const timeAgo = formatTimeAgo(new Date(post.created_at));
         return `
@@ -3351,7 +3399,7 @@ async function runSearch(query) {
             </div>
             <div>
               <div class="search-result-title">${highlightMatch(text.substring(0, 60), query)}</div>
-              <div class="search-result-meta">${comm} · ${timeAgo}</div>
+              <div class="search-result-meta">${comm} � ${timeAgo}</div>
             </div>
           </div>`;
       }).join('');
@@ -3368,7 +3416,7 @@ async function runSearch(query) {
             <div class="search-result-avatar">${initials}</div>
             <div>
               <div class="search-result-title">${highlightMatch(fullName, query)}</div>
-              <div class="search-result-meta">${deptShort} · ${s.student_id}</div>
+              <div class="search-result-meta">${deptShort} � ${s.student_id}</div>
             </div>
           </div>`;
       }).join('');
@@ -3376,7 +3424,7 @@ async function runSearch(query) {
 
     searchDropdown.innerHTML = html;
 
-    // Click on post result → scroll to post in feed
+    // Click on post result ? scroll to post in feed
     searchDropdown.querySelectorAll('.search-result-item[data-type="post"]').forEach(item => {
       item.addEventListener('click', async () => {
         const postId = item.dataset.id;
@@ -3397,7 +3445,7 @@ async function runSearch(query) {
       });
     });
 
-    // Click on student → go to their profile page
+    // Click on student ? go to their profile page
     searchDropdown.querySelectorAll('.search-result-item[data-type="student"]').forEach(item => {
       item.addEventListener('click', () => {
         const userId = item.dataset.id;
@@ -3435,5 +3483,7 @@ searchInput?.addEventListener('keydown', (e) => {
     searchInput.value = '';
   }
 });
+
+
 
 

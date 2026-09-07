@@ -268,73 +268,81 @@ async function toggleComments(postId) {
 
 async function loadComments(postId) {
   const listEl = document.getElementById(`comment-list-${postId}`);
-  const { data: comments, error } = await db
+
+  // Fetch all comments for this post at once
+  const { data: allComments, error } = await db
     .from('comments')
-    .select('*, profiles:author_id(first_name, last_name), replies:comments!parent_id(*, profiles:author_id(first_name, last_name))')
+    .select('*, profiles:author_id(first_name, last_name)')
     .eq('post_id', postId)
-    .is('parent_id', null)
     .order('created_at', { ascending: true });
 
-  if (error || !comments?.length) {
+  if (error || !allComments?.length) {
     listEl.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--gray-400);font-size:13px;">No comments yet. Be the first!</div>`;
     return;
   }
 
-  listEl.innerHTML = comments.map(c => {
+  // Split into top-level and replies
+  const topLevel = allComments.filter(c => !c.parent_id);
+  const replyMap = {};
+  allComments.filter(c => c.parent_id).forEach(r => {
+    if (!replyMap[r.parent_id]) replyMap[r.parent_id] = [];
+    replyMap[r.parent_id].push(r);
+  });
+
+  function renderOne(c, isReply) {
     const author   = c.is_anonymous ? 'Anonymous' : (c.profiles ? `${c.profiles.first_name} ${c.profiles.last_name}` : 'Unknown');
     const initials = c.is_anonymous ? 'A' : (c.profiles ? (c.profiles.first_name[0] + c.profiles.last_name[0]).toUpperCase() : '?');
     const time     = formatTimeAgo(new Date(c.created_at));
     const isOwn    = adminUser && c.author_id === adminUser.id;
+    const ml       = isReply ? 'margin-left:2rem;margin-top:6px;' : '';
+    const ava      = isReply ? 'width:26px;height:26px;font-size:10px;' : '';
 
-    // Render replies
-    const repliesHtml = (c.replies || []).map(r => {
-      const rAuthor   = r.is_anonymous ? 'Anonymous' : (r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : 'Unknown');
-      const rInitials = r.is_anonymous ? 'A' : (r.profiles ? (r.profiles.first_name[0] + r.profiles.last_name[0]).toUpperCase() : '?');
-      const rTime     = formatTimeAgo(new Date(r.created_at));
-      const rIsOwn    = adminUser && r.author_id === adminUser.id;
-      return `
-        <div class="comment-item" style="margin-left:2rem;margin-top:6px;">
-          <div class="comment-avatar" style="width:26px;height:26px;font-size:10px;">${escapeHtml(rInitials)}</div>
-          <div class="comment-bubble">
-            <span class="comment-author">${escapeHtml(rAuthor)}</span>
-            <span class="comment-time">${rTime}</span>
-            <div class="comment-text">${escapeHtml(r.content)}</div>
-          </div>
-          ${rIsOwn ? `<button onclick="deleteAdminComment('${r.id}','${postId}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:11px;padding:2px 6px;" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
-        </div>`;
-    }).join('');
+    const replyBtn = !isReply ? `
+      <button onclick="toggleAdminReply('${c.id}','${postId}','${author.replace(/'/g, '')}')"
+        style="background:none;border:none;cursor:pointer;color:var(--gray-500);font-size:12px;font-weight:600;padding:2px 0;">
+        <i class="fas fa-reply"></i> Reply
+      </button>` : '';
+
+    const deleteBtn = isOwn ? `
+      <button onclick="deleteAdminComment('${c.id}','${postId}')"
+        style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:12px;padding:2px 0;">
+        <i class="fas fa-trash"></i>
+      </button>` : '';
+
+    const replyBox = !isReply ? `
+      <div id="reply-box-${c.id}" style="display:none;margin-top:6px;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="reply-input-${c.id}" placeholder="Write a reply..." maxlength="500"
+            style="flex:1;padding:6px 10px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-family:Poppins,sans-serif;"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminReply('${c.id}','${postId}');}" />
+          <button onclick="sendAdminReply('${c.id}','${postId}')"
+            style="padding:6px 12px;background:var(--maroon);color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>` : '';
+
+    const childReplies = !isReply ? (replyMap[c.id] || []).map(r => renderOne(r, true)).join('') : '';
 
     return `
-      <div class="comment-item" id="comment-${c.id}">
-        <div class="comment-avatar">${escapeHtml(initials)}</div>
+      <div class="comment-item" id="comment-${c.id}" style="${ml}">
+        <div class="comment-avatar" style="${ava}">${escapeHtml(initials)}</div>
         <div style="flex:1;">
           <div class="comment-bubble">
             <span class="comment-author">${escapeHtml(author)}</span>
             <span class="comment-time">${time}</span>
             <div class="comment-text">${escapeHtml(c.content)}</div>
           </div>
-          <div style="display:flex;gap:.75rem;margin-top:4px;padding-left:4px;">
-            <button onclick="toggleAdminReply('${c.id}','${postId}','${escapeHtml(author)}')"
-              style="background:none;border:none;cursor:pointer;color:var(--gray-500);font-size:12px;font-weight:600;padding:2px 0;">
-              <i class="fas fa-reply"></i> Reply
-            </button>
-            ${isOwn ? `<button onclick="deleteAdminComment('${c.id}','${postId}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:12px;padding:2px 0;"><i class="fas fa-trash"></i></button>` : ''}
+          <div style="display:flex;gap:.75rem;margin-top:3px;padding-left:4px;">
+            ${replyBtn}${deleteBtn}
           </div>
-          ${repliesHtml}
-          <div id="reply-box-${c.id}" style="display:none;margin-top:6px;margin-left:0;">
-            <div style="display:flex;gap:6px;align-items:center;">
-              <input id="reply-input-${c.id}" placeholder="Write a reply..." maxlength="500"
-                style="flex:1;padding:6px 10px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-family:Poppins,sans-serif;"
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminReply('${c.id}','${postId}');}" />
-              <button onclick="sendAdminReply('${c.id}','${postId}')"
-                style="padding:6px 12px;background:var(--maroon);color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;">
-                <i class="fas fa-paper-plane"></i>
-              </button>
-            </div>
-          </div>
+          ${replyBox}
+          ${childReplies}
         </div>
       </div>`;
-  }).join('');
+  }
+
+  listEl.innerHTML = topLevel.map(c => renderOne(c, false)).join('');
 }
 
 function toggleAdminReply(commentId, postId, authorName) {

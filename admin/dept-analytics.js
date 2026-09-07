@@ -174,8 +174,8 @@ async function loadLineChart() {
 // -- DOUGHNUT CHART: Account status breakdown --
 async function loadDoughnutChart() {
   const deptFull = DEPT_FULL[adminUser.admin_role];
-  const statuses = ['approved', 'pending', 'suspended', 'rejected'];
-  const colors = ['#10b981', '#f59e0b', '#ef4444', '#6b7280'];
+  const statuses = ['approved', 'suspended'];
+  const colors = ['#10b981', '#ef4444'];
   const counts = [];
 
   for (const status of statuses) {
@@ -315,6 +315,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await db.auth.signOut();
   window.location.href = 'login.html';
 });
+
 
 
 

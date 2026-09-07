@@ -98,7 +98,7 @@ function renderUsers() {
   tbody.innerHTML = list.map(user => {
     const initials = ((user.first_name?.[0] || '') + (user.last_name?.[0] || '')).toUpperCase() || '?';
     const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown';
-    const status = user.account_status || 'pending';
+    const status = user.account_status || 'approved';
     const color = STATUS_COLORS[status] || '#6b7280';
     const joined = user.created_at
       ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -147,7 +147,7 @@ function renderUsers() {
 }
 
 async function updateStatus(userId, newStatus) {
-  const labels = { approved: 'Approved', rejected: 'Rejected', suspended: 'Suspended' };
+  const labels = { approved: 'Activated', suspended: 'Suspended' };
   const { error } = await db.from('profiles').update({ account_status: newStatus }).eq('id', userId);
   if (error) { showToast('Update failed: ' + error.message, 'error'); return; }
 
@@ -179,7 +179,7 @@ async function viewUser(userId) {
 
   const initials = ((user.first_name?.[0] || '') + (user.last_name?.[0] || '')).toUpperCase() || '?';
   const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown';
-  const status = user.account_status || 'pending';
+  const status = user.account_status || 'approved';
   const color = STATUS_COLORS[status] || '#6b7280';
   const joined = user.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })

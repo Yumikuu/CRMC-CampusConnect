@@ -337,6 +337,7 @@ document.getElementById('confirmDeletePostBtn').addEventListener('click', async 
   if (!pendingDeleteId) return;
   const btn = document.getElementById('confirmDeletePostBtn');
   btn.textContent = 'Deleting...'; btn.disabled = true;
+  await notifyPostDeleted(pendingDeleteId, adminUser?.id);
   await db.from('posts').delete().eq('id', pendingDeleteId);
   btn.textContent = 'Delete'; btn.disabled = false;
   document.getElementById('deletePostModal').style.display = 'none';

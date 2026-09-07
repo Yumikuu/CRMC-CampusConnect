@@ -543,3 +543,32 @@ async function submitAdminReply(postId, parentId) {
     input.disabled = false;
   }
 }
+
+// ── NOTIFY USER WHEN THEIR POST IS DELETED BY ADMIN ──
+// Call this BEFORE deleting the post so we can still read author_id
+async function notifyPostDeleted(postId, adminId) {
+  try {
+    // Fetch the post to get author and a preview
+    const { data: post } = await db
+      .from('posts')
+      .select('author_id, content, title, is_anonymous')
+      .eq('id', postId)
+      .single();
+
+    if (!post || post.is_anonymous || !post.author_id) return; // don't notify anonymous posts
+    if (post.author_id === adminId) return; // admin deleting own post — no notification
+
+    const preview = (post.title || post.content || '').replace(/^📢\s*\[ANNOUNCEMENT\]\s*/i, '').substring(0, 60);
+    const message = `⚠️ Your post "${preview}${preview.length >= 60 ? '...' : ''}" was removed by an admin for violating community guidelines.`;
+
+    await db.from('notifications').insert({
+      user_id:  post.author_id,
+      type:     'announcement',
+      message:  message,
+      link:     null,
+      is_read:  false,
+    });
+  } catch (err) {
+    console.warn('Post delete notification failed (non-critical):', err.message);
+  }
+}

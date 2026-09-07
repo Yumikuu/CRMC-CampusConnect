@@ -239,6 +239,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
   const btn = document.getElementById('confirmDeleteBtn');
   btn.textContent = 'Deleting...';
   btn.disabled = true;
+  await notifyPostDeleted(pendingDeleteId, adminUser?.id);
   const { error } = await db.from('posts').delete().eq('id', pendingDeleteId);
   if (!error) { await logActivity('delete_post', pendingDeleteId, 'post'); closeDeleteModal(); await loadPosts(); }
   else { btn.textContent = 'Delete'; btn.disabled = false; }

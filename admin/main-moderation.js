@@ -215,6 +215,7 @@ async function unflagPost(postId) {
 
 async function deletePost(postId) {
   if (!confirm('Delete this post permanently? This cannot be undone.')) return;
+  await notifyPostDeleted(postId, adminUser?.id);
   const { error } = await db.from('posts').delete().eq('id', postId);
   if (!error) { await logActivity('delete_post', postId, 'post'); await loadStats(); await loadFlaggedPosts(); }
 }
@@ -226,6 +227,7 @@ async function dismissReport(reportId) {
 
 async function resolveReport(reportId, postId) {
   if (!confirm('Delete the reported post? This cannot be undone.')) return;
+  await notifyPostDeleted(postId, adminUser?.id);
   await db.from('posts').delete().eq('id', postId);
   await db.from('post_reports').update({ status: 'reviewed', reviewed_by: adminUser.id, reviewed_at: new Date().toISOString() }).eq('id', reportId);
   await logActivity('delete_post', postId, 'post');

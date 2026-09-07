@@ -158,6 +158,7 @@ async function flagPost(postId) {
 
 async function deletePost(postId) {
   if (!confirm('Delete this post permanently?')) return;
+  await notifyPostDeleted(postId, adminUser?.id);
   const { error } = await db.from('posts').delete().eq('id', postId);
   if (error) { showToast('Failed to delete', 'error'); return; }
   showToast('Post deleted', 'success');

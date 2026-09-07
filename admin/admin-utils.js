@@ -564,6 +564,7 @@ async function notifyPostDeleted(postId, adminId) {
     await db.from('notifications').insert({
       user_id:  post.author_id,
       type:     'announcement',
+      title:    'Post Removed by Admin',
       message:  message,
       link:     null,
       is_read:  false,

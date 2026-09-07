@@ -588,7 +588,7 @@ async function notifyPostDeleted(postId, adminId) {
 
 // ── MOBILE SIDEBAR HAMBURGER ──
 // Auto-injects hamburger button and backdrop for mobile responsiveness
-(function initMobileSidebar() {
+document.addEventListener('DOMContentLoaded', function initMobileSidebar() {
   // Inject hamburger button
   const hamburger = document.createElement('button');
   hamburger.className = 'admin-hamburger';
@@ -625,4 +625,4 @@ async function notifyPostDeleted(postId, adminId) {
   document.querySelectorAll('.admin-sidebar .nav-item').forEach(link => {
     link.addEventListener('click', closeSidebar);
   });
-})();
+});

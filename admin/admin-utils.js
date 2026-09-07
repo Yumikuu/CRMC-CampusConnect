@@ -585,3 +585,44 @@ async function notifyPostDeleted(postId, adminId) {
     console.warn('Post delete notification failed (non-critical):', err.message);
   }
 }
+
+// ── MOBILE SIDEBAR HAMBURGER ──
+// Auto-injects hamburger button and backdrop for mobile responsiveness
+(function initMobileSidebar() {
+  // Inject hamburger button
+  const hamburger = document.createElement('button');
+  hamburger.className = 'admin-hamburger';
+  hamburger.setAttribute('aria-label', 'Open navigation');
+  hamburger.innerHTML = '<i class="fas fa-bars"></i>';
+  document.body.appendChild(hamburger);
+
+  // Inject backdrop
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sidebar-backdrop';
+  document.body.appendChild(backdrop);
+
+  const sidebar = document.querySelector('.admin-sidebar');
+
+  function openSidebar() {
+    sidebar?.classList.add('open');
+    backdrop.classList.add('open');
+    hamburger.innerHTML = '<i class="fas fa-times"></i>';
+  }
+
+  function closeSidebar() {
+    sidebar?.classList.remove('open');
+    backdrop.classList.remove('open');
+    hamburger.innerHTML = '<i class="fas fa-bars"></i>';
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  backdrop.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a nav link is clicked (navigating away)
+  document.querySelectorAll('.admin-sidebar .nav-item').forEach(link => {
+    link.addEventListener('click', closeSidebar);
+  });
+})();

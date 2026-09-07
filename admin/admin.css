@@ -358,23 +358,94 @@ body {
 }
 
 /* ── RESPONSIVE ── */
+
+/* Hamburger button — hidden on desktop */
+.admin-hamburger {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1100;
+  background: var(--maroon);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(107,15,26,.3);
+}
+
+/* Sidebar overlay backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 999;
+}
+
 @media (max-width: 768px) {
+  /* Show hamburger */
+  .admin-hamburger {
+    display: flex;
+  }
+
+  /* Sidebar slides off-screen by default */
   .admin-sidebar {
-    width: 70px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    width: 260px;
+    box-shadow: 4px 0 20px rgba(0,0,0,.15);
   }
 
-  .sidebar-brand span,
-  .nav-item span {
-    display: none;
+  /* Open state */
+  .admin-sidebar.open {
+    transform: translateX(0);
   }
 
+  .sidebar-backdrop.open {
+    display: block;
+  }
+
+  /* Main content takes full width */
   .admin-main {
-    margin-left: 70px;
+    margin-left: 0;
     padding: 1rem;
+    padding-top: 4rem; /* space for hamburger */
   }
 
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Restore sidebar text on mobile (it was hidden in old icon-only mode) */
+  .sidebar-brand span,
+  .nav-item span {
+    display: initial;
+  }
+
+  /* Stats grid single column */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+
+  /* Tables scroll horizontally */
+  .card { overflow-x: auto; }
+
+  /* Topbar wrap on mobile */
+  .admin-topbar {
+    flex-wrap: wrap;
+    gap: .75rem;
   }
 }
 

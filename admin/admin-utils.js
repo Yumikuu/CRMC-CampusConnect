@@ -143,6 +143,18 @@ function initAdminNotifications(adminUserId) {
 
   // Load initial count
   loadAdminNotifCount(adminUserId);
+
+  // ── Realtime: update badge when new notification arrives ──
+  db.channel(`admin-notif-${adminUserId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${adminUserId}`,
+    }, () => {
+      loadAdminNotifCount(adminUserId);
+    })
+    .subscribe();
 }
 
 async function loadAdminNotifCount(userId) {

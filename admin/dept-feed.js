@@ -321,7 +321,7 @@ async function loadComments(postId) {
             ${isOwn ? `<button onclick="deleteAdminComment('${c.id}','${postId}')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:12px;padding:2px 0;"><i class="fas fa-trash"></i></button>` : ''}
           </div>
           ${repliesHtml}
-          <div id="reply-box-${c.id}" style="display:none;margin-top:6px;margin-left:0;display:none;">
+          <div id="reply-box-${c.id}" style="display:none;margin-top:6px;margin-left:0;">
             <div style="display:flex;gap:6px;align-items:center;">
               <input id="reply-input-${c.id}" placeholder="Write a reply..." maxlength="500"
                 style="flex:1;padding:6px 10px;border:1px solid var(--gray-300);border-radius:20px;font-size:13px;font-family:Poppins,sans-serif;"
